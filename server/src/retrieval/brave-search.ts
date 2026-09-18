@@ -16,6 +16,12 @@ export class BraveSearchProvider implements InterviewResearchProvider {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
+export function createConfiguredInterviewResearchProvider(
+  fetchImpl: typeof fetch = fetch,
+): BraveSearchProvider | undefined {
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY?.trim();
+  return apiKey ? new BraveSearchProvider(apiKey, fetchImpl) : undefined;
+}
   async search(query: string): Promise<InterviewSearchResult[]> {
     if (!this.apiKey.trim()) throw new Error("Brave Search API key is missing");
 
