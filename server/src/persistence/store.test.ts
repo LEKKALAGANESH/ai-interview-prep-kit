@@ -68,3 +68,23 @@ test("builds different IDs when the request changes", () => {
     buildKitId({ ...input, job_description: "Python backend engineer" }),
   );
 });
+
+
+test("persists kits across store instances", async () => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(process.cwd(), "kit-store-test-"));
+  const filePath = join(directory, "kits.json");
+
+  try {
+    const first = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const id = buildKitId(input);
+    await first.save(id, kit);
+
+    const second = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const loaded = await second.getById(id);
+    assert.deepEqual(loaded, kit);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
