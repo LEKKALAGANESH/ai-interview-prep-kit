@@ -193,15 +193,28 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 14.1 | Separate retrieval/extraction/generation/scheduling/persistence | ⬜ |
-| 14.2 | Validate requests and generated kits before save | ⬜ |
-| 14.3 | Persist enough state for reload | ⬜ |
-| 14.4 | Structured errors | ⬜ |
-| 14.5 | Handle long-running generation safely | ⬜ |
-| 14.6 | Handle partial failure | ⬜ |
-| 14.7 | Handle duplicate triggers | ⬜ |
-| 14.8 | Harden idempotency/request locking | ⬜ |
-| 14.9 | Add API/server integration coverage | ⬜ |
+| 14.1 | Separate retrieval/extraction/generation/scheduling/persistence | 🟢 |
+| 14.2 | Validate requests and generated kits before save | 🟢 |
+| 14.3 | Persist enough state for reload | 🟢 |
+| 14.4 | Structured errors | 🟢 |
+| 14.5 | Handle long-running generation safely | 🟢 |
+| 14.6 | Handle partial failure | 🟢 |
+| 14.7 | Handle duplicate triggers | 🟢 |
+| 14.8 | Harden idempotency/request locking | 🟢 |
+| 14.9 | Add API/server integration coverage | 🟡 |
+
+### Step 14 implementation notes
+
+- Kept retrieval, extraction, generation, scheduling/coverage, assembly, and persistence as separate modules; the application orchestrator composes them without merging responsibilities.
+- Request input is validated with the shared input schema before normalization and generation.
+- Final kits pass KitSchema validation and the must-have coverage gate before persistence; failed assembly never calls store.save().
+- Durable JSON persistence uses atomic temp-file + rename writes; practice state is persisted separately, and in-memory practice state is now correctly isolated from the durable-store implementation.
+- Added explicit server request/header timeouts suitable for the assessment's long-running generation path.
+- Added a 60-second bounded Gemini request timeout, with timeout failures treated as transient/retryable by the existing generation retry layer.
+- Partial generation remains best-effort per requirement, records generation errors, and the final shippability gate prevents incomplete must-have coverage from being persisted.
+- Duplicate generation requests are coalesced in-process and protected by per-kit request locks; durable locks now scope to the deterministic kit ID instead of serializing unrelated requests.
+- Added backend hardening integration coverage for structured validation errors, validated persistence/reload, and concurrent identical-request idempotency.
+- Item 14.9 remains 🟡 until the integration suite is observed passing in CI/runtime; no local test execution is being claimed.
 
 ## Step 15 — Final Repository & Assessment Verification
 
@@ -240,7 +253,7 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 11 | Builder | 🟡 Active |
 | 12 | Practice mode | ⬜ |
 | 13 | Frontend | 🟡 Active |
-| 14 | Backend hardening | ⬜ |
+| 14 | Backend hardening | 🟡 Active |
 | 15 | Final verification | ⬜ |
 
 **Working rule:** The known Step 9 test failure is deferred; Step 10 can proceed, but Step 9 remains 🟡 until that failure and the final runtime/audit verification are resolved.
