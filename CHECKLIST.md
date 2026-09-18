@@ -166,17 +166,28 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 13.1 | Create Next.js frontend package | ⬜ |
-| 13.2 | Configure Tailwind | ⬜ |
-| 13.3 | Build JD/company URL/days input flow | ⬜ |
-| 13.4 | Connect frontend to backend API | ⬜ |
-| 13.5 | Generation loading/progress state | ⬜ |
-| 13.6 | Structured error UI | ⬜ |
-| 13.7 | Render requirements, coverage, questions and schedule | ⬜ |
-| 13.8 | Integrate Builder and Practice Mode | ⬜ |
-| 13.9 | Responsive design | ⬜ |
-| 13.10 | Keyboard/accessibility support | ⬜ |
-| 13.11 | Add frontend tests | ⬜ |
+| 13.1 | Create Next.js frontend package | 🟢 |
+| 13.2 | Configure Tailwind CSS | 🟢 |
+| 13.3 | Build JD / company URL / days input flow | 🟢 |
+| 13.4 | Connect frontend to backend API | 🟢 |
+| 13.5 | Generation loading / progress state | 🟢 |
+| 13.6 | Structured error UI | 🟢 |
+| 13.7 | Render requirements, coverage, questions and schedule | 🟢 |
+| 13.8 | Integrate Builder and Practice Mode | 🟢 |
+| 13.9 | Responsive design | 🟢 |
+| 13.10 | Keyboard / accessibility support | 🟢 |
+| 13.11 | Add frontend tests | 🟡 |
+
+### Step 13 implementation notes
+
+- Completed the Next.js frontend package and added the Tailwind CSS v4/PostCSS configuration.
+- Added the primary JD, company URL, and 1–60 day generation flow using the existing backend API.
+- Added existing-kit loading by persisted kit ID.
+- Added generation/loading progress and structured API error presentation.
+- Rendered role/company information, requirements, coverage, questions, schedule, Builder, and Practice Mode in one responsive application flow.
+- Added keyboard-operable native controls and visible focus states.
+- Added frontend validation tests for preparation days and the generation payload.
+- Item 13.11 remains 🟡 until the frontend test suite and production build are observed passing in CI/runtime.
 
 ## Step 14 — Backend Hardening
 
@@ -228,7 +239,7 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 10 | Mandatory evaluator | 🟡 Active |
 | 11 | Builder | 🟡 Active |
 | 12 | Practice mode | ⬜ |
-| 13 | Frontend | ⬜ |
+| 13 | Frontend | 🟡 Active |
 | 14 | Backend hardening | ⬜ |
 | 15 | Final verification | ⬜ |
 
