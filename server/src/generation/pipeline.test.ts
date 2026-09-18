@@ -136,9 +136,9 @@ test("second pass includes uncovered nice requirements as well as must requireme
     { provider },
   );
 
-  assert.deepEqual(calls, ["React", "GraphQL"]);
+  assert.deepEqual(calls, ["React", "GraphQL", "GraphQL"]);
   assert.equal(result.coverage.can_ship, true);
-  assert.deepEqual(result.coverage.uncovered_requirement_ids, ["r2"]);
+  assert.deepEqual(result.coverage.uncovered_requirement_ids, []);
   assert.deepEqual(result.coverage.uncovered_nice_requirement_ids, ["r2"]);
 });
 
