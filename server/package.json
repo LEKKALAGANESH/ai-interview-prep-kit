@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "tsx --test src/retrieval/*.test.ts src/extraction/*.test.ts src/generation/*.test.ts src/pipeline/*.test.ts src/persistence/*.test.ts"
+    "test": "tsx --test src/retrieval/*.test.ts src/extraction/*.test.ts src/generation/*.test.ts src/pipeline/*.test.ts src/persistence/*.test.ts src/api/*.test.ts"
   },
   "devDependencies": {
     "tsx": "^4.20.5"
