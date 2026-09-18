@@ -142,7 +142,7 @@ test("does not persist when coverage cannot ship", async () => {
     ),
   );
 
-  assert.equal(await store.getById(buildKitId({\n    job_description: "React frontend engineer",\n    company_url: "https://example.com/",\n    days_available: 1,\n  })), null);
+  assert.equal(await store.getById(buildKitId({ job_description: "React frontend engineer", company_url: "https://example.com/", days_available: 1 })), null);
 });
 
 test("propagates persistence failures and never reports a successful save", async () => {
