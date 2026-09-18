@@ -28,7 +28,6 @@ function companyNameFromUrl(companyUrl: string): string {
 }
 
 function buildCompanyBrief(
-  companyUrl: string,
   research: Awaited<ReturnType<typeof researchCompany>>,
 ): CompanyBrief {
   const page = research.pages[0];
@@ -107,7 +106,7 @@ export async function generateKitFromInput(
     {
       company: companyNameFromUrl(companyUrl),
       role,
-      companyBrief: buildCompanyBrief(companyUrl, research),
+      companyBrief: buildCompanyBrief(research),
       research,
       provider,
     },
