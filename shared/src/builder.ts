@@ -1,4 +1,5 @@
 import { KitSchema, type Kit, type Question } from "./kit.js";
+import { checkCoverage } from "./coverage.js";
 
 export type BuilderEdit =
   | { type: "edit_question"; question_id: string; prompt?: string; answer_outline?: string }
@@ -14,9 +15,11 @@ function locate(kit: Kit, questionId: string): { day: number; index: number } {
   throw new Error(`Question is not scheduled: ${questionId}`);
 }
 
-function withMinutes(kit: Kit): Kit {
+function withDerivedState(kit: Kit): Kit {
   const next = structuredClone(kit);
   for (const day of next.schedule.days) day.minutes = day.question_ids.length * 10;
+  const coverage = checkCoverage(next.role.requirements, next.questions, next.coverage.passes);
+  next.coverage = { uncovered_requirement_ids: coverage.uncovered_requirement_ids, passes: coverage.passes };
   return KitSchema.parse(next);
 }
 
@@ -50,7 +53,7 @@ export function applyBuilderEdit(kit: Kit, edit: BuilderEdit): Kit {
     const targetIndex = Math.max(0, Math.min(edit.to_index, to.question_ids.length));
     to.question_ids.splice(targetIndex, 0, edit.question_id);
   }
-  return withMinutes(next);
+  return withDerivedState(next);
 }
 
 export function reorderQuestion(kit: Kit, questionId: string, day: number, toIndex: number): Kit {
