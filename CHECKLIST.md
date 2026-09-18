@@ -214,6 +214,8 @@ The latest CI verification reached the server test suite with **one remaining kn
 - Partial generation remains best-effort per requirement, records generation errors, and the final shippability gate prevents incomplete must-have coverage from being persisted.
 - Duplicate generation requests are coalesced in-process and protected by per-kit request locks; durable locks now scope to the deterministic kit ID instead of serializing unrelated requests.
 - Added backend hardening integration coverage for structured validation errors, validated persistence/reload, and concurrent identical-request idempotency.
+- Added provider abstraction for Gemini, OpenAI, Anthropic Claude, Groq, and local Ollama; provider/model selection is optional and backward-compatible with the assessment evaluator.
+- Added provider adapter tests and a smooth animated frontend provider selector; API keys remain server-side.
 - Item 14.9 remains 🟡 until the integration suite is observed passing in CI/runtime; no local test execution is being claimed.
 
 ## Step 15 — Final Repository & Assessment Verification
