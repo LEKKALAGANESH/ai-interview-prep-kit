@@ -40,6 +40,14 @@ test("prioritizes must-have requirements before nice-to-have requirements", () =
   assert.deepEqual(schedule[0].question_ids, ["q1", "q2"]);
 });
 
+test("places harder questions earlier within the same priority", () => {
+  const schedule = buildSchedule(1, requirements, [
+    { ...questions[0], difficulty: 1 },
+    { ...questions[1], requirement_ids: ["r1"], difficulty: 3 },
+  ]);
+  assert.deepEqual(schedule[0].question_ids, ["q2", "q1"]);
+});
+
 test("schedule minutes are integer values", () => {
   const schedule = buildSchedule(2, requirements, questions);
 
