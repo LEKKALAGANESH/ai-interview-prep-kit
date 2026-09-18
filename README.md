@@ -26,6 +26,37 @@ Implementation of the Trao Full-Stack Engineering Assessment: **The AI Interview
 12. Track flashcard practice coverage/confidence.
 13. Support multi-role batch evaluation.
 
+## JD extraction
+
+The extraction boundary is deliberately separate from retrieval and later question generation.
+
+```
+pasted JD
+  ↓
+RoleExtractionProvider
+  ↓
+structured raw role
+  ↓
+Zod validation
+  ↓
+deterministic normalization
+  ↓
+Appendix A role
+```
+
+Requirements use the exact Appendix A fields:
+
+- `id`
+- `text`
+- `kind`: `technical | behavioural | domain`
+- `priority`: `must | nice`
+
+Requirement IDs are assigned deterministically within a kit. Equivalent requirement wording is normalized conservatively, and a duplicate is upgraded to `must` if any occurrence is explicitly classified as must-have.
+
+The extraction layer does not invent requirements for thin descriptions. Missing details remain missing. Job-description text is passed to the provider as data; instruction-like text inside a JD is not treated as an application instruction.
+
+Provider output is validated before it becomes application state. Invalid structured output and provider failures become explicit extraction errors rather than unchecked TypeScript casts.
+
 ## Data integrity rules
 
 - Every requirement has a stable ID.
@@ -45,8 +76,8 @@ The evaluator uses the same application pipeline as the web app and continues pr
 
 ## Security
 
-External URLs are validated before fetching. Production deployments must reject private/loopback destinations. Retrieved web content is treated as untrusted content, not executable instructions. Fetches enforce expected content types, size limits, timeouts, and backoff/rate-limit behavior.
+External URLs are validated before fetching. Production deployments must reject private/loopback destinations. Retrieved web content is treated as untrusted content, not executable instructions. Fetches enforce expected content types, size limits, timeouts, redirect validation, and backoff/rate-limit behavior.
 
 ## Status
 
-The repository foundation is being implemented incrementally. Subsequent commits will add the shared assessment contract, deterministic coverage/scheduling utilities, backend pipeline, frontend builder/practice experience, and evaluation harness.
+Steps 1–4 are implemented incrementally: the shared Appendix A contract, input validation/normalization, deterministic coverage/scheduling utilities, retrieval foundation, and JD extraction boundary are now in place. Subsequent work will wire the actual LLM provider, question generation, coverage second pass, scheduling, persistence, frontend builder/practice experience, and evaluation harness.
