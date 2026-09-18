@@ -30,6 +30,7 @@ export type ResearchResult = {
   public_interview_research: {
     attempted: boolean;
     found: boolean;
+    results: Array<{ title: string; url: string; snippet: string }>;
     note: string;
   };
 };
@@ -38,6 +39,7 @@ export type ResearchOptions = {
   maxPages?: number;
   allowLocalhost?: boolean;
   fetchImpl?: typeof fetch;
+  interviewResearchProvider?: InterviewResearchProvider;
 };
 
 export async function researchCompany(
