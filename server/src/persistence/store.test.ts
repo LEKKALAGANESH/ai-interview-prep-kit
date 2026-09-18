@@ -1,7 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
-import { InMemoryKitStore } from "./store.js";
+import { buildKitId, InMemoryKitStore } from "./store.js";
+import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
+
+const input: NormalizedKitInput = {
+  job_description: "React frontend engineer",
+  company_url: "https://example.com/",
+  days_available: 1,
+};
 
 const kit = {
   source: {
@@ -35,13 +42,29 @@ const kit = {
 
 test("saves and retrieves a kit without exposing mutable store state", async () => {
   const store = new InMemoryKitStore();
-  const saved = await store.save(kit);
+  const id = buildKitId(input);
+  const saved = await store.save(id, kit);
   saved.questions[0].prompt = "mutated";
-  const loaded = await store.getById("https://example.com/|Frontend Engineer|20");
+  const loaded = await store.getById(id);
   assert.equal(loaded?.questions[0].prompt, "React?");
 });
 
 test("returns null for unknown kit IDs", async () => {
   const store = new InMemoryKitStore();
   assert.equal(await store.getById("missing"), null);
+});
+
+test("builds the same ID for the same normalized request", () => {
+  assert.equal(buildKitId(input), buildKitId({ ...input }));
+});
+
+test("builds different IDs when the request changes", () => {
+  assert.notEqual(
+    buildKitId(input),
+    buildKitId({ ...input, days_available: 2 }),
+  );
+  assert.notEqual(
+    buildKitId(input),
+    buildKitId({ ...input, job_description: "Python backend engineer" }),
+  );
 });
