@@ -14,6 +14,7 @@ export type GenerateAndPersistKitOptions = Omit<BuildKitOptions, "role" | "compa
 export type PersistedKitResult = {
   id: string;
   kit: Kit;
+  reused: boolean;
 };
 
 export async function generateAndPersistKit(
@@ -21,11 +22,19 @@ export async function generateAndPersistKit(
   options: GenerateAndPersistKitOptions,
   store: KitStore,
 ): Promise<PersistedKitResult> {
+  const id = buildKitId(input);
+  const existing = await store.getById(id);
+
+  if (existing) {
+    return { id, kit: existing, reused: true };
+  }
+
   const kit = await buildValidatedKit(input, options);
-  const saved = await store.save(kit);
+  const saved = await store.save(id, kit);
 
   return {
-    id: buildKitId(saved),
+    id,
     kit: saved,
+    reused: false,
   };
 }
