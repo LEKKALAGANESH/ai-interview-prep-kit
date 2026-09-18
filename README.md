@@ -72,7 +72,7 @@ The required command is:
 
 `npm run evaluate -- --input <cases.json> --output <kits.json>`
 
-The evaluator uses the same application pipeline as the web app and continues processing after per-case failures.
+Step 10 is the mandatory batch evaluator. It must accept an array of cases containing `id`, `jd`, `company_url`, and `days`; run the same pipeline used by the application; use the requested day count; emit the Appendix B structure; and continue processing when an individual case fails. The evaluator must also cover the assessment's invalid/timeout URLs, thin JDs, missing hiring pages, absent public interview discussion, malformed model JSON, rate-limit/transient failures, duplicate cases, 1-day/60-day cases, and local company URLs with relative links.
 
 ## Security
 
@@ -80,8 +80,9 @@ External URLs are validated before fetching. Production deployments must reject 
 
 ## Status
 
-Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, durable persistence, idempotency, and raw-input API orchestration are now in place. Runtime verification is wired through GitHub Actions; the available repository integration does not expose a completed workflow run, so runtime success is not claimed until that run is observed.
+Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, durable persistence, idempotency, and raw-input API orchestration are in place.
 
+The latest CI verification has one known test failure that is intentionally deferred for a later fix. Step 10 evaluation work is now active while Step 9 remains tracked as 🟡 until the deferred test and final runtime/audit verification are resolved.
 
 ## Public interview research
 
@@ -91,13 +92,11 @@ Company crawling is separate from public interview research. When the `BRAVE_SEA
 
 The server test suite covers URL/SSRF validation, HTTP content limits and redirects, retry behavior, robots.txt decisions and redirects, HTML cleaning, link ranking, company crawling, and public interview research.
 
-
 ## Question generation
 
 Question generation is deliberately separated by requirement and category. The generation pipeline selects `technical` for technical requirements, `behavioural` for behavioural requirements, and `system-design` for domain requirements. The model receives the selected requirement ID and research context, but requirement IDs are assigned by application code rather than accepted from model output.
 
 The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flash`). Generated JSON is validated with Zod before questions become application state. Rate-limit and transient provider errors are retried with bounded exponential backoff; malformed responses are rejected. Job-description, company-page, and public-search text is explicitly treated as untrusted reference data in the generation prompt.
-
 
 ## Coverage engine
 
@@ -107,11 +106,9 @@ Coverage is deterministic application logic. It compares generated question `req
 
 The Step 8 scheduler consumes the final Step 7 question set and the extracted requirements. It validates the requested 1–60 day range, orders questions deterministically by requirement priority and difficulty, distributes question IDs across exactly the requested number of days, derives each day's focus from the assigned requirement text, and calculates integer minutes at 10 minutes per question. Scheduling does not regenerate or mutate questions, so Step 7 coverage is preserved.
 
-
 ## Persistence and idempotency
 
 Kit persistence uses a `KitStore` abstraction with both in-memory and durable JSON-backed implementations. Each normalized generation request receives a deterministic ID derived from the normalized company URL, job description, and requested study days. The service checks for an existing kit before generation and coalesces concurrent identical requests in one process; the durable store also serializes file writes with an atomic lock and survives process restarts. Persistence errors propagate instead of being reported as successful generation, and a kit is never saved before final validation and shippable coverage checks pass.
-
 
 ## Raw-input application pipeline
 
