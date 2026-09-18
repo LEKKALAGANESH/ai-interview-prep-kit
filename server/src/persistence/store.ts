@@ -2,11 +2,14 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
+import type { PracticeState } from "@trao/interview-prep-shared/practice.js";
 
 export interface KitStore {
   save(id: string, kit: Kit): Promise<Kit>;
   getById(id: string): Promise<Kit | null>;
   withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T>;
+  getPractice(id: string): Promise<PracticeState>;
+  savePractice(id: string, state: PracticeState): Promise<PracticeState>;
 }
 
 function stableHash(value: string): string {
@@ -32,6 +35,7 @@ export function buildKitId(input: NormalizedKitInput): string {
 
 export class InMemoryKitStore implements KitStore {
   private readonly kits = new Map<string, Kit>();
+  private readonly practice = new Map<string, PracticeState>();
 
   async save(id: string, kit: Kit): Promise<Kit> {
     this.kits.set(id, structuredClone(kit));
@@ -42,6 +46,9 @@ export class InMemoryKitStore implements KitStore {
     const kit = this.kits.get(id);
     return kit ? structuredClone(kit) : null;
   }
+
+  async getPractice(id: string): Promise<PracticeState> { const data=await this.readPractice(); return structuredClone(data[id] ?? {current_index:0,results:[],completed:false}); }
+  async savePractice(id: string,state: PracticeState): Promise<PracticeState> { return this.withLock(async()=>{const data=await this.readPractice();data[id]=structuredClone(state);await this.writePractice(data);return structuredClone(state);}); }
 
   async update(id: string, kit: Kit): Promise<Kit> {
     if (!this.kits.has(id)) throw new Error(`Unknown kit: ${id}`);
@@ -105,6 +112,12 @@ export class JsonFileKitStore implements KitStore {
     throw new Error("Timed out acquiring kit store lock");
   }
 
+  private async readPractice(): Promise<Record<string, PracticeState>> {
+    const path = `${this.filePath}.practice`;
+    try { const parsed: unknown = JSON.parse(await readFile(path, "utf8")); return parsed as Record<string, PracticeState>; }
+    catch(error) { if(error && typeof error==="object" && "code" in error && (error as {code?:string}).code==="ENOENT") return {}; throw error; }
+  }
+  private async writePractice(data: Record<string, PracticeState>): Promise<void> { await writeFile(`${this.filePath}.practice.tmp`,JSON.stringify(data),"utf8"); await rename(`${this.filePath}.practice.tmp`,`${this.filePath}.practice`); }
   private async writeAll(kits: Record<string, Kit>): Promise<void> {
     const tempPath = `${this.filePath}.tmp`;
     await writeFile(tempPath, JSON.stringify(kits), "utf8");
