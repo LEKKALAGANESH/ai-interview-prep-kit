@@ -48,8 +48,8 @@ export class InMemoryKitStore implements KitStore {
     return kit ? structuredClone(kit) : null;
   }
 
-  async getPractice(id: string): Promise<PracticeState> { const data=await this.readPractice(); return structuredClone(data[id] ?? {current_index:0,results:[],completed:false}); }
-  async savePractice(id: string,state: PracticeState): Promise<PracticeState> { return this.withLock(async()=>{const data=await this.readPractice();data[id]=structuredClone(state);await this.writePractice(data);return structuredClone(state);}); }
+  async getPractice(id: string): Promise<PracticeState> { return structuredClone(this.practice.get(id) ?? { current_index: 0, results: [], completed: false }); }
+  async savePractice(id: string, state: PracticeState): Promise<PracticeState> { this.practice.set(id, structuredClone(state)); return structuredClone(state); }
 
   async update(id: string, kit: Kit): Promise<Kit> {
     if (!this.kits.has(id)) throw new Error(`Unknown kit: ${id}`);
@@ -57,8 +57,19 @@ export class InMemoryKitStore implements KitStore {
     return structuredClone(kit);
   }
 
-  async withRequestLock<T>(_id: string, operation: () => Promise<T>): Promise<T> {
-    return operation();
+  async withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.locks.get(id) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => { release = resolve; });
+    const queued = previous.then(() => current);
+    this.locks.set(id, queued);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.locks.get(id) === queued) this.locks.delete(id);
+    }
   }
 }
 
@@ -125,8 +136,27 @@ export class JsonFileKitStore implements KitStore {
     await rename(tempPath, this.filePath);
   }
 
-  async withRequestLock<T>(_id: string, operation: () => Promise<T>): Promise<T> {
-    return this.withLock(operation);
+  async withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T> {
+    const lockPath = `${this.filePath}.${stableHash(id)}.request.lock`;
+    await mkdir(dirname(lockPath), { recursive: true });
+    for (let attempt = 0; attempt < 300; attempt += 1) {
+      try {
+        await mkdir(lockPath);
+        try {
+          return await operation();
+        } finally {
+          await rm(lockPath, { recursive: true, force: true });
+        }
+      } catch (error) {
+        if (error && typeof error === "object" && "code" in error &&
+            (error as { code?: string }).code === "EEXIST") {
+          await new Promise<void>((resolve) => setTimeout(resolve, 25));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new Error("Timed out acquiring request lock");
   }
 
   async save(id: string, kit: Kit): Promise<Kit> {
