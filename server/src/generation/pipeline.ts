@@ -5,7 +5,11 @@ import {
   type CoverageResult,
 } from "@trao/interview-prep-shared/coverage.js";
 import type { ResearchResult } from "../retrieval/research.js";
-import { generateQuestionsForRequirement, type GenerateQuestionOptions } from "./generator.js";
+import {
+  generateQuestionsForRequirement,
+  QuestionGenerationError,
+  type GenerateQuestionOptions,
+} from "./generator.js";
 
 export type InitialQuestionSetOptions = GenerateQuestionOptions & {
   companyBrief?: {
@@ -69,24 +73,65 @@ export async function generateInitialQuestionSetWithCoverage(
   };
 }
 
+export type QuestionGenerationAttemptError = {
+  requirement_id: string;
+  pass: number;
+  code: string;
+  message: string;
+};
+
 export type CompleteQuestionSetWithCoverage = InitialQuestionSetWithCoverage & {
   maxPasses: number;
+  generation_errors: QuestionGenerationAttemptError[];
 };
 
 export type QuestionSetGenerationOptions = InitialQuestionSetOptions & {
   maxPasses?: number;
 };
 
+async function generateBestEffortPass(
+  requirements: Requirement[],
+  options: InitialQuestionSetOptions,
+  pass: number,
+  generationErrors: QuestionGenerationAttemptError[],
+): Promise<Question[]> {
+  const questions: Question[] = [];
+
+  for (const requirement of requirements) {
+    try {
+      questions.push(
+        ...(await generateQuestionsForRequirements([requirement], options)),
+      );
+    } catch (error) {
+      generationErrors.push({
+        requirement_id: requirement.id,
+        pass,
+        code: error instanceof QuestionGenerationError ? error.code : "UNKNOWN",
+        message: error instanceof Error ? error.message : "Question generation failed",
+      });
+    }
+  }
+
+  return questions;
+}
+
 export async function generateQuestionSetWithCoverage(
   requirements: Requirement[],
   options: QuestionSetGenerationOptions = {},
 ): Promise<CompleteQuestionSetWithCoverage> {
   const maxPasses = Math.max(1, Math.trunc(options.maxPasses ?? 2));
-  let questions = await generateInitialQuestionSet(requirements, options);
+  const generationErrors: QuestionGenerationAttemptError[] = [];
+
+  let questions = await generateBestEffortPass(
+    requirements,
+    options,
+    1,
+    generationErrors,
+  );
   let coverage = checkCoverage(requirements, questions, 1);
 
   if (coverage.can_ship || maxPasses === 1) {
-    return { questions, coverage, maxPasses };
+    return { questions, coverage, maxPasses, generation_errors: generationErrors };
   }
 
   for (let pass = 2; pass <= maxPasses; pass += 1) {
@@ -98,22 +143,20 @@ export async function generateQuestionSetWithCoverage(
     }
 
     const previousQuestionCount = questions.length;
-    const repairQuestions = await generateQuestionsForRequirements(
+    const repairQuestions = await generateBestEffortPass(
       missingRequirements,
       options,
+      pass,
+      generationErrors,
     );
 
     questions = [...questions, ...repairQuestions];
     coverage = checkCoverage(requirements, questions, pass);
 
-    if (questions.length === previousQuestionCount) {
-      break;
-    }
-
-    if (coverage.can_ship) {
+    if (questions.length === previousQuestionCount || coverage.can_ship) {
       break;
     }
   }
 
-  return { questions, coverage, maxPasses };
+  return { questions, coverage, maxPasses, generation_errors: generationErrors };
 }
