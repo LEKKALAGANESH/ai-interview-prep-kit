@@ -2,6 +2,8 @@ import { cleanHtml } from "./clean-html.js";
 import { fetchPage, RetrievalError } from "./http-client.js";
 import { rankLinks } from "./link-ranking.js";
 import { checkRobots } from "./robots.js";
+import { createConfiguredInterviewResearchProvider } from "./brave-search.js";
+import { researchPublicInterviews, type InterviewResearchProvider } from "./interview-research.js";
 import { withRetry } from "./retry.js";
 import { validateExternalUrl } from "./url-validator.js";
 
@@ -61,9 +63,15 @@ export async function researchCompany(
     public_interview_research: {
       attempted: false,
       found: false,
+      results: [],
       note: "Public interview discussion research is not yet connected to an external search provider.",
     },
   };
+
+  const interviewProvider =
+    options.interviewResearchProvider ?? createConfiguredInterviewResearchProvider(fetchImpl);
+  const interviewResearch = await researchPublicInterviews(root.href, interviewProvider);
+  result.public_interview_research = interviewResearch;
 
   if (!robots.allowed) {
     result.skipped.push({
