@@ -84,7 +84,7 @@ test("second pass generates only uncovered requirements and preserves first-pass
   assert.deepEqual(result.generation_errors, [{
     requirement_id: "r2",
     pass: 1,
-    code: "MODEL_OUTPUT_INVALID",
+    code: "PROVIDER_FAILED",
     message: "invalid first-pass output",
   }]);
 });
