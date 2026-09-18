@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
@@ -69,18 +69,44 @@ export class JsonFileKitStore implements KitStore {
     }
   }
 
-  private async writeAll(kits: Record<string, Kit>): Promise<void> {
+  private async withLock<T>(operation: () => Promise<T>): Promise<T> {
+    const lockPath = `${this.filePath}.lock`;
     await mkdir(dirname(this.filePath), { recursive: true });
+
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      try {
+        await mkdir(lockPath);
+        try {
+          return await operation();
+        } finally {
+          await rm(lockPath, { recursive: true, force: true });
+        }
+      } catch (error) {
+        if (error && typeof error === "object" && "code" in error &&
+            (error as { code?: string }).code === "EEXIST") {
+          await new Promise<void>((resolve) => setTimeout(resolve, 10));
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new Error("Timed out acquiring kit store lock");
+  }
+
+  private async writeAll(kits: Record<string, Kit>): Promise<void> {
     const tempPath = `${this.filePath}.tmp`;
     await writeFile(tempPath, JSON.stringify(kits), "utf8");
     await rename(tempPath, this.filePath);
   }
 
   async save(id: string, kit: Kit): Promise<Kit> {
-    const kits = await this.readAll();
-    kits[id] = structuredClone(kit);
-    await this.writeAll(kits);
-    return structuredClone(kit);
+    return this.withLock(async () => {
+      const kits = await this.readAll();
+      kits[id] = structuredClone(kit);
+      await this.writeAll(kits);
+      return structuredClone(kit);
+    });
   }
 
   async getById(id: string): Promise<Kit | null> {
