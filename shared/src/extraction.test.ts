@@ -15,7 +15,7 @@ test("deduplicates equivalent wording and preserves must priority", () => {
   const requirements = normalizeRequirements([{ text: "Experience with React", kind: "technical", priority: "nice" }, { text: "React", kind: "technical", priority: "must" }]);
   assert.equal(requirements.length, 1);
   assert.equal(requirements[0].priority, "must");
-  assert.match(requirements[0].id, /^r_[a-f0-9]{10}$/);
+  assert.match(requirements[0].id, /^r_[a-f0-9]{16}$/);
 });
 
 test("stable IDs are independent of extraction ordering", () => {
