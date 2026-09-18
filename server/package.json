@@ -8,10 +8,9 @@
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts"
   },
-  "devDependencies": {
-    "tsx": "^4.20.5"
-  },
+  "devDependencies": { "tsx": "^4.20.5" },
   "dependencies": {
-    "@trao/interview-prep-shared": "file:../shared"
+    "@trao/interview-prep-shared": "file:../shared",
+    "zod": "^3.25.76"
   }
 }
