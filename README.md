@@ -97,3 +97,8 @@ The server test suite covers URL/SSRF validation, HTTP content limits and redire
 Question generation is deliberately separated by requirement and category. The generation pipeline selects `technical` for technical requirements, `behavioural` for behavioural requirements, and `system-design` for domain requirements. The model receives the selected requirement ID and research context, but requirement IDs are assigned by application code rather than accepted from model output.
 
 The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flash`). Generated JSON is validated with Zod before questions become application state. Rate-limit and transient provider errors are retried with bounded exponential backoff; malformed responses are rejected. Job-description, company-page, and public-search text is explicitly treated as untrusted reference data in the generation prompt.
+
+
+## Coverage engine
+
+Coverage is deterministic application logic. It compares generated question `requirement_ids` against extracted requirement IDs, separates uncovered `must` and `nice` requirements, rejects invalid references as non-coverage, preserves requirement ordering, and exposes `can_ship`. Initial generation immediately runs this coverage check; a later pipeline pass can use the uncovered IDs to drive missing-question generation. The LLM is never asked to decide whether coverage exists.
