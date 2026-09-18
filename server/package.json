@@ -4,11 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build": "tsc --noEmit",
     "test": "tsx --test src/retrieval/*.test.ts src/extraction/*.test.ts src/generation/*.test.ts src/pipeline/*.test.ts src/persistence/*.test.ts src/api/*.test.ts",
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts"
   },
-  "devDependencies": { "tsx": "^4.20.5" },
+  "devDependencies": { "tsx": "^4.20.5", "typescript": "^5.9.2", "@types/node": "^22.18.6" },
   "dependencies": {
     "@trao/interview-prep-shared": "file:../shared",
     "zod": "^3.25.76"
