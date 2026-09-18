@@ -1,4 +1,5 @@
 import type { Question, Requirement } from "@trao/interview-prep-shared/kit.js";
+import { checkCoverage, type CoverageResult } from "@trao/interview-prep-shared/coverage.js";
 import type { ResearchResult } from "../retrieval/research.js";
 import { generateQuestionsForRequirement, type GenerateQuestionOptions } from "./generator.js";
 
@@ -39,4 +40,21 @@ export async function generateInitialQuestionSet(
   }
 
   return questions;
+}
+
+
+export type InitialQuestionSetWithCoverage = {
+  questions: Question[];
+  coverage: CoverageResult;
+};
+
+export async function generateInitialQuestionSetWithCoverage(
+  requirements: Requirement[],
+  options: InitialQuestionSetOptions = {},
+): Promise<InitialQuestionSetWithCoverage> {
+  const questions = await generateInitialQuestionSet(requirements, options);
+  return {
+    questions,
+    coverage: checkCoverage(requirements, questions, 1),
+  };
 }
