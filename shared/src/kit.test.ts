@@ -57,28 +57,80 @@ test("valid Appendix A kit parses", () => {
   assert.doesNotThrow(() => KitSchema.parse(validKit));
 });
 
-test("invalid question difficulty is rejected", () => {
+test("invalid difficulty is rejected with a useful path", () => {
   const kit = structuredClone(validKit);
   kit.questions[0].difficulty = 4;
-  assert.throws(() => KitSchema.parse(kit));
+  const result = KitSchema.safeParse(kit);
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.deepEqual(result.error.issues[0].path, ["questions", 0, "difficulty"]);
+  }
 });
 
-test("non-integer schedule minutes are rejected", () => {
+test("difficulty must be an integer from 1 through 3", () => {
+  for (const value of [0, 3.5, 4, "2", null]) {
+    const kit = structuredClone(validKit);
+    kit.questions[0].difficulty = value;
+    assert.equal(KitSchema.safeParse(kit).success, false);
+  }
+});
+
+test("non-integer schedule minutes are rejected with a useful path", () => {
   const kit = structuredClone(validKit);
   kit.schedule.days[0].minutes = 30.5;
-  assert.throws(() => KitSchema.parse(kit));
+  const result = KitSchema.safeParse(kit);
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.deepEqual(result.error.issues[0].path, ["schedule", "days", 0, "minutes"]);
+  }
 });
 
-test("invalid requirement kind is rejected", () => {
+test("schedule minutes must be a non-negative integer", () => {
+  for (const value of [-1, 30.5, "30", null]) {
+    const kit = structuredClone(validKit);
+    kit.schedule.days[0].minutes = value;
+    assert.equal(KitSchema.safeParse(kit).success, false);
+  }
+});
+
+test("invalid requirement kind is rejected with a useful path", () => {
   const kit = structuredClone(validKit);
   kit.role.requirements[0].kind = "soft-skill";
-  assert.throws(() => KitSchema.parse(kit));
+  const result = KitSchema.safeParse(kit);
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.deepEqual(result.error.issues[0].path, ["role", "requirements", 0, "kind"]);
+  }
 });
 
-test("invalid question category is rejected", () => {
+test("requirement kind only accepts technical, behavioural, or domain", () => {
+  for (const value of ["soft-skill", "soft_skill", "hr", "technical-behavioural", 1, null]) {
+    const kit = structuredClone(validKit);
+    kit.role.requirements[0].kind = value;
+    assert.equal(KitSchema.safeParse(kit).success, false);
+  }
+});
+
+test("invalid question category is rejected with a useful path", () => {
   const kit = structuredClone(validKit);
   kit.questions[0].category = "hr";
-  assert.throws(() => KitSchema.parse(kit));
+  const result = KitSchema.safeParse(kit);
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.deepEqual(result.error.issues[0].path, ["questions", 0, "category"]);
+  }
+});
+
+test("question category only accepts the Appendix A categories", () => {
+  for (const value of ["hr", "behavioral", "system_design", "company_fit", "coding", 1, null]) {
+    const kit = structuredClone(validKit);
+    kit.questions[0].category = value;
+    assert.equal(KitSchema.safeParse(kit).success, false);
+  }
 });
 
 test("Appendix B input accepts multiple cases", () => {
