@@ -1,0 +1,17 @@
+{
+  "name": "@trao/interview-prep-evaluation",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "evaluate": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@trao/interview-prep-server": "file:../server",
+    "@trao/interview-prep-shared": "file:../shared",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  }
+}
