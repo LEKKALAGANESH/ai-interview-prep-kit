@@ -130,7 +130,7 @@ export async function generateQuestionSetWithCoverage(
   );
   let coverage = checkCoverage(requirements, questions, 1);
 
-  if (coverage.can_ship || maxPasses === 1) {
+  if (findUncoveredRequirements(requirements, questions).length === 0 || maxPasses === 1) {
     return { questions, coverage, maxPasses, generation_errors: generationErrors };
   }
 
@@ -153,7 +153,7 @@ export async function generateQuestionSetWithCoverage(
     questions = [...questions, ...repairQuestions];
     coverage = checkCoverage(requirements, questions, pass);
 
-    if (questions.length === previousQuestionCount || coverage.can_ship) {
+    if (questions.length === previousQuestionCount || findUncoveredRequirements(requirements, questions).length === 0) {
       break;
     }
   }
