@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generateAndPersistKit } from "./service.js";
 import { InMemoryKitStore } from "../persistence/store.js";
+import type { KitStore } from "../persistence/store.js";
 import type { Role } from "@trao/interview-prep-shared/kit.js";
 
 const role: Role = {
@@ -26,24 +27,30 @@ const research = {
   },
 };
 
+const baseInput = {
+  job_description: "React frontend engineer",
+  company_url: "https://example.com/",
+  days_available: 2,
+};
+
+const baseOptions = {
+  role,
+  company: "Example",
+  companyBrief: {
+    summary: "Example",
+    what_they_do: "Software",
+    sources: ["https://example.com/"],
+  },
+  research,
+};
+
 test("generates, validates, and persists the complete kit", async () => {
   const store = new InMemoryKitStore();
 
   const result = await generateAndPersistKit(
+    baseInput,
     {
-      job_description: "React frontend engineer",
-      company_url: "https://example.com/",
-      days_available: 2,
-    },
-    {
-      role,
-      company: "Example",
-      companyBrief: {
-        summary: "Example",
-        what_they_do: "Software",
-        sources: ["https://example.com/"],
-      },
-      research,
+      ...baseOptions,
       provider: {
         async generate() {
           return {
@@ -60,11 +67,40 @@ test("generates, validates, and persists the complete kit", async () => {
   );
 
   assert.ok(result.id);
+  assert.equal(result.reused, false);
   assert.equal(result.kit.coverage.can_ship, undefined);
   assert.equal(result.kit.schedule.days.length, 2);
 
   const loaded = await store.getById(result.id);
   assert.deepEqual(loaded, result.kit);
+});
+
+test("does not regenerate an identical request", async () => {
+  const store = new InMemoryKitStore();
+  let providerCalls = 0;
+  const options = {
+    ...baseOptions,
+    provider: {
+      async generate() {
+        providerCalls += 1;
+        return {
+          questions: [{
+            prompt: "React question",
+            answer_outline: "Outline",
+            difficulty: 2,
+          }],
+        };
+      },
+    },
+  };
+
+  const first = await generateAndPersistKit(baseInput, options, store);
+  const second = await generateAndPersistKit(baseInput, options, store);
+
+  assert.equal(providerCalls, 1);
+  assert.equal(first.id, second.id);
+  assert.equal(second.reused, true);
+  assert.deepEqual(second.kit, first.kit);
 });
 
 test("does not persist when coverage cannot ship", async () => {
@@ -78,6 +114,7 @@ test("does not persist when coverage cannot ship", async () => {
         days_available: 1,
       },
       {
+        ...baseOptions,
         role: {
           ...role,
           requirements: [
@@ -85,13 +122,6 @@ test("does not persist when coverage cannot ship", async () => {
             { id: "r2", text: "SQL", kind: "technical", priority: "must" },
           ],
         },
-        company: "Example",
-        companyBrief: {
-          summary: "Example",
-          what_they_do: "Software",
-          sources: ["https://example.com/"],
-        },
-        research,
         provider: {
           async generate(request) {
             if (request.userPrompt.includes("Requirement: SQL")) {
@@ -112,5 +142,38 @@ test("does not persist when coverage cannot ship", async () => {
     ),
   );
 
-  assert.equal(await store.getById("https://example.com/|Frontend Engineer|23"), null);
+  assert.equal(await store.getById("kit_0"), null);
+});
+
+test("propagates persistence failures and never reports a successful save", async () => {
+  const failingStore: KitStore = {
+    async getById() {
+      return null;
+    },
+    async save() {
+      throw new Error("database unavailable");
+    },
+  };
+
+  await assert.rejects(
+    generateAndPersistKit(
+      baseInput,
+      {
+        ...baseOptions,
+        provider: {
+          async generate() {
+            return {
+              questions: [{
+                prompt: "React question",
+                answer_outline: "Outline",
+                difficulty: 2,
+              }],
+            };
+          },
+        },
+      },
+      failingStore,
+    ),
+    /database unavailable/,
+  );
 });
