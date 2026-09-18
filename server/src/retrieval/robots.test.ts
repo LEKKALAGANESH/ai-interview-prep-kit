@@ -36,3 +36,11 @@ test("rejects redirect loops beyond the configured limit", async () => {
   assert.equal(result.allowed, false);
   assert.match(result.reason, /limit/i);
 });
+
+
+test("allows localhost redirects only for explicitly local research", async () => {
+  const result = await checkRobots("http://localhost:3000", async () =>
+    new Response(null, { status: 302, headers: { location: "http://localhost:3000/robots.txt" } }),
+  );
+  assert.equal(result.allowed, false);
+});
