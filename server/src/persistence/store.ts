@@ -6,6 +6,7 @@ import type { Kit } from "@trao/interview-prep-shared/kit.js";
 export interface KitStore {
   save(id: string, kit: Kit): Promise<Kit>;
   getById(id: string): Promise<Kit | null>;
+  withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T>;
 }
 
 function stableHash(value: string): string {
@@ -40,6 +41,10 @@ export class InMemoryKitStore implements KitStore {
   async getById(id: string): Promise<Kit | null> {
     const kit = this.kits.get(id);
     return kit ? structuredClone(kit) : null;
+  }
+
+  async withRequestLock<T>(_id: string, operation: () => Promise<T>): Promise<T> {
+    return operation();
   }
 }
 
@@ -98,6 +103,10 @@ export class JsonFileKitStore implements KitStore {
     const tempPath = `${this.filePath}.tmp`;
     await writeFile(tempPath, JSON.stringify(kits), "utf8");
     await rename(tempPath, this.filePath);
+  }
+
+  async withRequestLock<T>(_id: string, operation: () => Promise<T>): Promise<T> {
+    return this.withLock(operation);
   }
 
   async save(id: string, kit: Kit): Promise<Kit> {
