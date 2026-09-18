@@ -25,11 +25,14 @@ export class LlmProviderError extends Error {
   }
 }
 
+const DEFAULT_LLM_TIMEOUT_MS = 60_000;
+
 export class GeminiProvider implements LlmProvider {
   constructor(
     private readonly apiKey: string,
     private readonly model = "gemini-2.5-flash",
     private readonly fetchImpl: typeof fetch = fetch,
+    private readonly timeoutMs = DEFAULT_LLM_TIMEOUT_MS,
   ) {}
 
   async generate(request: LlmGenerateRequest): Promise<unknown> {
@@ -40,10 +43,13 @@ export class GeminiProvider implements LlmProvider {
     const endpoint =
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     let response: Response;
     try {
       response = await this.fetchImpl(endpoint, {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "content-type": "application/json",
           accept: "application/json",
@@ -57,11 +63,15 @@ export class GeminiProvider implements LlmProvider {
         }),
       });
     } catch (error) {
+      clearTimeout(timeout);
       throw new LlmProviderError(
         "TRANSIENT",
-        error instanceof Error ? error.message : "Gemini request failed",
+        error instanceof Error && error.name === "AbortError"
+          ? `Gemini request timed out after ${this.timeoutMs}ms`
+          : error instanceof Error ? error.message : "Gemini request failed",
       );
     }
+    clearTimeout(timeout);
 
     if (response.status === 429) {
       throw new LlmProviderError("RATE_LIMITED", "Gemini rate limit reached");
@@ -109,5 +119,6 @@ export function createConfiguredLlmProvider(
     apiKey,
     process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
     fetchImpl,
+    Number(process.env.GEMINI_TIMEOUT_MS) > 0 ? Number(process.env.GEMINI_TIMEOUT_MS) : DEFAULT_LLM_TIMEOUT_MS,
   );
 }
