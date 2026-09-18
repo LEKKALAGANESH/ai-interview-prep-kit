@@ -81,3 +81,12 @@ External URLs are validated before fetching. Production deployments must reject 
 ## Status
 
 Steps 1–4 are implemented incrementally: the shared Appendix A contract, input validation/normalization, deterministic coverage/scheduling utilities, retrieval foundation, and JD extraction boundary are now in place. Subsequent work will wire the actual LLM provider, question generation, coverage second pass, scheduling, persistence, frontend builder/practice experience, and evaluation harness.
+
+
+## Public interview research
+
+Company crawling is separate from public interview research. When the `BRAVE_SEARCH_API_KEY` environment variable is configured, the retrieval pipeline searches the public web for interview-process and interview-question discussions using the company hostname. Search results are stored as research evidence and are not treated as instructions. If no provider is configured or the search fails, the kit records that gap honestly rather than fabricating interview information.
+
+## Retrieval test coverage
+
+The server test suite covers URL/SSRF validation, HTTP content limits and redirects, retry behavior, robots.txt decisions and redirects, HTML cleaning, link ranking, company crawling, and public interview research.
