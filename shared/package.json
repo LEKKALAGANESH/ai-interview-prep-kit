@@ -1,20 +1,6 @@
 {
-  "name": "@trao/interview-prep-shared",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "test": "tsx --test src/*.test.ts"
-  },
-  "dependencies": { "zod": "^3.25.76" },
-  "devDependencies": { "tsx": "^4.20.5" },
-  "exports": {
-    "./kit.js": "./src/kit.ts",
-    "./input.js": "./src/input.ts",
-    "./input-model.js": "./src/input-model.ts",
-    "./extraction.js": "./src/extraction.ts",
-    "./coverage.js": "./src/coverage.ts",
-    "./schedule.js": "./src/schedule.ts",
-    "./builder.js": "./src/builder.ts"
-  }
+  "name": "@trao/interview-prep-shared","private":true,"version":"0.1.0","type":"module",
+  "scripts":{"test":"tsx --test src/*.test.ts"},
+  "dependencies":{"zod":"^3.25.76"},"devDependencies":{"tsx":"^4.20.5"},
+  "exports":{"./kit.js":"./src/kit.ts","./input.js":"./src/input.ts","./input-model.js":"./src/input-model.ts","./extraction.js":"./src/extraction.ts","./coverage.js":"./src/coverage.ts","./schedule.js":"./src/schedule.ts","./builder.js":"./src/builder.ts","./practice.js":"./src/practice.ts"}
 }
