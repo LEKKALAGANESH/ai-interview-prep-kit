@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BatchKitInputSchema } from "./input.js";
 
 export const RequirementSchema = z.object({
   id: z.string().min(1),
@@ -186,14 +187,8 @@ export type Schedule = z.infer<typeof ScheduleSchema>;
 export type Coverage = z.infer<typeof CoverageSchema>;
 export type Kit = z.infer<typeof KitSchema>;
 
-export const EvaluationCaseSchema = z.object({
-  id: z.string().min(1),
-  jd: z.string().min(1),
-  company_url: z.string().url(),
-  days: z.number().int().min(1).max(60),
-});
-
-export const EvaluationInputSchema = z.array(EvaluationCaseSchema);
+export const EvaluationCaseSchema = BatchKitInputSchema.element;
+export const EvaluationInputSchema = BatchKitInputSchema;
 
 export const EvaluationResultSchema = z.object({
   id: z.string().min(1),
