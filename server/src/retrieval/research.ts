@@ -52,7 +52,9 @@ export async function researchCompany(
     allowLocalhost: options.allowLocalhost,
   });
 
-  const robots = await checkRobots(root.href, fetchImpl);
+  const robots = await checkRobots(root.href, fetchImpl, {
+    allowLocalhost: options.allowLocalhost,
+  });
 
   const result: ResearchResult = {
     company_url: root.href,
