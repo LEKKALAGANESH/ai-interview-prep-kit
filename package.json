@@ -1,0 +1,16 @@
+{
+  "name": "ai-interview-prep-kit",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["client", "server", "shared", "evaluation"],
+  "scripts": {
+    "dev": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "test": "npm test --workspaces",
+    "evaluate": "npm run evaluate --workspace evaluation",
+    "build": "npm run build --workspaces"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
