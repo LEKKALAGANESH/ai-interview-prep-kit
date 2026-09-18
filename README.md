@@ -80,7 +80,7 @@ External URLs are validated before fetching. Production deployments must reject 
 
 ## Status
 
-Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, and persistence/API orchestration are now in place. Runtime execution still requires the repository's Node/npm environment; the GitHub workflow should be used for runtime verification. Remaining work includes the frontend builder/practice experience, full raw-input application orchestration, and the evaluation harness.
+Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, durable persistence, idempotency, and raw-input API orchestration are now in place. Runtime verification is wired through GitHub Actions; the available repository integration does not expose a completed workflow run, so runtime success is not claimed until that run is observed.
 
 
 ## Public interview research
@@ -110,4 +110,11 @@ The Step 8 scheduler consumes the final Step 7 question set and the extracted re
 
 ## Persistence and idempotency
 
-Kit persistence uses a `KitStore` abstraction with an in-memory implementation for the current backend slice. Each normalized generation request receives a deterministic ID derived from the normalized company URL, job description, and requested study days. The service checks for an existing kit before generation and coalesces concurrent identical requests for the same store and request ID, preventing duplicate model generation in the same process. Persistence errors propagate instead of being reported as successful generation, and a kit is never saved before final validation and shippable coverage checks pass.
+Kit persistence uses a `KitStore` abstraction with both in-memory and durable JSON-backed implementations. Each normalized generation request receives a deterministic ID derived from the normalized company URL, job description, and requested study days. The service checks for an existing kit before generation and coalesces concurrent identical requests in one process; the durable store also serializes file writes with an atomic lock and survives process restarts. Persistence errors propagate instead of being reported as successful generation, and a kit is never saved before final validation and shippable coverage checks pass.
+
+
+## Raw-input application pipeline
+
+The API now owns the application pipeline boundary: a validated request containing only `jd`, `company_url`, and `days` is normalized, researched, extracted through the configured LLM, converted into a deterministic company brief from retrieved evidence, passed through question generation and coverage repair, scheduled, schema-validated, and persisted. Missing LLM credentials, unusable company retrieval, extraction failures, and unshippable coverage are returned as structured API errors.
+
+The Node runtime exposes `POST /api/kits` and `GET /health`. The default durable store path is `.data/kits.json`, configurable with `KIT_STORE_FILE`.
