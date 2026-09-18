@@ -56,11 +56,14 @@ export async function generateKitFromInput(
   options: ApplicationPipelineOptions,
 ): Promise<PersistedKitResult> {
   const provider =
-    options.llmProvider ?? createConfiguredLlmProvider(options.fetchImpl);
+    options.llmProvider ?? createConfiguredLlmProvider(options.fetchImpl, {
+      provider: input.llm_provider,
+      model: input.llm_model,
+    });
   if (!provider) {
     throw new ApplicationPipelineError(
       "LLM_NOT_CONFIGURED",
-      "GEMINI_API_KEY is not configured",
+      `${input.llm_provider ?? process.env.LLM_PROVIDER ?? "gemini"} provider is not configured`,
     );
   }
 
