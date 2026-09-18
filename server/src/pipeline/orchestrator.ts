@@ -31,10 +31,14 @@ function buildCompanyBrief(
   research: Awaited<ReturnType<typeof researchCompany>>,
 ): CompanyBrief {
   const page = research.pages[0];
-  const summary = page?.text.slice(0, 500).trim() || "No company summary was available from the researched pages.";
+  const summary =
+    page?.text.slice(0, 500).trim() ||
+    "No company summary was available from the researched pages.";
   return {
     summary,
-    what_they_do: page?.text.slice(0, 1000).trim() || "No company description was available from the researched pages.",
+    what_they_do:
+      page?.text.slice(0, 1000).trim() ||
+      "No company description was available from the researched pages.",
     sources: research.pages.map((item) => item.url),
   };
 }
@@ -44,13 +48,15 @@ export type ApplicationPipelineOptions = {
   fetchImpl?: typeof fetch;
   research?: Omit<ResearchOptions, "fetchImpl">;
   llmProvider?: ReturnType<typeof createConfiguredLlmProvider>;
+  allowLocalhost?: boolean;
 };
 
 export async function generateKitFromInput(
   input: NormalizedKitInput,
   options: ApplicationPipelineOptions,
 ): Promise<PersistedKitResult> {
-  const provider = options.llmProvider ?? createConfiguredLlmProvider(options.fetchImpl);
+  const provider =
+    options.llmProvider ?? createConfiguredLlmProvider(options.fetchImpl);
   if (!provider) {
     throw new ApplicationPipelineError(
       "LLM_NOT_CONFIGURED",
@@ -60,7 +66,9 @@ export async function generateKitFromInput(
 
   let companyUrl: string;
   try {
-    companyUrl = validateExternalUrl(input.company_url).href;
+    companyUrl = validateExternalUrl(input.company_url, {
+      allowLocalhost: options.allowLocalhost,
+    }).href;
   } catch (error) {
     throw new ApplicationPipelineError(
       "RESEARCH_FAILED",
@@ -72,6 +80,7 @@ export async function generateKitFromInput(
   try {
     research = await researchCompany(companyUrl, {
       ...options.research,
+      allowLocalhost: options.allowLocalhost,
       fetchImpl: options.fetchImpl,
     });
   } catch (error) {
@@ -90,10 +99,9 @@ export async function generateKitFromInput(
 
   let role;
   try {
-    role = await extractRole(
-      input.job_description,
-      { provider: createLlmRoleExtractionProvider(provider) },
-    );
+    role = await extractRole(input.job_description, {
+      provider: createLlmRoleExtractionProvider(provider),
+    });
   } catch (error) {
     throw new ApplicationPipelineError(
       "EXTRACTION_FAILED",
