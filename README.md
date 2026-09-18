@@ -80,7 +80,7 @@ External URLs are validated before fetching. Production deployments must reject 
 
 ## Status
 
-Steps 1–7 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, and bounded second-pass coverage repair are now in place. Runtime execution still requires the repository's Node/npm environment; the GitHub workflow should be used for runtime verification. Subsequent work will wire scheduling, persistence, frontend builder/practice experience, and the evaluation harness.
+Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, and persistence/API orchestration are now in place. Runtime execution still requires the repository's Node/npm environment; the GitHub workflow should be used for runtime verification. Remaining work includes the frontend builder/practice experience, full raw-input application orchestration, and the evaluation harness.
 
 
 ## Public interview research
@@ -106,3 +106,8 @@ Coverage is deterministic application logic. It compares generated question `req
 ## Deterministic scheduling
 
 The Step 8 scheduler consumes the final Step 7 question set and the extracted requirements. It validates the requested 1–60 day range, orders questions deterministically by requirement priority and difficulty, distributes question IDs across exactly the requested number of days, derives each day's focus from the assigned requirement text, and calculates integer minutes at 10 minutes per question. Scheduling does not regenerate or mutate questions, so Step 7 coverage is preserved.
+
+
+## Persistence and idempotency
+
+Kit persistence uses a `KitStore` abstraction with an in-memory implementation for the current backend slice. Each normalized generation request receives a deterministic ID derived from the normalized company URL, job description, and requested study days. The service checks for an existing kit before generation and coalesces concurrent identical requests for the same store and request ID, preventing duplicate model generation in the same process. Persistence errors propagate instead of being reported as successful generation, and a kit is never saved before final validation and shippable coverage checks pass.
