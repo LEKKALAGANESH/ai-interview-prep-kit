@@ -3,7 +3,7 @@
 ## Steps 1–10 — Current Checklist
 
 **Repository:** `LEKKALAGANESH/ai-interview-prep-kit`  
-**Status:** Step 9 implementation is complete, with one known CI test failure intentionally deferred; Step 10 evaluation work is now active.
+**Status:** Step 10 evaluator implementation is complete at source level; runtime/performance verification remains pending. One Step 9 CI test failure remains intentionally deferred.
 
 ### Step 9 Checklist
 
@@ -63,24 +63,38 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 10.1 | Create evaluation package | ⬜ |
-| 10.2 | Implement the mandatory `evaluate` command | ⬜ |
-| 10.3 | Accept array cases with `id`, `jd`, `company_url`, `days` | ⬜ |
-| 10.4 | Use the same pipeline as the app | ⬜ |
-| 10.5 | Use requested `days` | ⬜ |
-| 10.6 | Emit Appendix B output | ⬜ |
-| 10.7 | Continue after individual case failures | ⬜ |
-| 10.8 | Support invalid/404/timeout URLs | ⬜ |
-| 10.9 | Support thin JDs and missing hiring pages | ⬜ |
-| 10.10 | Support no public interview discussion | ⬜ |
-| 10.11 | Handle invalid model JSON | ⬜ |
-| 10.12 | Handle LLM rate-limit/transient failures | ⬜ |
-| 10.13 | Handle duplicate company/JD cases | ⬜ |
-| 10.14 | Handle 1-day and 60-day cases | ⬜ |
-| 10.15 | Support local company URLs and relative links | ⬜ |
-| 10.16 | Document environment variables | ⬜ |
-| 10.17 | Verify 5 cases under 15 minutes including retries | ⬜ |
-| 10.18 | Add evaluator tests | ⬜ |
+| 10.1 | Create evaluation package | 🟢 |
+| 10.2 | Implement the mandatory `evaluate` command | 🟢 |
+| 10.3 | Accept array cases with `id`, `jd`, `company_url`, `days` | 🟢 |
+| 10.4 | Use the same pipeline as the app | 🟢 |
+| 10.5 | Use requested `days` | 🟢 |
+| 10.6 | Emit Appendix B output | 🟢 |
+| 10.7 | Continue after individual case failures | 🟢 |
+| 10.8 | Support invalid/404/timeout URLs | 🟢 |
+| 10.9 | Support thin JDs and missing hiring pages | 🟢 |
+| 10.10 | Support no public interview discussion | 🟢 |
+| 10.11 | Handle invalid model JSON | 🟢 |
+| 10.12 | Handle LLM rate-limit/transient failures | 🟢 |
+| 10.13 | Handle duplicate company/JD cases | 🟢 |
+| 10.14 | Handle 1-day and 60-day cases | 🟢 |
+| 10.15 | Support local company URLs and relative links | 🟢 |
+| 10.16 | Document environment variables | 🟢 |
+| 10.17 | Verify 5 cases under 15 minutes including retries | 🟡 |
+| 10.18 | Add evaluator tests | 🟢 |
+
+### Step 10 implementation notes
+
+- `evaluation/` now contains the evaluator package, CLI, evaluator service, and tests.
+- The CLI contract is exactly `npm run evaluate -- --input <cases.json> --output <kits.json>`.
+- Input is validated with the shared `EvaluationInputSchema`, normalized with the shared input normalizer, and processed case-by-case.
+- Each case calls `generateKitFromInput`, the same application pipeline used by the API.
+- Requested `days` are passed through unchanged.
+- Output is validated against the shared Appendix B-oriented `EvaluationOutputSchema`.
+- A case failure becomes `status: "failed"` with structured `code` and `message`; later cases continue.
+- Local company URLs are enabled only through the evaluator's explicit `allowLocalhost` option; normal application behavior remains restricted.
+- Existing server pipeline behavior supplies the invalid URL, retrieval, thin-JD, missing-public-discussion, malformed-model-output, rate-limit/transient, duplicate/idempotency, and 1/60-day handling.
+- Evaluator tests cover successful batch processing, requested day counts, per-case failure continuation, and duplicate case-ID rejection.
+- Item 10.17 remains 🟡 because the evaluator has not yet been runtime-measured against five real cases under the 15-minute requirement.
 
 ## Step 11 — Builder / Editing
 
