@@ -7,7 +7,7 @@ import { createKitStore } from "./persistence/store.js";
 const port = Number(process.env.PORT || 4000);
 const store = createKitStore();
 
-const server = createServer(async (request, response) => {
+const server = createServer({ requestTimeout: 180_000, headersTimeout: 190_000 }, async (request, response) => {
   if (request.url === "/health") {
     response.statusCode = 200;
     response.setHeader("content-type", "application/json");
