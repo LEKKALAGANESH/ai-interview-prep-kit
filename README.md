@@ -102,3 +102,7 @@ The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flas
 ## Coverage engine
 
 Coverage is deterministic application logic. It compares generated question `requirement_ids` against extracted requirement IDs, separates uncovered `must` and `nice` requirements, rejects invalid references as non-coverage, preserves requirement ordering, and exposes `can_ship`. Initial generation immediately runs this coverage check; the complete question pipeline then uses uncovered requirements for a bounded second pass. Only missing requirements are regenerated, successful first-pass questions are preserved, and final coverage is re-checked after the repair pass. Persistent generation failures are recorded per requirement/pass and a kit remains non-shippable when a must-have requirement is still uncovered. The LLM is never asked to decide whether coverage exists.
+
+## Deterministic scheduling
+
+The Step 8 scheduler consumes the final Step 7 question set and the extracted requirements. It validates the requested 1–60 day range, orders questions deterministically by requirement priority and difficulty, distributes question IDs across exactly the requested number of days, derives each day's focus from the assigned requirement text, and calculates integer minutes at 10 minutes per question. Scheduling does not regenerate or mutate questions, so Step 7 coverage is preserved.
