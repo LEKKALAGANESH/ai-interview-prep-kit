@@ -1,3 +1,5 @@
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
 
@@ -9,7 +11,6 @@ export interface KitStore {
 function stableHash(value: string): string {
   let h1 = 0x811c9dc5;
   let h2 = 0x9e3779b9;
-
   for (let index = 0; index < value.length; index += 1) {
     const code = value.charCodeAt(index);
     h1 ^= code;
@@ -17,18 +18,15 @@ function stableHash(value: string): string {
     h2 ^= code + index;
     h2 = Math.imul(h2, 0x85ebca6b);
   }
-
   return `${(h1 >>> 0).toString(16).padStart(8, "0")}${(h2 >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 export function buildKitId(input: NormalizedKitInput): string {
-  return `kit_${stableHash(
-    JSON.stringify([
-      input.company_url,
-      input.job_description,
-      input.days_available,
-    ]),
-  )}`;
+  return `kit_${stableHash(JSON.stringify([
+    input.company_url,
+    input.job_description,
+    input.days_available,
+  ]))}`;
 }
 
 export class InMemoryKitStore implements KitStore {
@@ -45,6 +43,53 @@ export class InMemoryKitStore implements KitStore {
   }
 }
 
+/**
+ * Small durable JSON-backed store for single-node deployments.
+ * Writes are atomic (temporary file + rename), so a process restart does not
+ * discard generated kits. The application-level in-flight map still prevents
+ * concurrent duplicates inside one process.
+ */
+export class JsonFileKitStore implements KitStore {
+  constructor(private readonly filePath: string) {}
+
+  private async readAll(): Promise<Record<string, Kit>> {
+    try {
+      const raw = await readFile(this.filePath, "utf8");
+      const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Kit store file must contain an object");
+      }
+      return parsed as Record<string, Kit>;
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error &&
+          (error as { code?: string }).code === "ENOENT") {
+        return {};
+      }
+      throw error;
+    }
+  }
+
+  private async writeAll(kits: Record<string, Kit>): Promise<void> {
+    await mkdir(dirname(this.filePath), { recursive: true });
+    const tempPath = `${this.filePath}.tmp`;
+    await writeFile(tempPath, JSON.stringify(kits), "utf8");
+    await rename(tempPath, this.filePath);
+  }
+
+  async save(id: string, kit: Kit): Promise<Kit> {
+    const kits = await this.readAll();
+    kits[id] = structuredClone(kit);
+    await this.writeAll(kits);
+    return structuredClone(kit);
+  }
+
+  async getById(id: string): Promise<Kit | null> {
+    const kits = await this.readAll();
+    return kits[id] ? structuredClone(kits[id]) : null;
+  }
+}
+
 export function createKitStore(): KitStore {
-  return new InMemoryKitStore();
+  const path = process.env.KIT_STORE_FILE?.trim() || ".data/kits.json";
+  return new JsonFileKitStore(path);
 }
