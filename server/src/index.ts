@@ -1,11 +1,11 @@
-import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
 import { createServer } from "node:http";
 import { handleGenerateKit } from "./api/generate-kit.js";
 import { handleBuilder } from "./api/builder.js";
 import { handlePractice } from "./api/practice.js";
 import { createKitStore } from "./persistence/store.js";
 
-// The standalone Node server does not inherit Next.js' automatic .env.local loading.\n// dotenv loads .env.local first when started from the repository root/server workspace.\nconst port = Number(process.env.PORT || 4000);
+// Load server environment files explicitly. Supports both server/.env.local and repo/.env.local.\nloadDotenv({ path: ".env.local" });\nloadDotenv({ path: ".env" });\nloadDotenv({ path: "server/.env.local" });\nloadDotenv({ path: "server/.env" });\n\nconst port = Number(process.env.PORT || 4000);
 const store = createKitStore();
 
 const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }, async (request, response) => {\n  const origin = request.headers.origin;\n  if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {\n    response.setHeader("access-control-allow-origin", origin);\n    response.setHeader("vary", "Origin");\n  }\n  response.setHeader("access-control-allow-methods", "GET,POST,PATCH,OPTIONS");\n  response.setHeader("access-control-allow-headers", "content-type");\n  if (request.method === "OPTIONS") {\n    response.statusCode = 204;\n    response.end();\n    return;\n  }
