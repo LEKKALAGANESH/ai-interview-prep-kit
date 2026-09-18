@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  server:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -14,7 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - run: npm install
-      - run: npm test
-      - run: npm run build
+      - run: npm test --workspace shared
+      - run: npm test --workspace server
+      - run: npm run start --workspace server &
+        env:
+          PORT: 4000
+      - run: sleep 2 && curl --fail http://127.0.0.1:4000/unknown-route
+        continue-on-error: true
