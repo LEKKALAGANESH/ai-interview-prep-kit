@@ -90,3 +90,10 @@ Company crawling is separate from public interview research. When the `BRAVE_SEA
 ## Retrieval test coverage
 
 The server test suite covers URL/SSRF validation, HTTP content limits and redirects, retry behavior, robots.txt decisions and redirects, HTML cleaning, link ranking, company crawling, and public interview research.
+
+
+## Question generation
+
+Question generation is deliberately separated by requirement and category. The generation pipeline selects `technical` for technical requirements, `behavioural` for behavioural requirements, and `system-design` for domain requirements. The model receives the selected requirement ID and research context, but requirement IDs are assigned by application code rather than accepted from model output.
+
+The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flash`). Generated JSON is validated with Zod before questions become application state. Rate-limit and transient provider errors are retried with bounded exponential backoff; malformed responses are rejected. Job-description, company-page, and public-search text is explicitly treated as untrusted reference data in the generation prompt.
