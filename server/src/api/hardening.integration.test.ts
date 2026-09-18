@@ -84,7 +84,7 @@ test("API persists a validated kit and reloads the same state", async () => {
       method: "POST",
       body: JSON.stringify({
         jd: "We need Python engineers.",
-        company_url: "http://localhost:4000",
+        company_url: "https://example.com",
         days: 1,
       }),
       headers: { "content-type": "application/json" },
@@ -106,7 +106,7 @@ test("concurrent identical requests return one persisted kit", async () => {
       method: "POST",
       body: JSON.stringify({
         jd: "We need Python engineers.",
-        company_url: "http://localhost:4000",
+        company_url: "https://example.com",
         days: 1,
       }),
       headers: { "content-type": "application/json" },
