@@ -213,7 +213,7 @@ test("reuses the existing provider retry/error boundary during second-pass gener
   const provider: LlmProvider = {
     async generate() {
       calls += 1;
-      if (calls === 2) {
+      if (calls === 2 || calls === 3) {
         throw new Error("provider unavailable");
       }
       return { questions: [{ prompt: "covered", answer_outline: "outline", difficulty: 2 }] };
@@ -228,8 +228,11 @@ test("reuses the existing provider retry/error boundary during second-pass gener
     { provider },
   );
 
+  assert.equal(calls, 3);
   assert.equal(result.coverage.can_ship, false);
   assert.deepEqual(result.coverage.uncovered_must_requirement_ids, ["r2"]);
   assert.equal(result.generation_errors[0].code, "UNKNOWN");
   assert.equal(result.generation_errors[0].pass, 1);
+  assert.equal(result.generation_errors[1].code, "UNKNOWN");
+  assert.equal(result.generation_errors[1].pass, 2);
 });
