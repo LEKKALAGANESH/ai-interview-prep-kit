@@ -17,14 +17,12 @@ export function buildSchedule(
   );
 
   const ordered = [...questions].sort((a, b) => {
-    const aPriority = Math.min(
-      ...a.requirement_ids.map((id) => priority.get(id) ?? 1),
-    );
-    const bPriority = Math.min(
-      ...b.requirement_ids.map((id) => priority.get(id) ?? 1),
-    );
+    const aPriority = Math.min(...a.requirement_ids.map((id) => priority.get(id) ?? 1));
+    const bPriority = Math.min(...b.requirement_ids.map((id) => priority.get(id) ?? 1));
 
-    return aPriority - bPriority || a.difficulty - b.difficulty || a.id.localeCompare(b.id);
+    return bPriority === aPriority
+      ? b.difficulty - a.difficulty || a.id.localeCompare(b.id)
+      : aPriority - bPriority;
   });
 
   const buckets: Question[][] = Array.from({ length: days }, () => []);
