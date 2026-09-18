@@ -36,7 +36,7 @@ export const QuestionSchema = z.object({
   category: z.enum(["technical", "behavioural", "system-design", "company-fit"]),
   prompt: z.string().min(1),
   answer_outline: z.string().min(1),
-  difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  difficulty: z.number().int().min(1).max(3),
 });
 
 export const FlashcardSchema = z.object({
