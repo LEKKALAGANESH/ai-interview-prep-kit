@@ -1,14 +1,8 @@
 import { normalizeKitInput } from "@trao/interview-prep-shared/input-model.js";
 import { KitInputSchema } from "@trao/interview-prep-shared/input.js";
-import { generateAndPersistKit, type GenerateAndPersistKitOptions } from "../pipeline/service.js";
-import type { KitStore } from "../persistence/store.js";
+import { generateKitFromInput, type ApplicationPipelineOptions } from "../pipeline/orchestrator.js";
 
-export type GenerateKitDependencies = {
-  store: KitStore;
-  buildOptions: (
-    input: ReturnType<typeof normalizeKitInput>,
-  ) => Promise<GenerateAndPersistKitOptions>;
-};
+export type GenerateKitDependencies = ApplicationPipelineOptions;
 
 export type ApiError = {
   error: {
@@ -19,7 +13,7 @@ export type ApiError = {
 };
 
 export type GenerateKitResponse =
-  | { id: string; kit: Awaited<ReturnType<typeof generateAndPersistKit>>["kit"] }
+  | { id: string; kit: Awaited<ReturnType<typeof generateKitFromInput>>["kit"] }
   | ApiError;
 
 function jsonResponse(body: GenerateKitResponse, status: number): Response {
@@ -52,53 +46,45 @@ export async function handleGenerateKit(
   try {
     raw = await readJson(request);
   } catch (error) {
-    return jsonResponse(
-      {
-        error: {
-          code: "INVALID_JSON",
-          message: error instanceof Error ? error.message : "Invalid JSON body",
-        },
+    return jsonResponse({
+      error: {
+        code: "INVALID_JSON",
+        message: error instanceof Error ? error.message : "Invalid JSON body",
       },
-      400,
-    );
+    }, 400);
   }
 
   const parsed = KitInputSchema.safeParse(raw);
   if (!parsed.success) {
-    return jsonResponse(
-      {
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Request validation failed",
-          details: parsed.error.flatten(),
-        },
+    return jsonResponse({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Request validation failed",
+        details: parsed.error.flatten(),
       },
-      400,
-    );
+    }, 400);
   }
 
   try {
     const input = normalizeKitInput(parsed.data);
-    const options = await dependencies.buildOptions(input);
-    const result = await generateAndPersistKit(input, options, dependencies.store);
-
-    return jsonResponse({ id: result.id, kit: result.kit }, 201);
+    const result = await generateKitFromInput(input, dependencies);
+    return jsonResponse({ id: result.id, kit: result.kit }, result.reused ? 200 : 201);
   } catch (error) {
     const code =
       error && typeof error === "object" && "code" in error
         ? String((error as { code: unknown }).code)
         : "KIT_GENERATION_FAILED";
+    const status =
+      code === "COVERAGE_NOT_SHIPPABLE" ? 422 :
+      code === "LLM_NOT_CONFIGURED" ? 503 :
+      code === "RESEARCH_FAILED" ? 502 :
+      code === "EXTRACTION_FAILED" ? 422 : 500;
 
-    const status = code === "COVERAGE_NOT_SHIPPABLE" ? 422 : 500;
-
-    return jsonResponse(
-      {
-        error: {
-          code,
-          message: error instanceof Error ? error.message : "Kit generation failed",
-        },
+    return jsonResponse({
+      error: {
+        code,
+        message: error instanceof Error ? error.message : "Kit generation failed",
       },
-      status,
-    );
+    }, status);
   }
 }
