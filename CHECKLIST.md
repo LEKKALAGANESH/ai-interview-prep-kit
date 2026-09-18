@@ -222,21 +222,30 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 15.1 | Root npm install works from clean clone | ⬜ |
-| 15.2 | Root npm test works | ⬜ |
-| 15.3 | Root npm run build works | ⬜ |
-| 15.4 | Mandatory evaluator command works | ⬜ |
-| 15.5 | Five evaluation cases under 15 minutes | ⬜ |
-| 15.6 | GitHub Actions covers full repository | ⬜ |
-| 15.7 | No secrets committed | ⬜ |
-| 15.8 | README matches actual architecture | ⬜ |
-| 15.9 | Appendix A verified | ⬜ |
-| 15.10 | Appendix B verified | ⬜ |
-| 15.11 | Edge cases verified | ⬜ |
-| 15.12 | Security/SSRF/content-size checks verified | ⬜ |
-| 15.13 | Steps 1–14 regression check | ⬜ |
-| 15.14 | Final clean-clone audit | ⬜ |
-| 15.15 | Final submission readiness | ⬜ |
+| 15.1 | Root npm install works from clean clone | 🟡 |
+| 15.2 | Root npm test works | 🟡 |
+| 15.3 | Root npm run build works | 🟡 |
+| 15.4 | Mandatory evaluator command works | 🟡 |
+| 15.5 | Five evaluation cases under 15 minutes | 🟡 |
+| 15.6 | GitHub Actions covers full repository | 🟢 |
+| 15.7 | No secrets committed | 🟢 |
+| 15.8 | README matches actual architecture | 🟢 |
+| 15.9 | Appendix A verified | 🟢 |
+| 15.10 | Appendix B verified | 🟢 |
+| 15.11 | Edge cases verified | 🟡 |
+| 15.12 | Security/SSRF/content-size checks verified | 🟢 |
+| 15.13 | Steps 1–14 regression check | 🟡 |
+| 15.14 | Final clean-clone audit | 🟡 |
+| 15.15 | Final submission readiness | 🟡 |
+
+### Step 15 verification notes
+
+- The reported server failure was traced to a test that incorrectly expected an uncovered nice requirement to remain uncovered after repair. The generation pipeline now repairs all uncovered requirements, while can_ship still gates only uncovered must requirements.
+- The reported frontend build failure was caused by the local Question type omitting the canonical category field. The frontend type now matches KitSchema.
+- Root workspace builds previously stopped because server, shared, and evaluation had no build scripts or TypeScript configs. Each package now has a strict tsc --noEmit build/typecheck target.
+- Added a five-case evaluator fixture at evaluation/cases.example.json. Use an actual filename in PowerShell; <cases.json> is placeholder notation and is interpreted as shell syntax.
+- CI now installs and verifies the full workspace with root npm install, npm test, npm run build, evaluator CLI help, and server health.
+- Items 15.1–15.5 and 15.11/15.13–15.15 remain yellow until the updated code is actually executed and the resulting CI/local evidence is reviewed.
 
 ## Overall Progress
 
