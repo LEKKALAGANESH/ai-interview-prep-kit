@@ -80,7 +80,7 @@ External URLs are validated before fetching. Production deployments must reject 
 
 ## Status
 
-Steps 1–4 are implemented incrementally: the shared Appendix A contract, input validation/normalization, deterministic coverage/scheduling utilities, retrieval foundation, and JD extraction boundary are now in place. Subsequent work will wire the actual LLM provider, question generation, coverage second pass, scheduling, persistence, frontend builder/practice experience, and evaluation harness.
+Steps 1–7 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, and bounded second-pass coverage repair are now in place. Runtime execution still requires the repository's Node/npm environment; the GitHub workflow should be used for runtime verification. Subsequent work will wire scheduling, persistence, frontend builder/practice experience, and the evaluation harness.
 
 
 ## Public interview research
@@ -101,4 +101,4 @@ The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flas
 
 ## Coverage engine
 
-Coverage is deterministic application logic. It compares generated question `requirement_ids` against extracted requirement IDs, separates uncovered `must` and `nice` requirements, rejects invalid references as non-coverage, preserves requirement ordering, and exposes `can_ship`. Initial generation immediately runs this coverage check; a later pipeline pass can use the uncovered IDs to drive missing-question generation. The LLM is never asked to decide whether coverage exists.
+Coverage is deterministic application logic. It compares generated question `requirement_ids` against extracted requirement IDs, separates uncovered `must` and `nice` requirements, rejects invalid references as non-coverage, preserves requirement ordering, and exposes `can_ship`. Initial generation immediately runs this coverage check; the complete question pipeline then uses uncovered requirements for a bounded second pass. Only missing requirements are regenerated, successful first-pass questions are preserved, and final coverage is re-checked after the repair pass. Persistent generation failures are recorded per requirement/pass and a kit remains non-shippable when a must-have requirement is still uncovered. The LLM is never asked to decide whether coverage exists.
