@@ -1,0 +1,12 @@
+{
+  "name": "@trao/interview-prep-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "tsx --test src/retrieval/*.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  }
+}
