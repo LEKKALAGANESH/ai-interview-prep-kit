@@ -5,10 +5,28 @@ import { handleBuilder } from "./api/builder.js";
 import { handlePractice } from "./api/practice.js";
 import { createKitStore } from "./persistence/store.js";
 
-// Load server environment files explicitly. Supports both server/.env.local and repo/.env.local.\nloadDotenv({ path: ".env.local" });\nloadDotenv({ path: ".env" });\nloadDotenv({ path: "server/.env.local" });\nloadDotenv({ path: "server/.env" });\n\nconst port = Number(process.env.PORT || 4000);
+// Load server environment files explicitly. Supports both server/.env.local and repo/.env.local.
+loadDotenv({ path: ".env.local" });
+loadDotenv({ path: ".env" });
+loadDotenv({ path: "server/.env.local" });
+loadDotenv({ path: "server/.env" });
+
+const port = Number(process.env.PORT || 4000);
 const store = createKitStore();
 
-const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }, async (request, response) => {\n  const origin = request.headers.origin;\n  if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {\n    response.setHeader("access-control-allow-origin", origin);\n    response.setHeader("vary", "Origin");\n  }\n  response.setHeader("access-control-allow-methods", "GET,POST,PATCH,OPTIONS");\n  response.setHeader("access-control-allow-headers", "content-type");\n  if (request.method === "OPTIONS") {\n    response.statusCode = 204;\n    response.end();\n    return;\n  }
+const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }, async (request, response) => {
+  const origin = request.headers.origin;
+  if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {
+    response.setHeader("access-control-allow-origin", origin);
+    response.setHeader("vary", "Origin");
+  }
+  response.setHeader("access-control-allow-methods", "GET,POST,PATCH,OPTIONS");
+  response.setHeader("access-control-allow-headers", "content-type");
+  if (request.method === "OPTIONS") {
+    response.statusCode = 204;
+    response.end();
+    return;
+  }
   if (request.url === "/health") {
     response.statusCode = 200;
     response.setHeader("content-type", "application/json");
