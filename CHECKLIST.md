@@ -112,6 +112,18 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 11.10 | Responsive laptop/mobile UI | ⬜ |
 | 11.11 | Add builder tests | ⬜ |
 
+### Step 11 implementation notes
+
+- Added shared builder operations for question editing, reordering/moving, adding, deleting, and scoped regeneration.
+- Builder edits preserve question IDs and validate the resulting kit against `KitSchema`.
+- Schedule minutes are recalculated deterministically at 10 minutes per question.
+- Coverage is recalculated after edits so deleting the only question covering a requirement exposes that requirement again.
+- Added persistent `KitStore.update()` support for in-memory and durable JSON storage.
+- Added `GET /api/kits/:id` for reload/display and `PATCH /api/kits/:id` for builder edits.
+- Added a responsive Next.js builder screen with loading/error states, inline question/answer editing, add/delete controls, and keyboard-operable reorder controls.
+- Scoped regeneration is represented by a shared operation that only replaces the requested question IDs, preserving all non-scoped/manual content.
+- Item 11.20 remains 🟡 until the new builder test suite is observed passing in CI/runtime.
+
 ## Step 12 — Practice Mode
 
 | # | Checklist | Status |
@@ -189,7 +201,7 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 8 | Scheduling | 🟢 |
 | 9 | Backend pipeline/persistence/API | 🟡 |
 | 10 | Mandatory evaluator | 🟡 Active |
-| 11 | Builder | ⬜ |
+| 11 | Builder | 🟡 Active |
 | 12 | Practice mode | ⬜ |
 | 13 | Frontend | ⬜ |
 | 14 | Backend hardening | ⬜ |
