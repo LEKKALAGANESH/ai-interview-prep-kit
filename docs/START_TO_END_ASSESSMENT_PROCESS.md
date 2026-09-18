@@ -1,185 +1,231 @@
 # Trao AI Interview Prep Kit — Start-to-End Implementation Process
 
-This document is the execution plan for completing the repository against the Trao Full-Stack Engineering Assessment (FS-AI-INTERVIEW-01).
+**Assessment:** Trao Full-Stack Engineering Assessment — The AI Interview Prep Kit  
+**Assessment ID:** FS-AI-INTERVIEW-01
 
-> Rule: implement and verify one stage at a time. Do not treat the application as one large LLM prompt. Deterministic coverage checking and schedule allocation stay in application code.
+This is the master execution and verification plan for implementing this repository against the supplied assessment PDF. It expands the stated requirements into implementation tasks and a broad test matrix so normal, sparse, malformed, unavailable, duplicate, concurrent, adversarial, and batch cases are considered before submission.
+
+> **Source boundary:** Mandatory requirements are derived from the supplied assessment PDF. Additional implementation mechanics and defensive test cases below are engineering decisions for making those requirements robust; they are not additional stated scoring requirements.
 
 ## 0. Definition of Done
 
-Before submission, the repository must satisfy all of these:
-
-- Publicly accessible frontend and backend.
-- Secure registration, login, logout, session handling, and per-user kit ownership.
-- Single-role kit creation from pasted JD + company URL + requested days.
-- Multi-role batch input.
-- Company-site crawling with ranked links; hiring-process discovery cannot depend on hard-coded paths.
-- Public interview-process research.
-- Source failures are recorded/skipped without unnecessarily failing the whole run.
-- Rate limiting, retry/backoff, timeouts, robots.txt/site-term awareness.
-- Sequential research/generation pipeline.
-- Separate question generation by requirement/category.
-- Deterministic coverage check.
-- Second pass generates missing questions and rechecks coverage.
-- Exact Appendix A field names and required structure.
-- Inline editing, reordering, category movement, add/delete.
-- Section regeneration without clobbering edits/user-created/pinned content.
-- Flashcard practice with confidence and coverage tracking.
-- Exactly N schedule days, integer minutes, all must-have requirements represented, higher-priority/harder material earlier.
-- Exact mandatory CLI:
-  npm run evaluate -- --input <cases.json> --output <kits.json>
-- CLI uses the same pipeline as the app.
-- Batch continues after individual case failures.
-- Five cases complete within 15 minutes including retries.
-- Edge cases and malformed model output handled honestly.
-- External URL security controls.
-- Automated tests for structure, coverage, scheduling, regeneration, auth, batch, retrieval and failure paths.
-- README explains setup, architecture, retrieval, sequencing, state model, schedule, trade-offs and limitations.
-- 3–4 minute walkthrough video prepared.
+- [ ] Public frontend and backend.
+- [ ] Secure registration, login, logout, sessions, and per-user ownership.
+- [ ] Single-role JD + company URL + days flow.
+- [ ] Multi-role batch input.
+- [ ] Visible generation progress and failure states.
+- [ ] Company brief, role breakdown, questions, flashcards, schedule.
+- [ ] Edit, reorder, move, add, delete.
+- [ ] Scoped regeneration without clobbering user work.
+- [ ] Flashcard practice and confidence/coverage tracking.
+- [ ] Company crawling and dynamically discovered hiring information.
+- [ ] Public interview-process research.
+- [ ] Rate limiting, retry/backoff, timeout, robots.txt/site-term awareness.
+- [ ] Sequential research/generation.
+- [ ] Deterministic coverage and schedule.
+- [ ] Mandatory second pass for coverage gaps.
+- [ ] Exact Appendix A/B contracts.
+- [ ] Batch command works from clean clone.
+- [ ] Batch continues after case failures.
+- [ ] Five cases complete within 15 minutes including retries.
+- [ ] Edge cases and malformed model output handled honestly.
+- [ ] External URL security controls.
+- [ ] Automated tests.
+- [ ] README, deployment, walkthrough.
 
 ---
 
-# Phase 1 — Repository and Architecture Foundation
+# 1. Repository Foundation
 
-## 1.1 Repository baseline
+## 1.1 Structure
 
-Create and maintain:
-
+```
 client/
 server/
 shared/
 evaluation/
 tests/
 docs/
+```
 
-Root files:
+Root:
 
-- package.json
-- .env.example
-- .gitignore
-- README.md
+- `package.json`
+- `.env.example`
+- `.gitignore`
+- `README.md`
 
-## 1.2 Branching and commits
+## 1.2 Development history
 
-Use meaningful commits that show development progress.
+Suggested meaningful commits:
 
-Suggested sequence:
+1. `chore: initialize project foundation`
+2. `feat: add exact Appendix A and B contracts`
+3. `test: add structure validation tests`
+4. `feat: add authentication`
+5. `feat: add secure URL retrieval`
+6. `feat: add page cleaning and crawler`
+7. `feat: add JD requirement extraction`
+8. `feat: add sequential research pipeline`
+9. `feat: add question generation`
+10. `feat: add deterministic coverage and second pass`
+11. `feat: add deterministic schedule allocation`
+12. `feat: add persistence`
+13. `feat: add batch evaluator`
+14. `feat: add backend API`
+15. `feat: add frontend builder`
+16. `feat: add regeneration preservation`
+17. `feat: add practice mode`
+18. `test: cover assessment edge cases`
+19. `feat: add deployment configuration`
+20. `docs: complete assessment documentation`
 
-1. chore: initialize project foundation
-2. feat: add exact Appendix A and B contracts
-3. feat: add authentication
-4. feat: add secure URL retrieval
-5. feat: add company crawler and source ranking
-6. feat: add JD requirement extraction
-7. feat: add sequential research pipeline
-8. feat: add question generation
-9. feat: add deterministic coverage and second pass
-10. feat: add deterministic schedule allocation
-11. feat: add kit persistence and builder APIs
-12. feat: add frontend kit builder
-13. feat: add practice mode
-14. feat: add batch evaluator
-15. test: add assessment edge-case coverage
-16. feat: add deployment configuration
-17. docs: complete assessment README and walkthrough notes
-
-Do not squash away useful development history before submission.
+Do not destroy useful development history before submission.
 
 ---
 
-# Phase 2 — Exact Assessment Data Contracts
+# 2. Exact Appendix A Contract
 
-Appendix A is exact. Do not replace its structure with a different public output shape.
+Appendix A is explicitly exact. Required names must remain unchanged.
 
-## 2.1 Canonical Kit
+Required top-level structure:
 
-The externally generated kit must contain:
+```json
+{
+  "source": {
+    "company": "",
+    "company_url": "",
+    "role": "",
+    "location": "",
+    "jd_chars": 0,
+    "researched_at": "",
+    "pages_used": []
+  },
+  "company_brief": {
+    "summary": "",
+    "what_they_do": "",
+    "sources": []
+  },
+  "role": {
+    "title": "",
+    "seniority": "",
+    "responsibilities": [],
+    "requirements": [
+      {
+        "id": "r1",
+        "text": "",
+        "kind": "technical",
+        "priority": "must"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "requirement_ids": ["r1"],
+      "category": "technical",
+      "prompt": "",
+      "answer_outline": "",
+      "difficulty": 2
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "",
+      "back": "",
+      "requirement_ids": ["r1"]
+    }
+  ],
+  "schedule": {
+    "days_available": 5,
+    "days": [
+      {
+        "day": 1,
+        "focus": "",
+        "question_ids": ["q1"],
+        "minutes": 60
+      }
+    ]
+  },
+  "coverage": {
+    "uncovered_requirement_ids": [],
+    "passes": 2
+  }
+}
+```
 
-source:
-- company
-- company_url
-- role
-- location
-- jd_chars
-- researched_at
-- pages_used
+Rules:
 
-company_brief:
-- summary
-- what_they_do
-- sources
+- requirement `kind`: `technical | behavioural | domain`;
+- requirement `priority`: `must | nice`;
+- question `category`: `technical | behavioural | system-design | company-fit`;
+- difficulty: 1–3;
+- minutes: integer;
+- stable IDs within a kit;
+- question requirement IDs must exist;
+- schedule question IDs must exist.
 
-role:
-- title
-- seniority
-- responsibilities
-- requirements
+Internal persistence may add metadata such as `origin`, `is_edited`, `is_pinned`, `version`, and timestamps, but the external Appendix A serializer must preserve the required structure.
 
-requirement:
-- id
-- text
-- kind: technical | behavioural | domain
-- priority: must | nice
+---
 
-questions:
-- id
-- requirement_ids
-- category: technical | behavioural | system-design | company-fit
-- prompt
-- answer_outline
-- difficulty: 1 | 2 | 3
+# 3. Appendix A Structure Test Matrix
 
-flashcards:
-- id
-- front
-- back
-- requirement_ids
+Test valid:
 
-schedule:
-- days_available
-- days
-- day
-- focus
-- question_ids
-- minutes
+- minimum kit;
+- one requirement;
+- multiple requirements;
+- technical/behavioural/domain requirements;
+- must/nice priorities;
+- multiple question categories;
+- difficulties 1, 2, 3;
+- empty arrays where genuinely applicable;
+- multiple schedule days.
 
-coverage:
-- uncovered_requirement_ids
-- passes
+Reject:
 
-Every requirement ID must be stable within the kit.
-Every question's requirement_ids must point to real requirements.
-Every schedule question_ids entry must point to an existing question.
-difficulty is 1–3.
-minutes is an integer.
+- missing required top-level fields;
+- renamed fields;
+- wrong types;
+- invalid requirement kind;
+- invalid priority;
+- invalid question category;
+- difficulty outside 1–3;
+- non-integer minutes;
+- duplicate IDs;
+- question referencing nonexistent requirement;
+- schedule referencing nonexistent question.
 
-## 2.2 Internal state
+Also test serializer round-tripping internal metadata into valid Appendix A.
 
-Internal persistence may extend the public structure with metadata such as:
+---
 
-- origin: generated | user_added
-- is_edited
-- is_pinned
-- version
-- created_at
-- updated_at
+# 4. Appendix B Batch Contract
 
-These fields exist to solve regeneration safely. The public Appendix A serializer must still emit the required external structure.
+Mandatory command:
 
-## 2.3 Batch contract
+```bash
+npm run evaluate -- --input <cases.json> --output <kits.json>
+```
 
 Input:
 
+```json
 [
   {
     "id": "case-01",
-    "jd": "...",
+    "jd": "Senior Backend Engineer...",
     "company_url": "http://localhost:8099/acme/",
     "days": 5
   }
 ]
+```
 
 Output:
 
+```json
 {
   "version": "1.0",
   "generated_at": "...",
@@ -192,507 +238,565 @@ Output:
     }
   ]
 }
+```
 
-Failed cases must contain:
+Failure:
 
-- status: failed
-- kit: null
-- error.code
-- error.message
+```json
+{
+  "id": "case-04",
+  "status": "failed",
+  "kit": null,
+  "error": {
+    "code": "COMPANY_UNREACHABLE",
+    "message": "..."
+  }
+}
+```
 
-A partially researched but valid kit is status=ok with honest gaps.
+Test:
+
+- one case;
+- five cases;
+- mixed valid/invalid;
+- failure in first/middle/last case;
+- all cases failed;
+- duplicate IDs;
+- duplicate cases;
+- mixed days;
+- malformed input;
+- local company server;
+- relative links;
+- output validity.
+
+A partially researched but valid kit is `ok`; `failed` is reserved for inability to produce a kit.
 
 ---
 
-# Phase 3 — Authentication and Ownership
-
-## 3.1 User flow
+# 5. Authentication and Ownership
 
 Implement:
 
 Register -> Login -> Session -> Protected application -> Logout
 
-Minimal scope only:
+Keep scope minimal. Do not build email verification, password reset, or role hierarchy.
 
-- registration
-- login
-- logout
-- session validation
+Security tests:
 
-Do NOT build:
+- registration;
+- duplicate registration;
+- valid login;
+- wrong password;
+- unknown account;
+- invalid session;
+- expired session;
+- logout;
+- protected page;
+- protected API;
+- user A cannot read B's kit;
+- user A cannot modify/delete/regenerate B's kit;
+- practice records are owner-scoped.
 
-- email verification
-- password reset
-- role hierarchy
+Never trust client-provided owner IDs.
 
-## 3.2 Security rules
+---
 
-- Hash passwords securely.
-- Use secure session handling.
-- Protect frontend routes.
-- Protect backend endpoints.
-- Reject expired/invalid sessions.
-- Every kit query/update must be scoped to authenticated user ID.
-- Never trust a client-provided owner ID.
+# 6. Input Validation
 
-## 3.3 Tests
+## Single-role cases
 
 Test:
 
-- registration
-- duplicate registration
-- valid login
-- invalid login
-- logout
-- expired/invalid session
-- unauthorized endpoint
-- user A cannot read user B's kit
-- user A cannot modify user B's kit
+- normal JD;
+- empty JD;
+- whitespace JD;
+- two-line JD;
+- very long JD;
+- Unicode;
+- duplicated JD text;
+- no explicit requirements;
+- invalid URL;
+- HTTP;
+- HTTPS;
+- unsupported protocol;
+- URL with credentials;
+- days 1;
+- days 60;
+- days 0;
+- days 61;
+- negative;
+- fractional;
+- string;
+- missing fields;
+- unexpected fields.
+
+The JD is pasted into the interface; do not fetch it from a job board.
+
+## Multi-role cases
+
+Test:
+
+- one valid case;
+- multiple valid cases;
+- mixed valid/invalid cases;
+- empty file;
+- malformed JSON;
+- malformed object;
+- missing ID;
+- duplicate ID;
+- missing JD;
+- missing URL;
+- invalid URL;
+- invalid days;
+- huge batch.
 
 ---
 
-# Phase 4 — Input and Validation
+# 7. Secure External Retrieval
 
-## 4.1 Create-kit form
+Company pages are untrusted.
 
-Required inputs:
+## URL validation
 
-- job description textarea
-- company website URL
-- days available
+Test:
 
-Validate:
+- HTTP/HTTPS;
+- malformed URL;
+- unsupported scheme;
+- credentials in URL;
+- localhost;
+- loopback;
+- private IP;
+- reserved IP;
+- DNS resolving to private address;
+- public -> private redirect;
+- redirect loop;
+- excessive redirects.
 
-- JD is a string.
-- URL is valid HTTP/HTTPS.
-- days is an integer from 1 through 60.
+The assessment permits local company URLs for the evaluator. Therefore production SSRF protection should remain strict while evaluator/test mode explicitly permits controlled local fixtures.
 
-Do not fetch the JD from a job board.
+## Response controls
 
-## 4.2 Multi-role input
+Test:
 
-Support file input containing multiple:
-
-- id
-- jd
-- company_url
-- days
-
-The batch interface must eventually feed the same pipeline used by the application.
-
-## 4.3 Duplicate submissions
-
-Define deterministic duplicate behavior.
-
-Recommended:
-
-- identify duplicate by normalized JD + normalized company URL + days/user context;
-- reuse an existing compatible kit or explicitly report duplicate status;
-- do not accidentally create concurrent duplicate generation jobs.
-
-Document the choice.
-
----
-
-# Phase 5 — Secure External Retrieval
-
-This is a security-critical subsystem because company URLs and fetched pages are untrusted.
-
-## 5.1 URL validation
-
-Before fetching:
-
-- only allow HTTP/HTTPS;
-- reject credentials in URLs;
-- reject loopback/private/reserved addresses in production;
-- resolve DNS carefully to avoid SSRF bypasses;
-- enforce redirects through the same validation;
-- reject unsupported schemes.
-
-Local addresses must remain possible for the mandatory evaluator, because the assessment explicitly says company sites used by the command may be served from a local address.
-
-Therefore use an explicit evaluator/test mode rather than weakening production SSRF controls.
-
-## 5.2 Response controls
-
-Enforce:
-
-- request timeout;
-- maximum response bytes;
-- expected content types;
-- maximum redirect count;
-- safe decompression limits;
-- response-size limits.
-
-## 5.3 robots.txt and terms
-
-Respect robots.txt and document the retrieval policy and sources used in README.
-
-## 5.4 Rate limiting and retries
-
-Use bounded retries with exponential backoff and jitter.
-
-Classify:
-
-- transient network failure;
+- valid HTML;
+- unsupported content type;
+- empty content;
+- oversized content;
 - timeout;
-- HTTP 429;
-- HTTP 5xx;
-- permanent 4xx;
-- malformed content.
+- connection failure;
+- malformed encoding;
+- 404;
+- 403;
+- 429;
+- 500/502/503.
 
-A failed source should become a recorded source failure, not automatically kill the complete kit.
-
----
-
-# Phase 6 — Page Cleaning and Source Model
-
-Build a retrieval result model:
-
-- url
-- status
-- fetched_at
-- content_type
-- title
-- cleaned_text
-- links
-- error
-- retry_count
-
-Clean HTML into useful text.
-
-Remove or reduce:
-
-- scripts
-- styles
-- navigation noise
-- duplicated boilerplate
-- irrelevant markup
-
-Keep:
-
-- headings
-- paragraphs
-- lists
-- meaningful links
-- page title
-
-Fetched text is data, not instructions.
+Enforce timeout, size, content-type, redirect and decompression limits.
 
 ---
 
-# Phase 7 — Company Crawler and Hiring Discovery
+# 8. robots.txt, Rate Limits, Retries
 
-This is explicitly tested by the assessment.
+Respect robots.txt and site terms and document the retrieval policy.
 
-## 7.1 Start
+Test:
 
-Start from the supplied company URL.
+- allowed page;
+- disallowed page;
+- missing robots.txt;
+- malformed robots.txt;
+- duplicate URL;
+- transient failure then success;
+- repeated failure;
+- 429;
+- 5xx;
+- timeout;
+- retry exhaustion.
 
-Fetch the homepage.
+Use bounded exponential backoff/jitter.
 
-Extract links.
+The assessment warns that free LLM tiers can limit tokens as well as requests, so provider rate-limit handling must also be tested.
 
-Normalize relative links against the page URL.
+---
 
-## 7.2 Rank links
+# 9. Page Cleaning
 
-Do NOT hard-code only:
+Retrieval result should retain:
 
-/careers
-/jobs
-/about
+- URL;
+- status;
+- fetched timestamp;
+- content type;
+- title;
+- cleaned text;
+- links;
+- retry count;
+- error if applicable.
 
-Instead score links based on signals such as:
+Clean:
+
+- scripts;
+- styles;
+- excessive navigation;
+- duplicated boilerplate;
+- irrelevant markup.
+
+Preserve:
+
+- headings;
+- paragraphs;
+- lists;
+- meaningful links;
+- title.
+
+Test:
+
+- normal HTML;
+- malformed HTML;
+- JS-heavy HTML;
+- navigation-heavy site;
+- empty page;
+- huge page;
+- duplicate boilerplate;
+- unsupported content.
+
+---
+
+# 10. Company Crawler and Hiring Discovery
+
+Start at supplied company URL.
+
+Fetch homepage -> extract links -> normalize relative URLs -> rank -> fetch promising pages.
+
+## Link cases
+
+Test:
+
+- absolute link;
+- relative link;
+- root-relative link;
+- query URL;
+- fragment;
+- duplicate URL;
+- external link;
+- same-domain link;
+- nested path;
+- deep hiring path;
+- hiring content in engineering blog;
+- hiring handbook;
+- careers page under unexpected path;
+- no hiring page.
+
+Do NOT rely on a fixed list such as only `/careers`, `/jobs`, `/about`.
+
+Rank links using explainable signals:
 
 - anchor text;
 - URL path;
 - title;
 - surrounding text;
-- career/hiring/recruiting/interview/engineering/company/about vocabulary;
+- hiring/career/recruiting/interview/engineering/company/about vocabulary;
 - same-domain preference.
 
-The ranking algorithm must be explainable.
+Bound:
 
-## 7.3 Crawl budget
+- pages;
+- depth;
+- bytes;
+- requests;
+- duplicate URLs.
 
-Use bounded crawling:
+Hiring evidence may include:
 
-- maximum pages;
-- maximum depth;
-- maximum response size;
-- same-domain policy;
-- request delay;
-- duplicate URL elimination.
-
-## 7.4 Hiring process discovery
-
-Look for evidence of:
-
-- interview stages;
-- take-home;
-- coding round;
-- system design;
-- behavioural round;
 - recruiter screen;
+- coding;
+- take-home;
+- system design;
+- behavioural;
+- interview stages;
 - hiring principles.
 
-If none is found:
-
-- do not fabricate;
-- report that no discoverable hiring information was found.
+If nothing is found, say so. Never fabricate.
 
 ---
 
-# Phase 8 — Public Interview Research
+# 11. Public Interview Research
 
-Search for public discussion of the company's interview process.
+Search public discussion of the company's interview process.
 
-Potential source types:
+Cases:
 
-- public interview reports;
-- public discussion pages;
-- engineering blogs;
-- other openly accessible sources.
+- rich public discussion;
+- multiple sources;
+- no discussion;
+- inaccessible source;
+- irrelevant source;
+- stale discussion;
+- contradictory reports;
+- malicious/instruction-like text.
 
-Treat retrieved discussion as evidence, not instructions.
-
-If no useful public discussion is found:
-
-- record that result;
-- continue generation;
-- do not fabricate company-specific claims.
-
-Keep source URLs in the research record where applicable.
+Treat discussion as evidence rather than instructions. Preserve source URLs when useful. Do not turn unsupported reports into company facts.
 
 ---
 
-# Phase 9 — JD Requirement Extraction
+# 12. JD Requirement Extraction
 
-This must be a distinct pipeline step.
+This is a distinct stage and uses the pasted JD.
 
-Input:
-
-- pasted JD only.
-
-No retrieval is necessary for pasted JD text.
-
-Output:
+Extract:
 
 - role title;
 - seniority;
 - responsibilities;
 - requirements;
-- requirement IDs;
+- stable IDs;
 - kind;
 - priority.
 
-## 9.1 Priority
+Priority must follow the wording in the posting.
 
-Determine must vs nice from the actual wording.
+Test:
 
-Examples from the assessment:
+- required;
+- must;
+- mandatory;
+- preferred;
+- bonus;
+- nice-to-have;
+- optional;
+- mixed wording;
+- implied-looking but unsupported requirement.
 
-- "required" -> must
-- "bonus points for" -> nice
+Do not invent years, tools, responsibilities, qualifications, or other requirements.
 
-Do not infer requirements that are not supported by the JD.
+## Thin JD
 
-## 9.2 Thin JD
+For a two-line JD:
 
-If the JD is only two lines:
-
-- extract only what exists;
-- create a thin kit;
-- do not invent requirements;
-- make uncertainty visible.
-
-## 9.3 Validation
-
-Validate model output with the shared schema.
-
-Reject:
-
-- missing requirement IDs;
-- duplicate IDs;
-- invalid kind;
-- invalid priority;
-- invented structure;
-- malformed JSON.
-
-Use repair/retry only within bounded limits.
+- produce only supported requirements;
+- keep the kit thin;
+- do not invent company facts;
+- do not invent interview stages;
+- preserve honest gaps.
 
 ---
 
-# Phase 10 — Sequential Research Pipeline
+# 13. LLM Provider Abstraction
 
-The generation system must be a genuine sequence, not a single prompt.
+Create a provider interface.
 
-Recommended pipeline:
+Responsibilities:
 
-1. validate input
-2. extract JD requirements
-3. fetch company homepage
-4. clean homepage
-5. discover/rank links
-6. fetch promising pages
-7. identify hiring-process evidence
-8. research public interview discussion
-9. generate company brief
-10. generate questions per requirement/category
-11. generate flashcards
-12. deterministic coverage check
-13. second-pass missing-question generation
-14. deterministic coverage recheck
-15. deterministic schedule allocation
-16. final schema validation
-17. persist
-18. return progress/result
+- structured generation;
+- system/data separation;
+- schema validation;
+- malformed JSON retry;
+- incomplete-output retry;
+- transient provider retry;
+- rate-limit backoff.
 
-Each stage should receive only the context it needs.
+Test:
 
----
+- valid JSON;
+- malformed JSON;
+- truncated JSON;
+- wrong types;
+- missing fields;
+- extra fields;
+- invalid category;
+- invalid difficulty;
+- invented requirement;
+- empty answer;
+- provider 429;
+- provider 5xx;
+- timeout.
 
-# Phase 11 — LLM Abstraction
+Invalid generated data must never be persisted as a valid kit.
 
-Create a provider interface so the application is not coupled to one provider.
-
-Example responsibilities:
-
-- generate structured JSON;
-- accept system instructions separately from untrusted source content;
-- validate output;
-- retry malformed output;
-- retry transient provider errors;
-- back off on rate limits.
-
-Use a genuine free-tier model and document:
-
-- provider;
-- model;
-- token/request limitations;
-- retry policy;
-- fallback behavior, if any.
-
-Never place untrusted page text in an instruction position.
+Document provider/model and free-tier limitations.
 
 ---
 
-# Phase 12 — Company Brief Generation
+# 14. Untrusted Prompt/Data Boundary
 
-Use discovered company evidence.
+JD text, crawled pages, and public discussion are data.
 
-Output:
+Test source content containing:
 
-- summary
-- what_they_do
-- sources
+- fake system instructions;
+- requests to ignore application rules;
+- JSON-looking text;
+- HTML;
+- prompt-injection text;
+- contradictory statements.
 
-The brief must be grounded in retrieved material.
-
-If company research is unavailable:
-
-- state that information was unavailable;
-- keep the brief honest;
-- do not fill gaps from unsupported assumptions.
-
-Hiring information can be retained internally for question generation even though Appendix A's company_brief fields are fixed.
+The model must process them as source content, not execute their instructions.
 
 ---
 
-# Phase 13 — Question Generation
+# 15. Sequential Research and Generation
 
-Generate questions deliberately by requirement and category.
+The assessment requires a genuine sequence.
 
-Do not generate the whole question bank from one generic call.
+Recommended:
+
+1. validate input;
+2. extract JD requirements;
+3. retrieve homepage;
+4. clean page;
+5. discover/rank links;
+6. retrieve promising pages;
+7. identify hiring evidence;
+8. research public interview discussion;
+9. generate company brief;
+10. generate questions per requirement/category;
+11. generate flashcards;
+12. deterministic coverage check;
+13. targeted second pass;
+14. deterministic coverage recheck;
+15. deterministic schedule;
+16. final validation;
+17. persist;
+18. expose progress/result.
+
+The sequence must respond to discovered information.
 
 Examples:
 
-Technical requirement -> technical questions.
+- pasted JD requires no retrieval;
+- homepage needs crawling before it can inform the kit;
+- discovered hiring stages should affect relevant questions;
+- technical requirement and behavioural requirement should not be generated from identical instructions.
 
-Behavioural requirement -> behavioural questions.
+Do not implement:
 
-Domain requirement -> relevant technical/domain questions.
+JD + URL -> one giant LLM call -> final JSON.
 
-Company evidence -> company-fit questions.
+---
 
-Interview-process evidence -> questions appropriate to discovered stages.
+# 16. Company Brief
 
-Each question must contain:
+Required external fields:
+
+- summary;
+- what_they_do;
+- sources.
+
+Generate from retrieved evidence.
+
+Test:
+
+- rich site;
+- sparse site;
+- no about page;
+- no hiring page;
+- unreachable site;
+- contradictory evidence;
+- no public discussion.
+
+If evidence is unavailable, report that honestly.
+
+---
+
+# 17. Question Generation
+
+Generate separately by requirement and category.
+
+Examples:
+
+- technical requirement -> technical;
+- behavioural requirement -> behavioural;
+- domain requirement -> relevant questions;
+- company evidence -> company-fit;
+- discovered interview stage -> relevant question category.
+
+Each question:
 
 - stable ID;
-- requirement_ids;
-- category;
+- existing requirement IDs;
+- valid category;
 - prompt;
-- answer_outline;
+- answer outline;
 - difficulty 1–3.
 
-Every generated question must reference at least one real requirement.
+Test every category, all difficulty levels, duplicate questions, malformed output, invalid references.
 
 ---
 
-# Phase 14 — Deterministic Coverage Check
+# 18. Deterministic Coverage
 
-This MUST be application code.
+Application code must:
 
-Algorithm:
+1. collect requirement IDs;
+2. collect question requirement IDs;
+3. compare;
+4. find uncovered IDs;
+5. distinguish must/nice.
 
-1. collect all requirement IDs;
-2. collect every question.requirement_ids;
-3. calculate referenced IDs;
-4. compute uncovered requirement IDs;
-5. distinguish must vs nice.
+Do not delegate coverage to the LLM.
 
-Do not ask the LLM whether coverage is complete.
+Output:
 
-The result goes into:
+`coverage.uncovered_requirement_ids`
 
-coverage.uncovered_requirement_ids
+Test:
 
----
-
-# Phase 15 — Second Pass
-
-After first-pass questions:
-
-1. run deterministic coverage check;
-2. find uncovered requirements;
-3. if must-have requirements are uncovered, generate targeted missing questions;
-4. validate those questions;
-5. merge them without deleting valid existing questions;
-6. run coverage again.
-
-Choose a bounded pass count, e.g. two coverage passes, and document why.
-
-Shipping a kit with uncovered must-have requirements is a failure.
-
-If a must-have remains uncovered after the bounded process:
-
-- report it clearly;
-- do not falsely claim complete coverage.
+- all covered;
+- nice uncovered;
+- must uncovered;
+- several uncovered;
+- invalid reference;
+- duplicate references.
 
 ---
 
-# Phase 16 — Flashcards
+# 19. Mandatory Second Pass
 
-Generate flashcards from the requirement/question knowledge.
+After first generation:
 
-Each card:
+1. run coverage;
+2. identify gaps;
+3. generate targeted questions for gaps;
+4. validate;
+5. merge;
+6. recheck.
 
-- id
-- front
-- back
-- requirement_ids
+Test:
 
-Flashcards must remain linked to requirements where applicable.
+- first pass fully covered -> no unnecessary gap generation;
+- one must missing -> targeted question;
+- multiple must missing -> targeted questions;
+- second pass malformed -> preserve valid first-pass kit;
+- bounded pass limit reached -> expose remaining gaps honestly.
+
+A kit must not claim complete must-have coverage when deterministic checking says otherwise.
 
 ---
 
-# Phase 17 — Deterministic Schedule
+# 20. Flashcards
 
-The model must NOT allocate the schedule.
+Each:
 
-Input:
+- id;
+- front;
+- back;
+- requirement_ids.
+
+Test:
+
+- normal cards;
+- multiple requirement IDs;
+- empty requirement linkage when genuinely appropriate;
+- malformed card;
+- duplicate card ID.
+
+---
+
+# 21. Deterministic Schedule
+
+The model must not allocate days.
+
+Inputs:
 
 - requested days;
 - requirements;
@@ -702,209 +806,222 @@ Input:
 
 Rules:
 
-- exactly requested number of days;
+- exactly N days;
 - integer minutes;
-- every must-have requirement represented somewhere;
+- every must-have represented;
 - harder/higher-priority material earlier.
 
-Handle:
+Test:
 
 - 1 day;
-- normal values;
-- 60 days.
+- 2 days;
+- normal 5–10;
+- 60 days;
+- more days than questions;
+- many questions;
+- many must-haves;
+- few requirements;
+- high-priority ordering;
+- invalid days.
 
-For many days and little content, empty-content days may use a valid focus and 0 minutes if the final schema permits it; document the policy.
-
-For 1 day, all required preparation material must fit into day 1.
-
-Test schedule allocation independently.
-
----
-
-# Phase 18 — Persistence
-
-MongoDB model should preserve enough information to:
-
-- reopen a kit;
-- continue editing;
-- practice flashcards;
-- regenerate a section;
-- preserve user state.
-
-Suggested entities:
-
-User
-Kit
-PracticeRecord
-
-Kit should include:
-
-- owner_id
-- source/input data
-- canonical Appendix A kit
-- internal item metadata
-- generation status
-- generation progress
-- source/research records
-- timestamps
-- version
+For sparse content over many days, implement a documented policy for valid empty days. For 1 day, allocate all required material to that day.
 
 ---
 
-# Phase 19 — Generation Job State
+# 22. Persistence
 
-Generation can take around 90 seconds and can fail halfway.
+MongoDB should preserve:
 
-Represent states such as:
+- owner;
+- source/input;
+- canonical kit;
+- internal metadata;
+- research/source records;
+- generation state;
+- practice state;
+- timestamps;
+- version.
 
-queued
-running
-completed
-failed
+Test:
 
-Progress should identify stages, for example:
-
-- Extracting requirements
-- Researching company
-- Finding hiring information
-- Researching interviews
-- Generating questions
-- Checking coverage
-- Filling coverage gaps
-- Building schedule
-- Validating kit
-- Saving kit
-
-Handle duplicate triggers with idempotency/concurrency protection.
+save -> reload -> edit -> reload -> regenerate -> reload -> practice -> reload.
 
 ---
 
-# Phase 20 — Builder
+# 23. Long-Running Generation
 
-The builder is a major human-review area.
+The assessment notes generation can take around 90 seconds and can fail halfway.
+
+States:
+
+- queued;
+- running;
+- completed;
+- failed.
+
+Progress:
+
+- extracting requirements;
+- researching company;
+- finding hiring information;
+- researching interviews;
+- generating questions;
+- checking coverage;
+- filling gaps;
+- building schedule;
+- validating;
+- saving.
+
+Test:
+
+- normal long run;
+- failure halfway;
+- retry;
+- refresh during run;
+- duplicate trigger;
+- stale job;
+- completed job requested again.
+
+Prevent concurrent generation from corrupting a kit.
+
+---
+
+# 24. Builder
 
 Must support:
 
-- inline edit question;
-- inline edit answer outline;
-- inline edit flashcard;
-- inline edit company brief;
-- reorder questions;
-- move question between categories;
+- inline question edit;
+- inline answer-outline edit;
+- inline flashcard edit;
+- inline brief edit;
+- question reorder;
+- category movement;
 - add question;
 - delete question;
 - add flashcard;
 - delete flashcard;
-- regenerate company brief;
-- regenerate one question category;
+- regenerate brief;
+- regenerate one category;
 - regenerate schedule.
 
-Edits should feel immediate. Do not save every keystroke through a blocking network request.
+Interaction tests:
+
+- edit then regenerate another section;
+- edit then regenerate same category;
+- add then regenerate;
+- delete then regenerate;
+- reorder then regenerate;
+- move category then regenerate;
+- edit flashcard then regenerate;
+- edit brief then regenerate schedule.
+
+Edits should feel immediate rather than saving every keystroke synchronously.
 
 ---
 
-# Phase 21 — Regeneration State Model
+# 25. Regeneration State
 
-This is one of the most important design decisions.
+Represent generated/user state explicitly.
 
-For generated content:
+Recommended:
 
-origin=generated
+- `origin=generated|user_added`
+- `is_edited`
+- `is_pinned`
+- `version`
+- timestamps
 
-For user-created:
+Regeneration should preserve:
 
-origin=user_added
+- user-added;
+- edited;
+- pinned.
 
-When user edits:
+It may replace:
 
-is_edited=true
+- generated;
+- unedited;
+- unpinned.
 
-When user pins:
+Hard test:
 
-is_pinned=true
-
-Regeneration of one category must:
-
-1. load current kit;
-2. identify the targeted section;
-3. preserve user_added items;
-4. preserve edited items;
-5. preserve pinned items;
-6. replace only generated + unedited + unpinned content;
-7. reconcile stable IDs;
-8. rerun validation;
-9. rerun coverage;
-10. update schedule if necessary without destroying unrelated user edits.
-
-Test this with explicit before/after fixtures.
+1. generate category;
+2. edit one question;
+3. pin another;
+4. add manual question;
+5. delete a generated question;
+6. regenerate category;
+7. verify protected items survive;
+8. verify replaceable generated items can change;
+9. validate;
+10. rerun coverage;
+11. reconcile schedule.
 
 ---
 
-# Phase 22 — Practice Mode
-
-UI:
-
-one flashcard at a time.
+# 26. Practice Mode
 
 Flow:
 
 Show front -> reveal answer -> confidence -> covered/uncovered -> next
 
-Store confidence per user/card.
+Confidence:
 
-Simple valid strategy:
+- 1 low;
+- 2 medium;
+- 3 high.
 
-- confidence 1 = low
-- confidence 2 = medium
-- confidence 3 = high
+Next session may use confidence-weighted ordering; document the exact strategy.
 
-Next session sorts primarily by lowest confidence, then by least recently reviewed.
+Test:
 
-Document the chosen strategy.
-
-Show:
-
-- covered count;
-- uncovered count;
-- current card;
-- confidence state.
+- hidden answer;
+- reveal;
+- all confidence values;
+- covered;
+- uncovered;
+- persistence;
+- next-session ordering.
 
 ---
 
-# Phase 23 — Frontend UX
+# 27. Frontend UX
 
 Next.js + Tailwind.
 
-Required states:
+Required:
 
-- empty;
-- loading;
-- progress;
+- reusable components;
+- sensible state boundaries;
+- loading state;
+- empty state;
+- error state;
+- progress state;
 - partial failure;
-- complete;
+- immediate-feeling edits/reordering;
+- laptop usability;
+- phone usability;
+- keyboard navigation.
+
+Test:
+
+- slow generation;
+- refresh;
+- partial research failure;
+- API failure;
 - validation failure;
-- network failure.
-
-Responsive:
-
-- laptop;
-- phone.
-
-Keyboard:
-
-- logical tab order;
-- accessible controls;
-- visible focus;
-- keyboard-friendly editing/reordering where practical.
-
-Use reusable components and sensible state boundaries.
+- regeneration in progress;
+- edit while another operation runs;
+- keyboard tab/focus;
+- mobile layout.
 
 ---
 
-# Phase 24 — Backend API Separation
+# 28. Backend Separation
 
-Separate concerns:
+Separate:
 
+```
 auth/
 retrieval/
 crawler/
@@ -913,98 +1030,282 @@ extraction/
 generation/
 coverage/
 schedule/
+persistence/
 kits/
 practice/
 evaluation/
+```
 
-Do not put the entire workflow into one Express route.
-
-Use service boundaries so the evaluator can call the same pipeline directly.
+The evaluator must be able to invoke the same pipeline.
 
 ---
 
-# Phase 25 — Mandatory Batch Evaluator
+# 29. API Validation
+
+Validate every incoming request.
+
+Test:
+
+- missing fields;
+- wrong types;
+- unexpected fields;
+- invalid IDs;
+- unauthorized IDs;
+- invalid days;
+- malformed URLs;
+- invalid update;
+- invalid regeneration target;
+- duplicate generation.
+
+Validate generated kits before saving.
+
+---
+
+# 30. Duplicate and Concurrency Cases
+
+The assessment explicitly includes duplicate description/company submission.
+
+Test:
+
+- same JD + same company + same days;
+- same JD + same company + different days;
+- same JD + different company;
+- equivalent URL normalization;
+- simultaneous duplicate creation;
+- simultaneous regeneration;
+- stale update against newer version.
+
+Choose/document deterministic behavior and prevent data loss.
+
+---
+
+# 31. Failure Semantics
+
+## Source failure
+
+Examples:
+
+- timeout;
+- 404;
+- unavailable hiring page.
+
+Expected:
+
+- record/skip source;
+- continue where possible.
+
+## Partial research
+
+Expected:
+
+- `status=ok`;
+- honest gaps;
+- no fabricated evidence.
+
+## Pipeline failure
+
+Examples:
+
+- no valid kit can be produced;
+- repeated invalid model output;
+- unrecoverable persistence error.
+
+Expected:
+
+- `status=failed`;
+- structured error.
+
+---
+
+# 32. Mandatory Batch Evaluator
 
 Implement exactly:
 
+```bash
 npm run evaluate -- --input <cases.json> --output <kits.json>
+```
 
 Requirements:
 
-- read JSON array;
-- validate each case;
-- call the SAME pipeline used by the application;
-- use case.days;
-- write Appendix B shape;
-- continue after failed cases;
-- preserve input IDs;
-- record structured failures;
-- support local company URLs;
-- follow relative links;
-- work from a clean clone;
-- environment variables documented in .env.example.
+- JSON array input;
+- same pipeline as web application;
+- uses each case's `days`;
+- Appendix B output;
+- continues after failure;
+- preserves IDs;
+- structured errors;
+- local company URLs supported;
+- relative links supported;
+- clean-clone operation;
+- environment variables documented.
 
-Never implement a second simplified evaluator pipeline.
-
----
-
-# Phase 26 — Failure Matrix
-
-Test each case:
-
-| Case | Expected behavior |
-|---|---|
-| invalid URL | structured failure or honest retrieval failure |
-| 404 | source failure; do not fabricate company research |
-| timeout | retry/backoff, then record failure |
-| no hiring page | valid kit with honest missing research |
-| thin JD | thin honest kit |
-| no public interview discussion | valid kit with no fabricated claims |
-| malformed model JSON | validate/retry/repair within bounds |
-| incomplete model output | reject/retry; never persist invalid kit |
-| provider 429 | backoff/retry |
-| transient 5xx | backoff/retry |
-| duplicate submission | deterministic duplicate handling |
-| 1 day | exactly one schedule day |
-| 60 days | exactly 60 schedule days |
+Performance test five cases within fifteen minutes including retries.
 
 ---
 
-# Phase 27 — Automated Tests
+# 33. Comprehensive Edge-Case Matrix
 
-Minimum high-value tests:
+## JD
 
-## Structure
+- [ ] empty;
+- [ ] whitespace;
+- [ ] two-line;
+- [ ] normal;
+- [ ] very long;
+- [ ] Unicode;
+- [ ] duplicated sections;
+- [ ] no explicit requirements;
+- [ ] technical only;
+- [ ] behavioural only;
+- [ ] domain only;
+- [ ] mixed;
+- [ ] conflicting wording;
+- [ ] requirement repeated in responsibilities.
 
-- Appendix A required fields;
-- exact field names;
-- valid difficulty;
-- integer minutes;
-- stable IDs;
-- schedule question IDs point to questions.
+## Company
 
-## Coverage
+- [ ] valid;
+- [ ] invalid;
+- [ ] 404;
+- [ ] timeout;
+- [ ] 403;
+- [ ] 429;
+- [ ] 5xx;
+- [ ] redirect;
+- [ ] redirect loop;
+- [ ] localhost evaluator;
+- [ ] relative links;
+- [ ] no hiring page;
+- [ ] no about page;
+- [ ] sparse site;
+- [ ] large site;
+- [ ] deep hiring page;
+- [ ] hiring content in blog/handbook.
 
-- covered requirement;
-- uncovered nice requirement;
-- uncovered must requirement;
-- second-pass closure;
-- invalid requirement reference.
+## Public research
+
+- [ ] rich;
+- [ ] absent;
+- [ ] unavailable;
+- [ ] stale;
+- [ ] contradictory;
+- [ ] irrelevant;
+- [ ] instruction-like malicious text.
+
+## LLM
+
+- [ ] valid JSON;
+- [ ] invalid JSON;
+- [ ] truncated JSON;
+- [ ] incomplete JSON;
+- [ ] wrong types;
+- [ ] extra fields;
+- [ ] invalid category;
+- [ ] invalid difficulty;
+- [ ] invented requirement;
+- [ ] empty answer;
+- [ ] 429;
+- [ ] 5xx;
+- [ ] timeout.
+
+## State
+
+- [ ] edit;
+- [ ] add;
+- [ ] delete;
+- [ ] reorder;
+- [ ] move category;
+- [ ] pin;
+- [ ] regenerate;
+- [ ] concurrent regeneration;
+- [ ] stale update;
+- [ ] refresh during generation;
+- [ ] session expiry.
 
 ## Schedule
 
-- exactly N days;
+- [ ] 1 day;
+- [ ] normal;
+- [ ] 60 days;
+- [ ] too few questions;
+- [ ] many questions;
+- [ ] many must-haves;
+- [ ] no nice-to-haves;
+- [ ] high difficulty;
+- [ ] mixed difficulty.
+
+## Batch
+
+- [ ] one case;
+- [ ] five cases;
+- [ ] mixed failures;
+- [ ] duplicate cases;
+- [ ] invalid case;
+- [ ] local server;
+- [ ] relative links;
+- [ ] large batch.
+
+---
+
+# 34. Security Test Matrix
+
+Test:
+
+- authentication bypass;
+- ownership bypass;
+- SSRF;
+- private IP;
+- loopback;
+- DNS-to-private resolution;
+- redirect SSRF;
+- oversized response;
+- unsupported content;
+- malicious HTML;
+- prompt injection in JD;
+- prompt injection in crawled page;
+- prompt injection in public discussion;
+- secret leakage in logs;
+- session leakage.
+
+Do not render untrusted HTML as executable application markup.
+
+---
+
+# 35. Automated Test Suite
+
+Minimum:
+
+## Structure
+
+- Appendix A;
+- Appendix B;
+- exact field names;
+- ID integrity;
+- difficulty;
+- integer minutes.
+
+## Coverage
+
+- covered;
+- uncovered nice;
+- uncovered must;
+- second pass;
+- invalid reference.
+
+## Schedule
+
+- exact N days;
 - 1 day;
 - 60 days;
-- must-have requirements represented;
-- high-priority material earlier;
+- must-have representation;
+- priority/difficulty ordering;
 - integer minutes.
 
 ## Regeneration
 
-- edited question survives;
-- pinned question survives;
-- user-added question survives;
+- edited survives;
+- pinned survives;
+- user-added survives;
 - unrelated category survives;
 - schedule regeneration preserves content.
 
@@ -1016,14 +1317,14 @@ Minimum high-value tests:
 - 404;
 - 429;
 - retry;
-- robots.txt;
-- size limit;
+- robots;
+- size;
 - content type;
-- SSRF/private-address protection.
+- SSRF.
 
-## Authentication
+## Auth
 
-- protected route;
+- protected routes;
 - ownership isolation;
 - logout;
 - invalid session.
@@ -1031,279 +1332,387 @@ Minimum high-value tests:
 ## Batch
 
 - multiple cases;
-- one failure does not abort others;
-- exact output shape;
-- same pipeline as application.
+- failure continuation;
+- exact output;
+- same pipeline.
 
 ---
 
-# Phase 28 — Observability
+# 36. Observability
 
-For every generation run record enough information to debug:
+Track per generation:
 
 - run ID;
 - kit ID;
 - current stage;
 - elapsed time;
-- source URLs attempted;
+- source attempts;
 - successful sources;
 - failed sources;
-- retry counts;
+- retries;
 - LLM calls;
 - validation failures;
 - coverage before second pass;
 - coverage after second pass;
 - final status.
 
-Do not log:
+Never log:
 
 - passwords;
-- session secrets;
 - API keys;
-- unnecessary sensitive user data.
+- session secrets;
+- unnecessary sensitive data.
 
 ---
 
-# Phase 29 — Deployment
+# 37. Optional Creative Feature
 
-Deploy both:
+Only after mandatory functionality.
 
-- frontend;
-- backend.
-
-Make both publicly reachable.
-
-Securely configure environment variables.
-
-Recommended deployment approach:
-
-Frontend -> Next.js hosting
-Backend -> Node/Express hosting
-Database -> MongoDB free tier
-
-Document:
-
-- local setup;
-- production setup;
-- environment variables;
-- URLs;
-- CORS;
-- database configuration.
-
-Verify from a clean environment.
-
----
-
-# Phase 30 — README Completion
-
-README must include:
-
-1. Project overview.
-2. Tech stack and justification.
-3. Local setup.
-4. Deployment setup.
-5. Exact batch command.
-6. LLM provider/model.
-7. High-level architecture.
-8. Retrieval approach.
-9. Sources used.
-10. Research/generation sequence.
-11. Coverage and second pass.
-12. Generated/edited/pinned state model.
-13. Schedule allocation algorithm.
-14. Creative feature, if any.
-15. Key design decisions.
-16. Trade-offs.
-17. Known limitations.
-18. Security decisions.
-19. Edge-case handling.
-20. Testing instructions.
-
----
-
-# Phase 31 — Optional Creative Feature
-
-Only add this after all mandatory requirements work.
-
-A practical choice:
+Possible implementation:
 
 ## Weak Spots Report
 
-Use deterministic data already produced by the app:
+Use existing deterministic data:
 
 - must-have requirements;
-- question coverage;
+- coverage;
 - practice confidence;
 - uncovered/low-confidence areas.
 
-Show:
+Show preparation areas derived from those signals.
 
-- requirements with weak coverage;
-- low-confidence flashcards;
-- recommended preparation focus.
-
-Why:
-
-It directly helps the candidate decide what to study next and uses existing application data instead of adding unrelated scope.
+This is optional and must not delay mandatory requirements.
 
 ---
 
-# Phase 32 — Final End-to-End Verification
+# 38. Deployment
 
-Run:
+Mandatory:
 
-npm install
+- public frontend;
+- reachable backend;
+- secure environment variables;
+- documented variables.
 
-npm test
+Smoke-test production:
 
-npm run build
-
-npm run evaluate -- --input evaluation/cases.json --output evaluation/kits.json
-
-Then verify:
-
-- clean clone works;
-- no hard-coded local paths;
-- .env.example is complete;
-- batch command works;
-- five-case run is within 15 minutes;
-- failed cases do not abort the batch;
-- Appendix A is exact;
-- all must-have requirements are covered;
-- schedule day count is exact;
-- regeneration preserves edits;
-- practice works;
-- mobile UI works;
-- keyboard navigation works;
-- deployment works.
+- register;
+- login;
+- create kit;
+- observe progress;
+- complete generation;
+- edit;
+- regenerate;
+- practice;
+- verify backend;
+- run batch from clean clone.
 
 ---
 
-# Phase 33 — Walkthrough Video Checklist
+# 39. README
+
+Include:
+
+1. overview;
+2. tech stack;
+3. justification;
+4. local setup;
+5. deployed setup;
+6. exact batch command;
+7. LLM provider/model;
+8. architecture;
+9. retrieval;
+10. sources;
+11. sequencing;
+12. coverage;
+13. second pass;
+14. generated/edited/pinned state;
+15. schedule algorithm;
+16. creative feature;
+17. design decisions;
+18. trade-offs;
+19. limitations;
+20. security;
+21. edge cases;
+22. tests.
+
+---
+
+# 40. Walkthrough Video
 
 3–4 minutes.
 
 Show:
 
-1. Create kit from pasted JD + company URL.
-2. Generation progress.
-3. Research sources.
-4. Generated company brief.
-5. Role breakdown.
-6. Categorized questions.
-7. Coverage gap detected.
-8. Second pass fills the gap.
-9. Edit a question.
-10. Reorder/move a question.
-11. Regenerate its category.
-12. Demonstrate that the manual edit survived.
-13. Practice a flashcard.
-14. Show confidence/coverage.
-15. Show schedule.
-16. Show creative feature if implemented.
-17. State one design decision you would defend.
+1. create from JD + company URL;
+2. progress;
+3. research;
+4. company brief;
+5. role;
+6. categorized questions;
+7. coverage gap;
+8. second pass;
+9. edit;
+10. reorder/move;
+11. category regeneration;
+12. preservation of manual edit;
+13. flashcard practice;
+14. confidence/coverage;
+15. schedule;
+16. creative feature if included;
+17. one defensible design decision.
 
 ---
 
-# Phase 34 — Final Submission Checklist
+# 41. Final Traceability Matrix
 
-## Repository
+| PDF requirement | Implementation | Verification |
+|---|---|---|
+| Authentication | auth/session | auth tests |
+| Own kits only | owner-scoped persistence | isolation tests |
+| JD input | form/API | input tests |
+| Multi-role | batch/evaluator | batch tests |
+| Company crawl | crawler/ranker | crawler fixtures |
+| Hiring discovery | dynamic link ranking | crawl fixtures |
+| Public research | research service | source tests |
+| Source failure | source error model | failure tests |
+| Rate limits | retry/backoff | retry tests |
+| Sequential pipeline | orchestrator | pipeline logs/tests |
+| Requirement extraction | extraction service | JD fixtures |
+| Question generation | targeted generators | generation tests |
+| Coverage | deterministic checker | coverage tests |
+| Second pass | gap loop | second-pass tests |
+| Exact kit | serializer/schema | structure tests |
+| Builder | UI/API | interaction tests |
+| Regeneration | metadata/reconciliation | preservation tests |
+| Practice | practice service/UI | practice tests |
+| Schedule | deterministic allocator | schedule tests |
+| Batch command | evaluation CLI | clean-clone test |
+| Edge cases | failure handling | edge matrix |
+| Security | URL/content/session controls | security tests |
+| Frontend | Next.js/Tailwind | UX verification |
+| Backend | Node/Express | API tests |
+| Deployment | frontend/backend | production smoke test |
+| README | documentation | final review |
+| Walkthrough | recording | submission check |
 
-- [ ] Public/access granted.
-- [ ] Complete source.
-- [ ] Meaningful commit history.
-- [ ] README complete.
-- [ ] .env.example complete.
-- [ ] Mandatory evaluator works from clean clone.
+---
 
-## Automated 55 points
+# 42. Final End-to-End Verification
 
-- [ ] Requirement extraction.
-- [ ] No invented requirements.
-- [ ] Correct must/nice classification.
-- [ ] Requirement coverage.
-- [ ] Exact schedule days.
-- [ ] Schedule allocation.
-- [ ] Company crawl.
-- [ ] Hiring discovery.
-- [ ] Public interview research.
-- [ ] Separate generation steps.
-- [ ] Deterministic coverage.
-- [ ] Second pass.
-- [ ] Robust failures.
-- [ ] Structure validation.
-- [ ] Tests.
+From a clean clone:
 
-## Human 45 points
+```bash
+npm install
+npm test
+npm run build
+npm run evaluate -- --input evaluation/cases.json --output evaluation/kits.json
+```
 
-- [ ] Builder editing.
-- [ ] Reordering.
-- [ ] Regeneration preservation.
-- [ ] Loading state.
-- [ ] Empty state.
-- [ ] Error state.
-- [ ] Responsive UI.
-- [ ] Keyboard access.
-- [ ] Practice mode.
-- [ ] Creative feature.
-- [ ] Architecture explanation.
+Verify:
 
-## Deployment
+- clean clone works;
+- no hidden local paths;
+- .env.example is complete;
+- batch command works;
+- five cases finish within 15 minutes;
+- failures do not abort batch;
+- Appendix A exact;
+- Appendix B exact;
+- must-have coverage;
+- exact schedule days;
+- valid question IDs;
+- edits survive regeneration;
+- practice persists;
+- mobile UI;
+- keyboard access;
+- production deployment.
 
-- [ ] Frontend public URL.
-- [ ] Backend reachable.
-- [ ] Database connected.
-- [ ] Environment variables secure.
-- [ ] Production URL tested.
+---
+
+# 43. Final Submission Gate
+
+## Automated areas
+
+- [ ] must-have extraction;
+- [ ] no invented requirements;
+- [ ] correct must/nice;
+- [ ] question coverage;
+- [ ] exact schedule;
+- [ ] deterministic schedule;
+- [ ] crawl;
+- [ ] hiring discovery;
+- [ ] public research;
+- [ ] separate generation;
+- [ ] deterministic coverage;
+- [ ] second pass;
+- [ ] robust failures;
+- [ ] structure validation;
+- [ ] tests;
+- [ ] batch performance.
+
+## Human-review areas
+
+- [ ] builder;
+- [ ] editing;
+- [ ] reordering;
+- [ ] category movement;
+- [ ] regeneration preservation;
+- [ ] loading;
+- [ ] empty;
+- [ ] error;
+- [ ] responsive;
+- [ ] keyboard;
+- [ ] practice;
+- [ ] creative feature;
+- [ ] README reasoning.
 
 ## Submission
 
-- [ ] GitHub repository.
-- [ ] Deployment link.
-- [ ] 3–4 minute walkthrough.
-- [ ] README.
+- [ ] GitHub repository/access;
+- [ ] complete source;
+- [ ] meaningful commits;
+- [ ] public deployment;
+- [ ] README;
+- [ ] batch command;
+- [ ] walkthrough.
 
 ---
 
-# Recommended Build Order for This Repository
+# 44. One-by-One Execution Order
 
-Do not jump directly to UI polish.
+Execute and verify in this order:
 
-Execute in this exact order:
+1. Exact Appendix A/B schemas.
+2. Structure/contract tests.
+3. Input validation.
+4. Secure URL retrieval.
+5. Page cleaning.
+6. Company crawler.
+7. Link ranking/hiring discovery.
+8. JD extraction.
+9. Public interview research.
+10. LLM abstraction.
+11. Company brief.
+12. Targeted question generation.
+13. Flashcards.
+14. Deterministic coverage.
+15. Second pass.
+16. Deterministic schedule.
+17. Full pipeline.
+18. Persistence.
+19. Authentication/ownership.
+20. Batch evaluator.
+21. Backend API.
+22. Next.js/Tailwind UI.
+23. Builder.
+24. Regeneration preservation.
+25. Practice mode.
+26. Progress/error UX.
+27. Full edge/security tests.
+28. Optional creative feature.
+29. Deployment.
+30. Clean-clone verification.
+31. README finalization.
+32. Walkthrough video.
+33. Final submission gate.
 
-1. Exact Appendix A/B schemas
-2. Tests for schemas
-3. Retrieval/security subsystem
-4. JD extraction
-5. Company crawler
-6. Public interview research
-7. LLM abstraction
-8. Company brief generation
-9. Question generation
-10. Deterministic coverage
-11. Second pass
-12. Deterministic schedule
-13. Full pipeline orchestration
-14. MongoDB persistence
-15. Authentication/ownership
-16. Batch evaluator
-17. Backend API
-18. Next.js UI
-19. Builder editing/reordering
-20. Regeneration preservation
-21. Practice mode
-22. Progress/error UX
-23. Optional weak-spots feature
-24. Full automated test suite
-25. Deployment
-26. Clean-clone evaluation
-27. README finalization
-28. Walkthrough video
+## Core architecture
 
-The critical engineering principle is:
+```
+Input
+  ↓
+Validation
+  ↓
+JD Requirement Extraction
+  ↓
+Company Homepage Retrieval
+  ↓
+Page Cleaning
+  ↓
+Link Discovery + Ranking
+  ↓
+Targeted Company Research
+  ↓
+Hiring-Process Research
+  ↓
+Public Interview Research
+  ↓
+Company Brief
+  ↓
+Requirement/Category-Specific Questions
+  ↓
+Flashcards
+  ↓
+DETERMINISTIC COVERAGE CHECK
+  ↓
+Missing Requirements
+  ↓
+TARGETED SECOND PASS
+  ↓
+DETERMINISTIC COVERAGE RECHECK
+  ↓
+DETERMINISTIC SCHEDULE
+  ↓
+FINAL VALIDATION
+  ↓
+Persistence
+  ↓
+Builder / Practice
+```
 
-JD extraction -> evidence retrieval -> targeted generation -> deterministic coverage -> targeted second pass -> deterministic schedule -> validation -> persistence
+The central engineering rule is:
 
-Never:
+**JD extraction -> evidence retrieval -> targeted generation -> deterministic coverage -> targeted second pass -> deterministic schedule -> validation -> persistence**
 
-JD + company URL -> one giant LLM prompt -> final JSON
+Not:
+
+**JD + company URL -> one giant LLM prompt -> final JSON**
+
+---
+
+# 45. Engineering Decision Record
+
+For each significant decision, record:
+
+- problem;
+- chosen approach;
+- alternatives;
+- reason;
+- trade-off;
+- test protecting the behavior.
+
+At minimum:
+
+1. authentication/session;
+2. crawler/link ranking;
+3. SSRF;
+4. LLM provider;
+5. retries/backoff;
+6. coverage;
+7. second-pass stopping;
+8. schedule;
+9. generated/edited/pinned state;
+10. practice ordering;
+11. duplicate generation;
+12. batch failures;
+13. deployment.
+
+---
+
+# 46. Assessment Mindset
+
+The supplied assessment says the purpose is not simply to produce a large application. Reviewers are looking for the engineering judgment underneath:
+
+- how the problem is broken into steps;
+- what deterministic logic is kept out of the model;
+- how data that cannot be controlled is handled;
+- how missing evidence is handled;
+- how edits survive regeneration;
+- how failures are isolated;
+- how the system is tested.
+
+Build one phase, test it, commit it, then move to the next.
+
+**This file is the project execution checklist. Update checkboxes as implementation progresses.**
