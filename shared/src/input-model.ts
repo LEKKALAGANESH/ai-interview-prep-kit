@@ -4,6 +4,8 @@ export interface NormalizedKitInput {
   job_description: string;
   company_url: string;
   days_available: number;
+  llm_provider?: "gemini" | "openai" | "anthropic" | "groq" | "ollama";
+  llm_model?: string;
 }
 
 export interface NormalizedBatchCase {
@@ -22,6 +24,8 @@ export function normalizeKitInput(input: KitInput): NormalizedKitInput {
     job_description: input.jd.trim(),
     company_url: normalizeUrl(input.company_url),
     days_available: input.days,
+    llm_provider: input.llm_provider,
+    llm_model: input.llm_model?.trim() || undefined,
   };
 }
 
@@ -34,6 +38,8 @@ export function normalizeBatchInput(
       jd: item.jd,
       company_url: item.company_url,
       days: item.days,
+      llm_provider: item.llm_provider,
+      llm_model: item.llm_model,
     }),
   }));
 }
