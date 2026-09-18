@@ -2,7 +2,7 @@
 import { useState } from "react";
 import PracticeSection from "./practice";
 type Requirement={id:string;text:string;priority:"must"|"nice";kind:string};
-type Question={id:string;prompt:string;answer_outline:string;difficulty:number;requirement_ids:string[]};
+type Question={id:string;prompt:string;answer_outline:string;difficulty:number;requirement_ids:string[];category:"technical"|"behavioural"|"system-design"|"company-fit"};
 type Kit={source:{company:string;role:string;company_url:string;location:string};company_brief:{summary:string;what_they_do:string;sources:string[]};role:{title:string;seniority:string;responsibilities:string[];requirements:Requirement[]};questions:Question[];schedule:{days_available:number;days:{day:number;focus:string;question_ids:string[];minutes:number}[]};coverage:{uncovered_requirement_ids:string[]}};
 const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:4000";
 const PROVIDERS=[
