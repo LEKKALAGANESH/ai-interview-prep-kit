@@ -5,11 +5,19 @@ export interface KitStore {
   getById(id: string): Promise<Kit | null>;
 }
 
+export function buildKitId(kit: Kit): string {
+  return [
+    kit.source.company_url,
+    kit.source.role,
+    kit.source.jd_chars,
+  ].join("|");
+}
+
 export class InMemoryKitStore implements KitStore {
   private readonly kits = new Map<string, Kit>();
 
   async save(kit: Kit): Promise<Kit> {
-    const id = kit.source.company_url + "|" + kit.source.role + "|" + kit.source.jd_chars;
+    const id = buildKitId(kit);
     this.kits.set(id, structuredClone(kit));
     return structuredClone(kit);
   }
