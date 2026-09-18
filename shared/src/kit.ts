@@ -41,7 +41,7 @@ export const ScheduleDaySchema = z.object({
   day: z.number().int().positive(),
   focus: z.string().min(1),
   question_ids: z.array(z.string()),
-  duration_minutes: z.number().int().positive(),
+  duration_minutes: z.number().int().min(0),
 });
 
 export const KitSchema = z.object({
