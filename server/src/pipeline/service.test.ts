@@ -150,6 +150,9 @@ test("propagates persistence failures and never reports a successful save", asyn
     async getById() {
       return null;
     },
+    async withRequestLock(_id, operation) {
+      return operation();
+    },
     async save() {
       throw new Error("database unavailable");
     },
