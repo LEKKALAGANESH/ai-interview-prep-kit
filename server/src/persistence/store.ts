@@ -36,6 +36,7 @@ export function buildKitId(input: NormalizedKitInput): string {
 export class InMemoryKitStore implements KitStore {
   private readonly kits = new Map<string, Kit>();
   private readonly practice = new Map<string, PracticeState>();
+  private readonly locks = new Map<string, Promise<void>>();
 
   async save(id: string, kit: Kit): Promise<Kit> {
     this.kits.set(id, structuredClone(kit));
