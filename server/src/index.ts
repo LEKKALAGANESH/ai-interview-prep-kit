@@ -6,7 +6,7 @@ const port = Number(process.env.PORT || 4000);
 const store = createKitStore();
 
 const server = createServer(async (request, response) => {
-  if (request.url !== "/api/kits") {
+  if (request.url === "/health") {\n    response.statusCode = 200;\n    response.setHeader("content-type", "application/json");\n    response.end(JSON.stringify({ ok: true }));\n    return;\n  }\n\n  if (request.url !== "/api/kits") {
     response.statusCode = 404;
     response.setHeader("content-type", "application/json");
     response.end(JSON.stringify({ error: { code: "NOT_FOUND", message: "Route not found" } }));
