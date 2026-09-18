@@ -43,6 +43,12 @@ export class InMemoryKitStore implements KitStore {
     return kit ? structuredClone(kit) : null;
   }
 
+  async update(id: string, kit: Kit): Promise<Kit> {
+    if (!this.kits.has(id)) throw new Error(`Unknown kit: ${id}`);
+    this.kits.set(id, structuredClone(kit));
+    return structuredClone(kit);
+  }
+
   async withRequestLock<T>(_id: string, operation: () => Promise<T>): Promise<T> {
     return operation();
   }
@@ -121,6 +127,16 @@ export class JsonFileKitStore implements KitStore {
   async getById(id: string): Promise<Kit | null> {
     const kits = await this.readAll();
     return kits[id] ? structuredClone(kits[id]) : null;
+  }
+
+  async update(id: string, kit: Kit): Promise<Kit> {
+    return this.withLock(async () => {
+      const kits = await this.readAll();
+      if (!kits[id]) throw new Error(`Unknown kit: ${id}`);
+      kits[id] = structuredClone(kit);
+      await this.writeAll(kits);
+      return structuredClone(kit);
+    });
   }
 }
 
