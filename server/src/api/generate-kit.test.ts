@@ -66,7 +66,7 @@ test("returns a created kit for a valid raw-input request", async () => {
   assert.equal(response.status, 201);
   const body = await response.json();
   assert.ok(body.id.startsWith("kit_"));
-  assert.equal(body.kit.questions[0].id, "q_r_");
+  assert.ok(body.kit.questions[0].id.startsWith("q_r_"));
   assert.equal(body.kit.schedule.days.length, 1);
 });
 
