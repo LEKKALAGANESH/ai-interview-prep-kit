@@ -44,7 +44,7 @@ export async function checkRobots(
   const url = validateExternalUrl(target, { allowLocalhost: true });
   const robotsUrl = new URL("/robots.txt", url);
 
-  let response: Response;
+  let response: Response | undefined;
   let currentUrl = robotsUrl.href;
 
   try {
@@ -88,6 +88,14 @@ export async function checkRobots(
     return {
       allowed: false,
       source: robotsUrl.href,
+      reason: "robots.txt could not be retrieved",
+    };
+  }
+
+  if (!response) {
+    return {
+      allowed: false,
+      source: currentUrl,
       reason: "robots.txt could not be retrieved",
     };
   }
