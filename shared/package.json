@@ -3,6 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "scripts": { "test": "node --test" },
-  "dependencies": { "zod": "^3.25.76" }
+  "scripts": {
+    "test": "tsx --test src/kit.test.ts"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  }
 }
