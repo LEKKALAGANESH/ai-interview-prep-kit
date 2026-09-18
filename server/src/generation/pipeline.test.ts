@@ -54,7 +54,7 @@ test("second pass generates only uncovered requirements and preserves first-pass
       if (requirement === "SQL") {
         sqlAttempts += 1;
         if (sqlAttempts === 1) {
-          throw new QuestionGenerationError("MODEL_OUTPUT_INVALID", "invalid first-pass output");
+          throw new Error("invalid first-pass output");
         }
         return { questions: [{ prompt: "SQL repair", answer_outline: "SQL outline", difficulty: 2 }] };
       }
@@ -146,7 +146,7 @@ test("stops at the configured maximum pass and remains non-shippable when a must
     async generate(request) {
       const match = request.userPrompt.match(/Requirement: ([^\n]+)/);
       calls.push(match?.[1] ?? "");
-      throw new QuestionGenerationError("MODEL_OUTPUT_INVALID", "still invalid");
+      throw new Error("still invalid");
     },
   };
 
@@ -170,7 +170,7 @@ test("stops when a repair pass makes no progress", async () => {
     async generate(request) {
       const match = request.userPrompt.match(/Requirement: ([^\n]+)/);
       if (match?.[1] === "SQL") {
-        throw new QuestionGenerationError("MODEL_OUTPUT_INVALID", "no SQL output");
+        throw new Error("no SQL output");
       }
       return { questions: [{ prompt: "React", answer_outline: "outline", difficulty: 2 }] };
     },
@@ -231,8 +231,8 @@ test("reuses the existing provider retry/error boundary during second-pass gener
   assert.equal(calls, 3);
   assert.equal(result.coverage.can_ship, false);
   assert.deepEqual(result.coverage.uncovered_must_requirement_ids, ["r2"]);
-  assert.equal(result.generation_errors[0].code, "UNKNOWN");
+  assert.equal(result.generation_errors[0].code, "PROVIDER_FAILED");
   assert.equal(result.generation_errors[0].pass, 1);
-  assert.equal(result.generation_errors[1].code, "UNKNOWN");
+  assert.equal(result.generation_errors[1].code, "PROVIDER_FAILED");
   assert.equal(result.generation_errors[1].pass, 2);
 });
