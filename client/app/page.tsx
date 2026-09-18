@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import PracticeSection from "./practice";
 
 type Question={id:string;prompt:string;answer_outline:string;difficulty:number};
 type Kit={questions:Question[];schedule:{days_available:number;days:{day:number;focus:string;question_ids:string[];minutes:number}[]};role:{requirements:{id:string;text:string;priority:string}[]};coverage:{uncovered_requirement_ids:string[]}};
