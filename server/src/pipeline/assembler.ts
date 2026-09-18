@@ -33,7 +33,7 @@ export function assembleKit(
       role: context.role.title,
       location: "",
       jd_chars: input.job_description.length,
-      researched_at: context.research.pages.length ? new Date().toISOString() : new Date().toISOString(),
+      researched_at: new Date().toISOString(),
       pages_used: context.research.pages.map((page) => page.url),
     },
     company_brief: context.companyBrief,
