@@ -211,3 +211,61 @@ test("coalesces concurrent identical requests into one generation", async () => 
   assert.equal(second.reused, true);
   assert.deepEqual(first.kit, second.kit);
 });
+
+
+test("supports the minimum one-day schedule", async () => {
+  const store = new InMemoryKitStore();
+  const result = await generateAndPersistKit(
+    { ...baseInput, days_available: 1 },
+    {
+      ...baseOptions,
+      provider: {
+        async generate() {
+          return {
+            questions: [{
+              prompt: "React question",
+              answer_outline: "Outline",
+              difficulty: 2,
+            }],
+          };
+        },
+      },
+    },
+    store,
+  );
+
+  assert.equal(result.kit.schedule.days_available, 1);
+  assert.deepEqual(result.kit.schedule.days.map((day) => day.day), [1]);
+  assert.deepEqual(result.kit.schedule.days[0].question_ids, ["q_r1_technical_1"]);
+});
+
+test("supports the maximum sixty-day schedule", async () => {
+  const store = new InMemoryKitStore();
+  const result = await generateAndPersistKit(
+    { ...baseInput, days_available: 60 },
+    {
+      ...baseOptions,
+      provider: {
+        async generate() {
+          return {
+            questions: [{
+              prompt: "React question",
+              answer_outline: "Outline",
+              difficulty: 2,
+            }],
+          };
+        },
+      },
+    },
+    store,
+  );
+
+  assert.equal(result.kit.schedule.days_available, 60);
+  assert.equal(result.kit.schedule.days.length, 60);
+  assert.deepEqual(
+    result.kit.schedule.days.map((day) => day.day),
+    Array.from({ length: 60 }, (_, index) => index + 1),
+  );
+  assert.equal(result.kit.schedule.days.reduce((sum, day) => sum + day.question_ids.length, 0), 1);
+  assert.ok(result.kit.schedule.days.every((day) => Number.isInteger(day.minutes) && day.minutes >= 0));
+});
