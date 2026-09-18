@@ -40,8 +40,9 @@ function pathMatches(pathname: string, rule: string): boolean {
 export async function checkRobots(
   target: string,
   fetchImpl: typeof fetch = fetch,
+  options: { allowLocalhost?: boolean } = {},
 ): Promise<RobotsPolicy> {
-  const url = validateExternalUrl(target, { allowLocalhost: true });
+  const url = validateExternalUrl(target, { allowLocalhost: options.allowLocalhost });
   const robotsUrl = new URL("/robots.txt", url);
 
   let response: Response | undefined;
@@ -66,7 +67,7 @@ export async function checkRobots(
       let next: URL;
       try {
         next = new URL(location, currentUrl);
-        validateExternalUrl(next.href, { allowLocalhost: true });
+        validateExternalUrl(next.href, { allowLocalhost: options.allowLocalhost });
       } catch {
         return {
           allowed: false,
