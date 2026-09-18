@@ -45,16 +45,45 @@ export async function checkRobots(
   const robotsUrl = new URL("/robots.txt", url);
 
   let response: Response;
+  let currentUrl = robotsUrl.href;
 
   try {
-    response = await fetchImpl(robotsUrl.href, {
-      method: "GET",
-      redirect: "follow",
-      headers: {
-        accept: "text/plain",
-        "user-agent": "Trao-AI-Interview-Prep-Kit/1.0",
-      },
-    });
+    for (let redirect = 0; redirect <= 5; redirect += 1) {
+      response = await fetchImpl(currentUrl, {
+        method: "GET",
+        redirect: "manual",
+        headers: {
+          accept: "text/plain",
+          "user-agent": "Trao-AI-Interview-Prep-Kit/1.0",
+        },
+      });
+
+      if (![301, 302, 303, 307, 308].includes(response.status)) break;
+
+      const location = response.headers.get("location");
+      if (!location) break;
+
+      let next: URL;
+      try {
+        next = new URL(location, currentUrl);
+        validateExternalUrl(next.href, { allowLocalhost: true });
+      } catch {
+        return {
+          allowed: false,
+          source: currentUrl,
+          reason: "robots.txt redirect destination is unsafe",
+        };
+      }
+      currentUrl = next.href;
+
+      if (redirect === 5) {
+        return {
+          allowed: false,
+          source: currentUrl,
+          reason: "robots.txt redirect limit exceeded",
+        };
+      }
+    }
   } catch {
     return {
       allowed: false,
