@@ -7,10 +7,10 @@ function kit(): Kit {
   return {
     source:{company:"Example",company_url:"https://example.com/",role:"Engineer",location:"",jd_chars:1,researched_at:"now",pages_used:["https://example.com/"]},
     company_brief:{summary:"Example",what_they_do:"Example",sources:["https://example.com/"]},
-    role:{title:"Engineer",seniority:"junior",responsibilities:[],requirements:[{id:"r1",text:"React",kind:"technical",priority:"must"}]},
+    role:{title:"Engineer",seniority:"junior",responsibilities:[],requirements:[{id:"r1",text:"React",kind:"technical",priority:"must"},{id:"r2",text:"Node",kind:"technical",priority:"nice"}]},
     questions:[
       {id:"q1",requirement_ids:["r1"],category:"technical",prompt:"Q1",answer_outline:"A1",difficulty:1},
-      {id:"q2",requirement_ids:["r1"],category:"technical",prompt:"Q2",answer_outline:"A2",difficulty:2}
+      {id:"q2",requirement_ids:["r2"],category:"technical",prompt:"Q2",answer_outline:"A2",difficulty:2}
     ],
     flashcards:[],
     schedule:{days_available:2,days:[
@@ -52,5 +52,5 @@ test("scoped regeneration preserves non-scoped questions",()=> {
 
 test("recalculates coverage after deleting the only covered question",()=> {
   const result=applyBuilderEdit(kit(),{type:"delete_question",question_id:"q1"});
-  assert.deepEqual(result.coverage.uncovered_requirement_ids,[]);
+  assert.deepEqual(result.coverage.uncovered_requirement_ids,["r1"]);
 });
