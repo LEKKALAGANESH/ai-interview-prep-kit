@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { Requirement, Role } from "./kit.js";
 
@@ -37,8 +36,21 @@ function canonicalKey(text: string): string {
     .replace(/\s+/g, " ").trim();
 }
 
+// Stable identifier only; this is deliberately a synchronous, platform-neutral hash,
+// not a cryptographic identifier.
 function stableRequirementId(text: string): string {
-  return `r_${createHash("sha256").update(canonicalKey(text)).digest("hex").slice(0, 10)}`;
+  let hashA = 0x811c9dc5;
+  let hashB = 0x9e3779b9;
+
+  for (const char of canonicalKey(text)) {
+    const code = char.charCodeAt(0);
+    hashA ^= code;
+    hashA = Math.imul(hashA, 0x01000193);
+    hashB ^= code + 0x9e3779b9;
+    hashB = Math.imul(hashB, 0x85ebca6b);
+  }
+
+  return `r_${(hashA >>> 0).toString(16).padStart(8, "0")}${(hashB >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 function containsEvidence(jd: string, requirementText: string): boolean {
