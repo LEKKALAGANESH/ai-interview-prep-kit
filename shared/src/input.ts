@@ -1,11 +1,15 @@
 import { z } from "zod";
 
-const HttpUrlSchema = z.string().trim().url().refine(
+const HttpUrlSchema = z.string().trim().refine(
   (value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
   },
-  { message: "company_url must use http or https" },
+  { message: "company_url must be a valid HTTP or HTTPS URL" },
 );
 
 export const KitInputSchema = z.object({
