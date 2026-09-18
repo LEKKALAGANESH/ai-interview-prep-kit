@@ -128,14 +128,39 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 12.1 | One flashcard/question at a time | ⬜ |
-| 12.2 | Reveal answer | ⬜ |
-| 12.3 | Capture confidence | ⬜ |
-| 12.4 | Show coverage | ⬜ |
-| 12.5 | Persist practice results | ⬜ |
-| 12.6 | Surface low-confidence items in next session | ⬜ |
-| 12.7 | Keyboard-accessible controls | ⬜ |
-| 12.8 | Add practice tests | ⬜ |
+| 12.1 | Display one flashcard/question at a time | 🟢 |
+| 12.2 | Show question before answer | 🟢 |
+| 12.3 | Reveal answer on user action | 🟢 |
+| 12.4 | Record confidence after answering | 🟢 |
+| 12.5 | Support confidence levels consistently | 🟢 |
+| 12.6 | Track practiced question IDs | 🟢 |
+| 12.7 | Track covered requirements during practice | 🟢 |
+| 12.8 | Show current practice progress | 🟢 |
+| 12.9 | Move to next question | 🟢 |
+| 12.10 | Prevent invalid/out-of-range question navigation | 🟢 |
+| 12.11 | Prioritize low-confidence questions for the next session | 🟢 |
+| 12.12 | Persist practice/confidence state | 🟢 |
+| 12.13 | Resume practice after reload | 🟢 |
+| 12.14 | Handle completed practice sessions | 🟢 |
+| 12.15 | Handle empty/no-question kits gracefully | 🟢 |
+| 12.16 | Loading states | 🟢 |
+| 12.17 | Error states | 🟢 |
+| 12.18 | Keyboard accessibility | 🟢 |
+| 12.19 | Responsive laptop/mobile UI | 🟢 |
+| 12.20 | Add practice-mode tests | 🟡 |
+
+### Step 12 implementation notes
+
+- Added shared practice state and deterministic queue logic.
+- Practice presents one generated question at a time, with answer reveal and low / medium / high confidence capture.
+- Practice records question IDs and derives requirement coverage from practiced questions.
+- Completed sessions can start a new session; low-confidence questions are prioritized by the next queue.
+- Practice state is persisted separately from the generated kit so reloads retain results.
+- Added GET /api/kits/:id/practice and POST /api/kits/:id/practice.
+- Added responsive practice UI with loading/error handling and keyboard-operable native buttons.
+- Empty kits and completed sessions are handled explicitly.
+- Practice tests cover confidence recording/completion, low-confidence prioritization, and requirement coverage.
+- Item 12.20 remains 🟡 until the new practice test suite is observed passing in CI/runtime.
 
 ## Step 13 — Frontend Application
 
