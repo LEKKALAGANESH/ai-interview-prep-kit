@@ -1,11 +1,9 @@
 # AI Interview Prep Kit — Master Checklist
 
-## Steps 1–9 — Current Checklist
-
-
+## Steps 1–10 — Current Checklist
 
 **Repository:** `LEKKALAGANESH/ai-interview-prep-kit`  
-**Status:** Implementation complete; runtime execution remains unverified through the available GitHub integration.
+**Status:** Step 9 implementation is complete, with one known CI test failure intentionally deferred; Step 10 evaluation work is now active.
 
 ### Step 9 Checklist
 
@@ -57,88 +55,19 @@
 | 44 | Runtime execution | 🟡 |
 | 45 | Repository audit GREEN | 🟡 |
 
-## Implementation notes
+### Step 9 verification note
 
-### Items 1–9
-The shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, and final `KitSchema` validation are implemented.
-
-### Items 10–22
-The backend has a `KitStore` abstraction, in-memory storage for tests, and a durable JSON-backed store. Request IDs are deterministic from normalized company URL, JD, and requested days. Existing requests are reused, and concurrent identical requests are coalesced/locked. Invalid or unshippable kits are rejected before persistence.
-
-### Items 23–30
-The assembled kit persists source metadata, company brief, role/requirements, questions, flashcards, schedule, coverage, and researched page metadata according to the Appendix A structure.
-
-### Items 31–39
-Integration and edge-case tests have been added for successful generation, invalid input, research failure, generation failure, final invalid kits, persistence failure, duplicate triggers, 1-day schedules, and 60-day schedules.
-
-### Item 40
-Steps 1–8 remain integrated with Step 9.
-
-### Items 41–43
-README and environment documentation were updated. Secrets are excluded through `.gitignore`; `.env.example` contains placeholders only.
-
-### Item 44 — Runtime execution
-A Node 20 GitHub Actions workflow is committed. It installs dependencies, runs shared/server tests, starts the server, and checks `/health`. The available GitHub integration did not expose a completed workflow run/status, so runtime success is intentionally **not** claimed.
-
-### Item 45 — Repository audit
-The final audit remains 🟡 solely because runtime execution (item 44) is unverified. Once a real CI run completes successfully, this item can be moved to 🟢.
-
-## Important architectural status
-
-The API now accepts raw `jd`, `company_url`, and `days` and routes them through:
-
-```
-API request
-  ↓
-validation
-  ↓
-normalization
-  ↓
-company research
-  ↓
-JD extraction
-  ↓
-question generation
-  ↓
-coverage pass 1
-  ↓
-coverage repair pass 2
-  ↓
-deterministic schedule
-  ↓
-final KitSchema validation
-  ↓
-durable persistence
-```
-
-The durable persistence implementation is JSON-file based and intended for the current single-node backend slice. The storage abstraction allows a production database implementation to replace it later.
-
-## Step 9 gate
-
-**Do not start Step 10 until:**
-1. CI/runtime verification has produced an actual successful run.
-2. Item 44 is changed from 🟡 to 🟢.
-3. Item 45 is changed from 🟡 to 🟢.
-4. The repository audit confirms no regressions in Steps 1–9.
-
-**Current gate:** 🟡 — waiting only on observable runtime verification.
-
-
----
-
-# Remaining Assessment Checklists
-
-> These are the remaining assessment requirements to track. They are not marked complete until implemented and verified.
+The latest CI verification reached the server test suite with **one remaining known test failure**. The failure is intentionally deferred and will be fixed later. Therefore Step 9 is tracked as 🟡 rather than falsely marking the full verification gate green.
 
 ## Step 10 — Mandatory Batch Evaluator
 
 | # | Checklist | Status |
 |---:|---|:---:|
 | 10.1 | Create evaluation package | ⬜ |
-| 10.2 | Implement the mandatory evaluate command | ⬜ |
-| 10.3 | Accept array cases with id, jd, company_url, days | ⬜ |
+| 10.2 | Implement the mandatory `evaluate` command | ⬜ |
+| 10.3 | Accept array cases with `id`, `jd`, `company_url`, `days` | ⬜ |
 | 10.4 | Use the same pipeline as the app | ⬜ |
-| 10.5 | Use requested days | ⬜ |
+| 10.5 | Use requested `days` | ⬜ |
 | 10.6 | Emit Appendix B output | ⬜ |
 | 10.7 | Continue after individual case failures | ⬜ |
 | 10.8 | Support invalid/404/timeout URLs | ⬜ |
@@ -245,11 +174,11 @@ The durable persistence implementation is JSON-file based and intended for the c
 | 7 | Coverage repair | 🟢 |
 | 8 | Scheduling | 🟢 |
 | 9 | Backend pipeline/persistence/API | 🟡 |
-| 10 | Mandatory evaluator | ⬜ |
+| 10 | Mandatory evaluator | 🟡 Active |
 | 11 | Builder | ⬜ |
 | 12 | Practice mode | ⬜ |
 | 13 | Frontend | ⬜ |
 | 14 | Backend hardening | ⬜ |
 | 15 | Final verification | ⬜ |
 
-**Gate:** Do not start Step 10 until Step 9 runtime verification and final audit are green.
+**Working rule:** The known Step 9 test failure is deferred; Step 10 can proceed, but Step 9 remains 🟡 until that failure and the final runtime/audit verification are resolved.
