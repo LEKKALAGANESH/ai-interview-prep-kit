@@ -12,5 +12,9 @@
   "dependencies": {
     "@trao/interview-prep-shared": "file:../shared",
     "zod": "^3.25.76"
+  },
+  "exports": {
+    "./pipeline/orchestrator.js": "./src/pipeline/orchestrator.ts",
+    "./persistence/store.js": "./src/persistence/store.ts"
   }
 }
