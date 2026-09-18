@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { generateAndPersistKit } from "./service.js";
-import { InMemoryKitStore } from "../persistence/store.js";
+import { buildKitId, InMemoryKitStore } from "../persistence/store.js";
 import type { KitStore } from "../persistence/store.js";
 import type { Role } from "@trao/interview-prep-shared/kit.js";
 
@@ -142,7 +142,7 @@ test("does not persist when coverage cannot ship", async () => {
     ),
   );
 
-  assert.equal(await store.getById("kit_0"), null);
+  assert.equal(await store.getById(buildKitId({\n    job_description: "React frontend engineer",\n    company_url: "https://example.com/",\n    days_available: 1,\n  })), null);
 });
 
 test("propagates persistence failures and never reports a successful save", async () => {
@@ -176,4 +176,38 @@ test("propagates persistence failures and never reports a successful save", asyn
     ),
     /database unavailable/,
   );
+});
+
+
+test("coalesces concurrent identical requests into one generation", async () => {
+  const store = new InMemoryKitStore();
+  let providerCalls = 0;
+
+  const options = {
+    ...baseOptions,
+    provider: {
+      async generate() {
+        providerCalls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return {
+          questions: [{
+            prompt: "React question",
+            answer_outline: "Outline",
+            difficulty: 2,
+          }],
+        };
+      },
+    },
+  };
+
+  const [first, second] = await Promise.all([
+    generateAndPersistKit(baseInput, options, store),
+    generateAndPersistKit(baseInput, options, store),
+  ]);
+
+  assert.equal(providerCalls, 1);
+  assert.equal(first.id, second.id);
+  assert.equal(first.reused, false);
+  assert.equal(second.reused, true);
+  assert.deepEqual(first.kit, second.kit);
 });
