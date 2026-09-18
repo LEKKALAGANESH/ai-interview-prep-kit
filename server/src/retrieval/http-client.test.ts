@@ -64,3 +64,43 @@ test("rejects responses above the byte limit", async () => {
       error.code === "CONTENT_TOO_LARGE",
   );
 });
+
+test("revalidates redirect destinations before following them", async () => {
+  let calls = 0;
+
+  const fetchImpl: typeof fetch = async () => {
+    calls += 1;
+    return new Response(null, {
+      status: 302,
+      headers: { location: "http://127.0.0.1:8080/admin" },
+    });
+  };
+
+  await assert.rejects(
+    fetchPage("https://example.com", { fetchImpl }),
+    (error: unknown) =>
+      error instanceof RetrievalError &&
+      error.code === "INVALID_URL" &&
+      error.message.includes("Unsafe redirect destination"),
+  );
+
+  assert.equal(calls, 1);
+});
+
+test("enforces a maximum redirect count", async () => {
+  const fetchImpl: typeof fetch = async (input) =>
+    new Response(null, {
+      status: 302,
+      headers: { location: String(input) + "/next" },
+    });
+
+  await assert.rejects(
+    fetchPage("https://example.com", {
+      fetchImpl,
+      maxRedirects: 2,
+    }),
+    (error: unknown) =>
+      error instanceof RetrievalError &&
+      error.code === "REDIRECT_LIMIT",
+  );
+});
