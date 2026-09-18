@@ -56,3 +56,7 @@ export function practiceCoverage(kit: Kit, state: PracticeState): {
     uncovered_requirement_ids: kit.role.requirements.filter((r) => !covered.has(r.id)).map((r) => r.id),
   };
 }
+
+export function startNextPracticeSession(state: PracticeState): PracticeState {
+  return { ...structuredClone(state), current_index: 0, completed: false };
+}
