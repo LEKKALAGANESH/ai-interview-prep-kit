@@ -44,3 +44,35 @@ test("classifies transient server failures", async () => {
     (error: unknown) => error instanceof LlmProviderError && error.code === "TRANSIENT",
   );
 });
+
+test("maps OpenAI-compatible responses into provider output", async () => {
+  const { OpenAIProvider } = await import("./provider.js");
+  const provider = new OpenAIProvider("OpenAI", "https://example.test/chat", "key", "test-model", async (input, init) => {
+    assert.equal(String(input), "https://example.test/chat");
+    assert.equal((init?.headers as Record<string,string>).authorization, "Bearer key");
+    return new Response(JSON.stringify({ choices: [{ message: { content: '{"ok":true}' } }] }), { status: 200 });
+  });
+  assert.deepEqual(await provider.generate({ systemInstruction: "s", userPrompt: "u" }), { ok: true });
+});
+
+test("maps Anthropic message content into provider output", async () => {
+  const { AnthropicProvider } = await import("./provider.js");
+  const provider = new AnthropicProvider("key", "claude-test", async (input, init) => {
+    assert.equal(String(input), "https://api.anthropic.com/v1/messages");
+    const headers = init?.headers as Record<string,string>;
+    assert.equal(headers["x-api-key"], "key");
+    return new Response(JSON.stringify({ content: [{ type: "text", text: '{"ok":true}' }] }), { status: 200 });
+  });
+  assert.deepEqual(await provider.generate({ systemInstruction: "s", userPrompt: "u" }), { ok: true });
+});
+
+test("maps Ollama chat responses into provider output", async () => {
+  const { OllamaProvider } = await import("./provider.js");
+  const provider = new OllamaProvider("http://ollama.test/api/chat", "llama-test", async (_input, init) => {
+    const body = JSON.parse(String(init?.body));
+    assert.equal(body.stream, false);
+    assert.equal(body.format, "json");
+    return new Response(JSON.stringify({ message: { content: '{"ok":true}' } }), { status: 200 });
+  });
+  assert.deepEqual(await provider.generate({ systemInstruction: "s", userPrompt: "u" }), { ok: true });
+});
