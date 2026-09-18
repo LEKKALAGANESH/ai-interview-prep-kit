@@ -6,7 +6,6 @@ import {
   generateQuestionSetWithCoverage,
 } from "./pipeline.js";
 import type { LlmProvider } from "./provider.js";
-import { QuestionGenerationError } from "./generator.js";
 
 test("generates each requirement through its appropriate category", async () => {
   const seen: string[] = [];
