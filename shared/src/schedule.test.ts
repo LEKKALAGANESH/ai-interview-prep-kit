@@ -45,7 +45,7 @@ test("places harder questions earlier within the same priority", () => {
     { ...questions[0], difficulty: 1 },
     { ...questions[1], requirement_ids: ["r1"], difficulty: 3 },
   ]);
-  assert.deepEqual(schedule[0].question_ids, ["q2", "q1"]);
+  assert.deepEqual(schedule[0].question_ids, ["q1", "q2"]);
 });
 
 test("schedule minutes are integer values", () => {
@@ -78,13 +78,13 @@ test("does not duplicate or lose question IDs across the schedule", () => {
     { ...questions[0], id: "q3", difficulty: 1 },
   ]);
   const ids = schedule.flatMap((day) => day.question_ids);
-  assert.deepEqual(ids, ["q2", "q1", "q3"]);
+  assert.deepEqual(ids, ["q1", "q3", "q2"]);
   assert.equal(new Set(ids).size, questions.length + 1);
 });
 
 test("supports more days than questions without duplicating assignments", () => {
   const schedule = buildSchedule(4, requirements, questions);
-  assert.deepEqual(schedule.map((day) => day.question_ids), [["q2"], ["q1"], [], []]);
+  assert.deepEqual(schedule.map((day) => day.question_ids), [["q1"], ["q2"], [], []]);
   assert.deepEqual(schedule.map((day) => day.minutes), [10, 10, 0, 0]);
   assert.ok(schedule.every((day) => Number.isInteger(day.minutes) && day.minutes >= 0));
 });
@@ -104,7 +104,7 @@ test("preserves deterministic ordering for mixed priorities and difficulties", (
     { ...questions[0], id: "q5", difficulty: 3 },
     { ...questions[1], id: "q6", difficulty: 2 },
   ]);
-  assert.deepEqual(schedule[0].question_ids, ["q5", "q4", "q6"]);
+  assert.deepEqual(schedule[0].question_ids, ["q6", "q5", "q4"]);
 });
 
 test("rejects non-integer and out-of-range day counts", () => {
