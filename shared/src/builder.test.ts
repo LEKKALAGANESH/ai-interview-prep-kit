@@ -48,3 +48,9 @@ test("scoped regeneration preserves non-scoped questions",()=> {
   assert.equal(result.questions[1].prompt,"Regenerated");
   assert.equal(result.questions[1].difficulty,3);
 });
+
+
+test("recalculates coverage after deleting the only covered question",()=> {
+  const result=applyBuilderEdit(kit(),{type:"delete_question",question_id:"q1"});
+  assert.deepEqual(result.coverage.uncovered_requirement_ids,[]);
+});
