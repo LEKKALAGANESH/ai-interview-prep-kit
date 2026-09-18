@@ -20,5 +20,4 @@ jobs:
       - run: npm run start --workspace server &
         env:
           PORT: 4000
-      - run: sleep 2 && curl --fail http://127.0.0.1:4000/unknown-route
-        continue-on-error: true
+      - run: sleep 2 && curl --fail http://127.0.0.1:4000/health
