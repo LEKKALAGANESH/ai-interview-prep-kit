@@ -60,7 +60,9 @@ export async function generateAndPersistKit(
     return { ...result, reused: true };
   }
 
-  const promise = generateAndPersistOnce(id, input, options, store);
+  const promise = store.withRequestLock(id, () =>
+    generateAndPersistOnce(id, input, options, store),
+  );
   inFlight.set(id, promise);
 
   try {
