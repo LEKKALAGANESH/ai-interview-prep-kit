@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "evaluate": "tsx src/cli.ts"
+    "evaluate": "tsx src/cli.ts",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@trao/interview-prep-server": "file:../server",
