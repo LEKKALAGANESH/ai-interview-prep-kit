@@ -11,7 +11,7 @@ const base: EvaluationCase = {
   days: 2,
 };
 
-function fakeKit(id: string, days: number) {
+function fakeKit(days: number) {
   return {
     source: {
       company: "Example",
@@ -57,7 +57,7 @@ test("evaluates every case and preserves requested days", async () => {
     store: new InMemoryKitStore(),
     generate: async (input) => {
       calls.push(input.job_description);
-      return { id: `kit-${input.days_available}`, kit: fakeKit("x", input.days_available) as any, reused: false };
+      return { id: `kit-${input.days_available}`, kit: fakeKit(input.days_available) as any, reused: false };
     },
   });
 
@@ -69,20 +69,21 @@ test("evaluates every case and preserves requested days", async () => {
 });
 
 test("continues after an individual case failure", async () => {
-  const output = await evaluateCases([base, { ...base, id: "case-2" }], {
+  const second = { ...base, id: "case-2", jd: "Build Node.js services" };
+  const output = await evaluateCases([base, second], {
     store: new InMemoryKitStore(),
     generate: async (input) => {
       if (input.job_description === base.jd) {
         throw Object.assign(new Error("temporary failure"), { code: "TRANSIENT" });
       }
-      return { id: "kit-2", kit: fakeKit("x", input.days_available) as any, reused: false };
+      return { id: "kit-2", kit: fakeKit(input.days_available) as any, reused: false };
     },
   });
 
   assert.equal(output.kits.length, 2);
   assert.equal(output.kits[0].status, "failed");
   assert.equal(output.kits[0].error?.code, "TRANSIENT");
-  assert.equal(output.kits[1].status, "failed");
+  assert.equal(output.kits[1].status, "ok");
 });
 
 test("rejects duplicate case IDs before processing", async () => {
