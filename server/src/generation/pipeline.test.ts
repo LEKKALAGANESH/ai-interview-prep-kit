@@ -6,6 +6,8 @@ import {
   generateQuestionSetWithCoverage,
 } from "./pipeline.js";
 import type { LlmProvider } from "./provider.js";
+import { QuestionGenerationError } from "./generator.js";
+import { buildSchedule } from "@trao/interview-prep-shared/schedule.js";
 
 test("generates each requirement through its appropriate category", async () => {
   const seen: string[] = [];
@@ -234,4 +236,37 @@ test("reuses the existing provider retry/error boundary during second-pass gener
   assert.equal(result.generation_errors[0].pass, 1);
   assert.equal(result.generation_errors[1].code, "PROVIDER_FAILED");
   assert.equal(result.generation_errors[1].pass, 2);
+});
+
+
+test("Step 7 final questions feed Step 8 without changing question coverage", async () => {
+  const requirements = [
+    { id: "r1", text: "React", kind: "technical" as const, priority: "must" as const },
+    { id: "r2", text: "Communication", kind: "behavioural" as const, priority: "nice" as const },
+  ];
+
+  const result = await generateQuestionSetWithCoverage(requirements, {
+    provider: {
+      async generate(request) {
+        const match = request.userPrompt.match(/Requirement: ([^\n]+)/);
+        const requirement = match?.[1] ?? "";
+        return {
+          questions: [{
+            prompt: `Question for ${requirement}`,
+            answer_outline: "outline",
+            difficulty: requirement === "React" ? 3 : 1,
+          }],
+        };
+      },
+    },
+  });
+
+  assert.equal(result.coverage.can_ship, true);
+
+  const schedule = buildSchedule(3, requirements, result.questions);
+  const scheduledIds = schedule.flatMap((day) => day.question_ids);
+
+  assert.deepEqual(scheduledIds, result.questions.map((question) => question.id));
+  assert.deepEqual(schedule.map((day) => day.day), [1, 2, 3]);
+  assert.ok(schedule.every((day) => Number.isInteger(day.minutes) && day.minutes >= 0));
 });
