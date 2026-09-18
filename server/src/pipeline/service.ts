@@ -17,12 +17,14 @@ export type PersistedKitResult = {
   reused: boolean;
 };
 
-export async function generateAndPersistKit(
+const inFlightByStore = new WeakMap<KitStore, Map<string, Promise<PersistedKitResult>>>();
+
+async function generateAndPersistOnce(
+  id: string,
   input: NormalizedKitInput,
   options: GenerateAndPersistKitOptions,
   store: KitStore,
 ): Promise<PersistedKitResult> {
-  const id = buildKitId(input);
   const existing = await store.getById(id);
 
   if (existing) {
@@ -37,4 +39,38 @@ export async function generateAndPersistKit(
     kit: saved,
     reused: false,
   };
+}
+
+export async function generateAndPersistKit(
+  input: NormalizedKitInput,
+  options: GenerateAndPersistKitOptions,
+  store: KitStore,
+): Promise<PersistedKitResult> {
+  const id = buildKitId(input);
+  let inFlight = inFlightByStore.get(store);
+
+  if (!inFlight) {
+    inFlight = new Map();
+    inFlightByStore.set(store, inFlight);
+  }
+
+  const active = inFlight.get(id);
+  if (active) {
+    const result = await active;
+    return { ...result, reused: true };
+  }
+
+  const promise = generateAndPersistOnce(id, input, options, store);
+  inFlight.set(id, promise);
+
+  try {
+    return await promise;
+  } finally {
+    if (inFlight.get(id) === promise) {
+      inFlight.delete(id);
+    }
+    if (inFlight.size === 0) {
+      inFlightByStore.delete(store);
+    }
+  }
 }
