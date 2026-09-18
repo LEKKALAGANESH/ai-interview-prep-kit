@@ -117,7 +117,7 @@ test("second pass includes uncovered nice requirements as well as must requireme
       calls.push(requirement);
 
       if (requirement === "GraphQL" && graphQlAttempts++ === 0) {
-        throw new QuestionGenerationError("MODEL_OUTPUT_INVALID", "invalid first-pass output");
+        throw new Error("invalid first-pass output");
       }
 
       return {
