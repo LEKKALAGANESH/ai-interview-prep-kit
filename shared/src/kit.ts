@@ -63,6 +63,8 @@ export const CoverageSchema = z.object({
   passes: z.number().int().nonnegative(),
 });
 
+const uniqueIds = (ids: string[]) => new Set(ids).size === ids.length;
+
 export const KitSchema = z.object({
   source: SourceSchema,
   company_brief: CompanyBriefSchema,
@@ -71,6 +73,108 @@ export const KitSchema = z.object({
   flashcards: z.array(FlashcardSchema),
   schedule: ScheduleSchema,
   coverage: CoverageSchema,
+}).superRefine((kit, ctx) => {
+  const requirementIds = kit.role.requirements.map((requirement) => requirement.id);
+  const questionIds = kit.questions.map((question) => question.id);
+  const flashcardIds = kit.flashcards.map((flashcard) => flashcard.id);
+
+  if (!uniqueIds(requirementIds)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["role", "requirements"],
+      message: "Requirement IDs must be unique",
+    });
+  }
+
+  if (!uniqueIds(questionIds)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["questions"],
+      message: "Question IDs must be unique",
+    });
+  }
+
+  if (!uniqueIds(flashcardIds)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["flashcards"],
+      message: "Flashcard IDs must be unique",
+    });
+  }
+
+  const requirementSet = new Set(requirementIds);
+  const questionSet = new Set(questionIds);
+
+  kit.questions.forEach((question, index) => {
+    question.requirement_ids.forEach((requirementId, requirementIndex) => {
+      if (!requirementSet.has(requirementId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["questions", index, "requirement_ids", requirementIndex],
+          message: `Unknown requirement ID: ${requirementId}`,
+        });
+      }
+    });
+  });
+
+  kit.flashcards.forEach((flashcard, index) => {
+    flashcard.requirement_ids.forEach((requirementId, requirementIndex) => {
+      if (!requirementSet.has(requirementId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["flashcards", index, "requirement_ids", requirementIndex],
+          message: `Unknown requirement ID: ${requirementId}`,
+        });
+      }
+    });
+  });
+
+  kit.schedule.days.forEach((day, dayIndex) => {
+    day.question_ids.forEach((questionId, questionIndex) => {
+      if (!questionSet.has(questionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["schedule", "days", dayIndex, "question_ids", questionIndex],
+          message: `Unknown question ID: ${questionId}`,
+        });
+      }
+    });
+  });
+
+  kit.coverage.uncovered_requirement_ids.forEach((requirementId, index) => {
+    if (!requirementSet.has(requirementId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["coverage", "uncovered_requirement_ids", index],
+        message: `Unknown requirement ID: ${requirementId}`,
+      });
+    }
+  });
+
+  if (kit.schedule.days.length !== kit.schedule.days_available) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["schedule", "days"],
+      message: "Schedule must contain exactly days_available days",
+    });
+  }
+
+  const dayNumbers = kit.schedule.days.map((day) => day.day);
+  const expectedDays = Array.from(
+    { length: kit.schedule.days_available },
+    (_, index) => index + 1,
+  );
+
+  if (
+    dayNumbers.length !== expectedDays.length ||
+    dayNumbers.some((day, index) => day !== expectedDays[index])
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["schedule", "days"],
+      message: "Schedule day numbers must be exactly 1 through days_available in order",
+    });
+  }
 });
 
 export type Requirement = z.infer<typeof RequirementSchema>;
