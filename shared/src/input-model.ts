@@ -24,8 +24,8 @@ export function normalizeKitInput(input: KitInput): NormalizedKitInput {
     job_description: input.jd.trim(),
     company_url: normalizeUrl(input.company_url),
     days_available: input.days,
-    llm_provider: input.llm_provider,
-    llm_model: input.llm_model?.trim() || undefined,
+    ...(input.llm_provider ? { llm_provider: input.llm_provider } : {}),
+    ...(input.llm_model?.trim() ? { llm_model: input.llm_model.trim() } : {}),
   };
 }
 
