@@ -5,7 +5,7 @@ Implementation of the Trao Full-Stack Engineering Assessment: **The AI Interview
 ## Architecture
 
 - `client/` — Next.js + Tailwind frontend
-- `server/` — Node.js + Express application/API
+- `server/` — Node.js HTTP application/API with separated retrieval, extraction, generation, scheduling, and persistence modules
 - `shared/` — shared TypeScript contracts, validation, and Appendix A model
 - `evaluation/` — mandatory `npm run evaluate -- --input <cases.json> --output <kits.json>` CLI
 - `tests/` — cross-cutting automated tests
@@ -25,6 +25,7 @@ Implementation of the Trao Full-Stack Engineering Assessment: **The AI Interview
 11. Support editing, reordering, adding/deleting, pinning, and scoped regeneration.
 12. Track flashcard practice coverage/confidence.
 13. Support multi-role batch evaluation.
+14. Support selectable Gemini, OpenAI, Anthropic Claude, Groq, and local Ollama providers.
 
 ## JD extraction
 
@@ -82,7 +83,7 @@ External URLs are validated before fetching. Production deployments must reject 
 
 Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, durable persistence, idempotency, and raw-input API orchestration are in place.
 
-The latest CI verification has one known test failure that is intentionally deferred for a later fix. Step 10 evaluation work is now active while Step 9 remains tracked as 🟡 until the deferred test and final runtime/audit verification are resolved.
+The final verification checklist tracks runtime and clean-clone evidence separately from source-level implementation status. Step 10 evaluation work is now active while Step 9 remains tracked as 🟡 until the deferred test and final runtime/audit verification are resolved.
 
 ## Public interview research
 
@@ -96,7 +97,7 @@ The server test suite covers URL/SSRF validation, HTTP content limits and redire
 
 Question generation is deliberately separated by requirement and category. The generation pipeline selects `technical` for technical requirements, `behavioural` for behavioural requirements, and `system-design` for domain requirements. The model receives the selected requirement ID and research context, but requirement IDs are assigned by application code rather than accepted from model output.
 
-The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flash`). Generated JSON is validated with Zod before questions become application state. Rate-limit and transient provider errors are retried with bounded exponential backoff; malformed responses are rejected. Job-description, company-page, and public-search text is explicitly treated as untrusted reference data in the generation prompt.
+The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-2.5-flash`). The application can also select OpenAI, Anthropic Claude, Groq, or local Ollama through the server-side provider configuration; provider API keys are never sent by the browser. Generated JSON is validated with Zod before questions become application state. Rate-limit and transient provider errors are retried with bounded exponential backoff; malformed responses are rejected. Job-description, company-page, and public-search text is explicitly treated as untrusted reference data in the generation prompt.
 
 ## Coverage engine
 
@@ -114,4 +115,4 @@ Kit persistence uses a `KitStore` abstraction with both in-memory and durable JS
 
 The API now owns the application pipeline boundary: a validated request containing only `jd`, `company_url`, and `days` is normalized, researched, extracted through the configured LLM, converted into a deterministic company brief from retrieved evidence, passed through question generation and coverage repair, scheduled, schema-validated, and persisted. Missing LLM credentials, unusable company retrieval, extraction failures, and unshippable coverage are returned as structured API errors.
 
-The Node runtime exposes `POST /api/kits` and `GET /health`. The default durable store path is `.data/kits.json`, configurable with `KIT_STORE_FILE`.
+The Node runtime exposes `POST /api/kits`, kit builder/practice routes, and `GET /health`. The default durable store path is `.data/kits.json`, configurable with `KIT_STORE_FILE`.
