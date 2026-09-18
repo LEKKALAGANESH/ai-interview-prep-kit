@@ -1,4 +1,5 @@
 import { config as loadDotenv } from "dotenv";
+import { resolve } from "node:path";
 import { createServer } from "node:http";
 import { handleGenerateKit } from "./api/generate-kit.js";
 import { handleBuilder } from "./api/builder.js";
