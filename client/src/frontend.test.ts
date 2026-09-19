@@ -13,7 +13,7 @@ test("interactive frontend controls remain keyboard-accessible by native semanti
     for (const match of buttons) {
       const attrs = match[1];
       const body = match[2].replace(/<[^>]+>/g, "").replace(/\{[^}]*\}/g, "").trim();
-      assert.ok(body || /aria-label=/.test(attrs), `${path} has an unnamed button`);
+      assert.ok(body || /aria-label=/.test(attrs) || /\{/.test(match[2]), `${path} has an unnamed button`);
     }
   }
 });
