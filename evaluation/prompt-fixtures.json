@@ -1,29 +1,5 @@
 [
-  {
-    "requirementId": "r_python",
-    "requirementText": "Python backend development",
-    "requirementKind": "technical",
-    "requirementPriority": "must",
-    "category": "technical",
-    "objective": "Assess practical Python engineering",
-    "difficulty": 2
-  },
-  {
-    "requirementId": "r_collab",
-    "requirementText": "Clear communication and collaboration",
-    "requirementKind": "behavioural",
-    "requirementPriority": "must",
-    "category": "behavioural",
-    "objective": "Assess collaboration under delivery pressure",
-    "difficulty": 2
-  },
-  {
-    "requirementId": "r_rag",
-    "requirementText": "RAG evaluation and reliability",
-    "requirementKind": "domain",
-    "requirementPriority": "must",
-    "category": "system-design",
-    "objective": "Assess production RAG tradeoffs",
-    "difficulty": 3
-  }
-]\n
+  {"requirementId":"r_python","requirementText":"Python backend development","requirementKind":"technical","requirementPriority":"must","category":"technical","objective":"Assess practical Python engineering","difficulty":2},
+  {"requirementId":"r_collab","requirementText":"Clear communication and collaboration","requirementKind":"behavioural","requirementPriority":"must","category":"behavioural","objective":"Assess collaboration under delivery pressure","difficulty":2},
+  {"requirementId":"r_rag","requirementText":"RAG evaluation and reliability","requirementKind":"domain","requirementPriority":"must","category":"system-design","objective":"Assess production RAG tradeoffs","difficulty":3}
+]
