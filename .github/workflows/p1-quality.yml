@@ -1,0 +1,46 @@
+name: P1 Quality Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Configured LLM provider"
+        required: true
+        default: "gemini"
+        type: choice
+        options:
+          - gemini
+          - openai
+          - anthropic
+          - groq
+          - ollama
+      model:
+        description: "Optional model override"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LLM_PROVIDER: ${{ inputs.provider }}
+      LLM_MODEL: ${{ inputs.model }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run regression --workspace evaluation
+      - run: npm run quality --workspace evaluation
+      - name: Upload quality artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-quality-${{ inputs.provider }}
+          path: evaluation/.artifacts/
