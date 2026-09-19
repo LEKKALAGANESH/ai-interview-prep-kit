@@ -20,7 +20,7 @@ export default function Home(){
  const selected=PROVIDERS.find(p=>p.id===provider)!;
  const covered=kit?kit.role.requirements.length-kit.coverage.uncovered_requirement_ids.length:0;
  const pct=kit&&kit.role.requirements.length?Math.round(covered/kit.role.requirements.length*100):0;
- const questions=useMemo(()=>kit?[...kit.questions].sort((a,b)=>dayOf(kit,a.id)-dayOf(kit,b.id)):[],[kit]);
+ const questions=useMemo(()=>kit?[...kit.questions].sort((a,b)=>{const da=dayOf(kit,a.id),db=dayOf(kit,b.id);if(da!==db)return da-db;const ai=kit.schedule.days.find(d=>d.day===da)?.question_ids.indexOf(a.id)??0;const bi=kit.schedule.days.find(d=>d.day===db)?.question_ids.indexOf(b.id)??0;return ai-bi}):[],[kit]);
 
  useEffect(()=>{void fetch(API+"/api/session",{credentials:"include"}).then(r=>r.json()).then(d=>d.authenticated&&setSession(d.session)).catch(()=>{})},[]);
 
