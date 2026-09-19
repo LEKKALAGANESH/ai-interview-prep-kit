@@ -137,7 +137,7 @@ test("API surfaces LLM provider failures without persisting a kit", async () => 
   );
   assert.equal(response.status, 422);
   const body = await response.json() as { error: { code: string } };
-  assert.equal(body.error.code, "PROVIDER_FAILED");
+  assert.equal(body.error.code, "EXTRACTION_FAILED");
   assert.equal(await store.getById("missing"), null);
 });
 
