@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildPracticeQueue, practiceCoverage, recordPractice } from "./practice.js";
 import type { Kit } from "./kit.js";
+import type { PracticeState } from "./practice.js";
 
 const kit = (): Kit => ({
  source:{company:"Example",company_url:"https://example.com",role:"Engineer",location:"",jd_chars:1,researched_at:"now",pages_used:["https://example.com"]},
@@ -17,7 +18,7 @@ const kit = (): Kit => ({
 });
 
 test("records confidence and completes after final question",()=>{
- const k=kit(); let state={current_index:0,results:[],completed:false};
+ const k=kit(); let state: PracticeState={current_index:0,results:[],completed:false};
  state=recordPractice(k,state,"q1","low","2026-01-01T00:00:00.000Z");
  assert.equal(state.results[0].confidence,"low");
  state=recordPractice(k,state,"q2","high","2026-01-01T00:01:00.000Z");
