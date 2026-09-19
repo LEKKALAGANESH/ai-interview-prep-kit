@@ -29,7 +29,9 @@ export class KitAssemblyError extends Error {
   }
 }
 
-export function assembleKit(input: NormalizedKitInput, context: Omit<BuildKitOptions, keyof QuestionSetGenerationOptions>, questions: Kit["questions"], coverage: Kit["coverage"]): Kit {
+export type BuildKitContext = Pick<BuildKitOptions, "research" | "company" | "role" | "companyBrief" | "flashcards">;
+
+export function assembleKit(input: NormalizedKitInput, context: BuildKitContext, questions: Kit["questions"], coverage: Kit["coverage"]): Kit {
   const schedule = buildSchedule(input.days_available, context.role.requirements, questions);
   const kit = {
     source: {
