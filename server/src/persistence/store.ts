@@ -5,6 +5,7 @@ import type { Kit } from "@trao/interview-prep-shared/kit.js";
 import type { PracticeState } from "@trao/interview-prep-shared/practice.js";
 
 export interface KitStore {
+  update(id: string, kit: Kit): Promise<Kit>;
   save(id: string, kit: Kit): Promise<Kit>;
   getById(id: string): Promise<Kit | null>;
   withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T>;
@@ -42,9 +43,6 @@ export class InMemoryKitStore implements KitStore {
     this.kits.set(id, structuredClone(kit));
     return structuredClone(kit);
   }
-
-  async getPractice(id: string): Promise<PracticeState> { const data = await this.readPractice(); return structuredClone(data[id] ?? { current_index: 0, results: [], completed: false }); }
-  async savePractice(id: string, state: PracticeState): Promise<PracticeState> { const data = await this.readPractice(); data[id] = structuredClone(state); await this.writePractice(data); return structuredClone(state); }
 
   async getById(id: string): Promise<Kit | null> {
     const kit = this.kits.get(id);
@@ -185,6 +183,9 @@ export class JsonFileKitStore implements KitStore {
       return structuredClone(kit);
     });
   }
+
+  async getPractice(id: string): Promise<PracticeState> { const data = await this.readPractice(); return structuredClone(data[id] ?? { current_index: 0, results: [], completed: false }); }
+  async savePractice(id: string, state: PracticeState): Promise<PracticeState> { const data = await this.readPractice(); data[id] = structuredClone(state); await this.writePractice(data); return structuredClone(state); }
 }
 
 export function createKitStore(): KitStore {
