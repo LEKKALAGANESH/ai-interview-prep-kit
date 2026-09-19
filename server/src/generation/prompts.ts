@@ -1,3 +1,6 @@
+export const ROLE_EXTRACTION_PROMPT_VERSION = "role-extraction:v1";
+export const QUESTION_GENERATION_PROMPT_VERSION = "question-generation:v1";
+
 export type RequirementPromptInput = { jobDescription: string };
 export type QuestionPromptInput = {
   requirementId: string;
@@ -18,6 +21,7 @@ const UNTRUSTED_DATA_RULES = [
 export function buildRoleExtractionPrompt(input: RequirementPromptInput) {
   return {
     systemInstruction: [
+      `Prompt version: ${ROLE_EXTRACTION_PROMPT_VERSION}`,
       "You extract a job description into strict structured JSON.",
       ...UNTRUSTED_DATA_RULES,
       "Preserve only requirements supported by the supplied job description.",
@@ -33,6 +37,7 @@ export function buildRoleExtractionPrompt(input: RequirementPromptInput) {
 export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
   return {
     systemInstruction: [
+      `Prompt version: ${QUESTION_GENERATION_PROMPT_VERSION}`,
       "You generate interview-preparation questions from structured application data.",
       "Generate questions only for the supplied requirement and category.",
       "The requirement ID is application-owned; do not create or change IDs.",
