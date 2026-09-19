@@ -1,3 +1,36 @@
+# Sprint 3 — Production & Assessment Hardening (P2)
+
+**Goal:** Turn the P0/P1 implementation into a reproducible, observable, assessment-ready production workflow without weakening deterministic application ownership.
+
+| ID | P2 checklist item | Status | Definition of done |
+|---|---|:---:|---|
+| P2.1 | Clean-clone reproducibility | ⬜ | Fresh clone installs, tests, builds, and evaluates with documented commands. |
+| P2.2 | Runtime CI evidence | ⬜ | Current assessment commit has successful CI evidence for test/build/evaluator workflows. |
+| P2.3 | Five-case evaluator SLA | ⬜ | Five representative cases complete within 15 minutes including retries. |
+| P2.4 | Durable idempotency verification | ⬜ | Duplicate requests remain coalesced across restarts/process boundaries for the selected persistence strategy. |
+| P2.5 | Persistence recovery | ⬜ | Interrupted writes and restart recovery are tested without partial valid-state publication. |
+| P2.6 | API contract integration suite | ⬜ | End-to-end API tests cover success, validation, research, LLM, persistence, duplicate, and timeout paths. |
+| P2.7 | Security regression suite | ⬜ | SSRF, private-network, content-size, redirect, prompt-injection, and secret-exfiltration fixtures run automatically. |
+| P2.8 | Retrieval freshness policy | ⬜ | Evidence freshness and stale-source handling are explicit and tested. |
+| P2.9 | Evidence provenance persistence | ⬜ | Important generated claims retain source URL/type/evidence provenance where the product exposes research. |
+| P2.10 | Prompt/version artifact persistence | ⬜ | Evaluations persist provider/model/prompt versions and quality metrics. |
+| P2.11 | Provider failover drill | ⬜ | A provider failure exercises bounded fallback while preserving schema, coverage, and provenance. |
+| P2.12 | Load/concurrency test | ⬜ | Concurrent generation, reads, edits, and practice updates are tested for race safety. |
+| P2.13 | Large-JD performance | ⬜ | Large but valid JDs remain within documented latency/context limits. |
+| P2.14 | Large-research performance | ⬜ | Evidence ranking and prompt budgeting remain bounded under maximum retrieval. |
+| P2.15 | Accessibility regression | ⬜ | Keyboard, focus, semantic controls, responsive layouts, and screen-reader-critical flows are regression-tested. |
+| P2.16 | Builder persistence regression | ⬜ | Edits, reorder, add/delete, scoped regeneration, and manual content survive reload and regeneration. |
+| P2.17 | Practice persistence regression | ⬜ | Confidence, queue state, completion, and resume behavior survive reload/restart. |
+| P2.18 | Appendix A/B conformance audit | ⬜ | Final persisted kits and evaluator output are mechanically checked against assessment contracts. |
+| P2.19 | Documentation audit | ⬜ | README, checklist, architecture, env, evaluation, and security docs match current code. |
+| P2.20 | Final submission audit | ⬜ | No known blocking failures, runtime evidence is attached, and assessment submission artifacts are reproducible. |
+
+### P2 gate
+
+P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regression, persistence/idempotency verification, and final Appendix A/B audit are all complete.
+
+---
+
 # Sprint 2 — LLM Quality Optimization (P1)
 
 **Goal:** Improve the quality, consistency, observability, and evaluation of generated interview kits after the P0 reliability/grounding foundation is stable.
@@ -6,31 +39,37 @@
 
 | ID | P1 checklist item | Status | Definition of done |
 |---|---|:---:|---|
-| P1.1 | Explicit question-planning stage | ⬜ | Introduce an explicit application-owned question objective/plan before generation; each planned item has requirement, category, difficulty, and objective. |
-| P1.2 | Category strategy | ⬜ | Deterministically choose category coverage from requirement kind/role context instead of relying only on free-form generation. |
-| P1.3 | Context ranking | ⬜ | Rank research evidence by direct relevance, company authority, interview signal, freshness, source quality, and length before prompt assembly. |
-| P1.4 | Evidence claim model | ⬜ | Represent important research claims with claim, source URL, source type, evidence, and confidence basis before LLM consumption. |
-| P1.5 | Research deduplication | ⬜ | Deduplicate equivalent evidence/pages and avoid repeated context consuming prompt budget. |
-| P1.6 | Research conflict handling | ⬜ | Detect conflicting company/interview evidence and prevent the model from silently choosing an unsupported claim. |
-| P1.7 | Research-gap behavior | ⬜ | When evidence is missing, generate only what is supported by the JD/available evidence and explicitly avoid invented company-specific facts. |
-| P1.8 | Question diversity checks | ⬜ | Detect near-duplicate questions within and across requirements/categories and regenerate only the affected items. |
-| P1.9 | Difficulty calibration | ⬜ | Enforce documented difficulty semantics and verify that generated difficulty matches reasoning depth, not superficial wording. |
-| P1.10 | Specificity/relevance validation | ⬜ | Add deterministic heuristics and semantic checks for requirement relevance, specificity, and answer usefulness. |
-| P1.11 | Semantic LLM-as-judge evaluation | ⬜ | Add an independent judge for relevance, specificity, grounding, answer usefulness, difficulty fit, and diversity; judge never overrides deterministic contract/coverage. |
-| P1.12 | Golden evaluation dataset | ⬜ | Add representative regression cases covering technical, behavioural, domain, thin JD, research gaps, injection, malformed output, and edge schedules. |
-| P1.13 | Prompt regression evaluation | ⬜ | Record prompt version + model/provider and compare golden-case results across prompt changes. |
-| P1.14 | Provider/model comparison | ⬜ | Evaluate configured providers/models on the same golden cases without changing application-owned contracts. |
-| P1.15 | Quality scorecard | ⬜ | Produce per-case and aggregate metrics for schema validity, requirement coverage, relevance, specificity, groundedness, diversity, and difficulty fit. |
-| P1.16 | Cost/latency instrumentation | ⬜ | Capture provider/model, attempts, latency, token usage when available, and generation stage without logging secrets or raw sensitive inputs. |
-| P1.17 | Prompt-budget control | ⬜ | Bound evidence/context size and preserve the highest-value evidence when prompts approach provider limits. |
-| P1.18 | Generation batching policy | ⬜ | Define and test batching boundaries so quality, latency, and provider limits remain predictable. |
-| P1.19 | Repair quality gate | ⬜ | Require repaired questions to satisfy the same schema, relevance, grounding, diversity, and difficulty checks as first-pass questions. |
-| P1.20 | Flashcard quality validation | ⬜ | Validate derived flashcards for answer usefulness, requirement traceability, and one-to-one source-question lineage. |
-| P1.21 | Prompt fixture library | ⬜ | Add reusable fixtures for normal JD, thin JD, false premise, injection, malicious company page, misleading interview discussion, and malformed provider output. |
-| P1.22 | Provider fallback quality policy | ⬜ | Define what happens when fallback providers produce materially different outputs; preserve contract/coverage and record provider provenance. |
-| P1.23 | Generation observability | ⬜ | Expose structured stage outcomes/errors so failed extraction, research, generation, repair, and validation can be diagnosed independently. |
-| P1.24 | P0 pin semantics | ⬜ | Decide and implement the explicit persisted representation for pinned/manual questions if the product requires pinning to survive regeneration. |
-| P1.25 | Runtime quality gate | ⬜ | Run the golden suite and verify no P0 regression before promoting P1 changes. |
+| P1.1 | Explicit question-planning stage | 🟢 | Introduce an explicit application-owned question objective/plan before generation; each planned item has requirement, category, difficulty, and objective. |
+| P1.2 | Category strategy | 🟢 | Deterministically choose category coverage from requirement kind/role context instead of relying only on free-form generation. |
+| P1.3 | Context ranking | 🟢 | Rank research evidence by direct relevance, company authority, interview signal, freshness, source quality, and length before prompt assembly. |
+| P1.4 | Evidence claim model | 🟢 | Represent important research claims with claim, source URL, source type, evidence, and confidence basis before LLM consumption. |
+| P1.5 | Research deduplication | 🟢 | Deduplicate equivalent evidence/pages and avoid repeated context consuming prompt budget. |
+| P1.6 | Research conflict handling | 🟡 | Detect conflicting company/interview evidence and prevent the model from silently choosing an unsupported claim. |
+| P1.7 | Research-gap behavior | 🟢 | When evidence is missing, generate only what is supported by the JD/available evidence and explicitly avoid invented company-specific facts. |
+| P1.8 | Question diversity checks | 🟢 | Detect near-duplicate questions within and across requirements/categories and regenerate only the affected items. |
+| P1.9 | Difficulty calibration | 🟢 | Enforce documented difficulty semantics and verify that generated difficulty matches reasoning depth, not superficial wording. |
+| P1.10 | Specificity/relevance validation | 🟢 | Add deterministic heuristics and semantic checks for requirement relevance, specificity, and answer usefulness. |
+| P1.11 | Semantic LLM-as-judge evaluation | 🟢 | Add an independent judge for relevance, specificity, grounding, answer usefulness, difficulty fit, and diversity; judge never overrides deterministic contract/coverage. |
+| P1.12 | Golden evaluation dataset | 🟢 | Add representative regression cases covering technical, behavioural, domain, thin JD, research gaps, injection, malformed output, and edge schedules. |
+| P1.13 | Prompt regression evaluation | 🟡 | Record prompt version + model/provider and compare golden-case results across prompt changes. |
+| P1.14 | Provider/model comparison | 🟡 | Evaluate configured providers/models on the same golden cases without changing application-owned contracts. |
+| P1.15 | Quality scorecard | 🟢 | Produce per-case and aggregate metrics for schema validity, requirement coverage, relevance, specificity, groundedness, diversity, and difficulty fit. |
+| P1.16 | Cost/latency instrumentation | 🟢 | Capture provider/model, attempts, latency, token usage when available, and generation stage without logging secrets or raw sensitive inputs. |
+| P1.17 | Prompt-budget control | 🟢 | Bound evidence/context size and preserve the highest-value evidence when prompts approach provider limits. |
+| P1.18 | Generation batching policy | 🟢 | Define and test batching boundaries so quality, latency, and provider limits remain predictable. |
+| P1.19 | Repair quality gate | 🟡 | Require repaired questions to satisfy the same schema, relevance, grounding, diversity, and difficulty checks as first-pass questions. |
+| P1.20 | Flashcard quality validation | 🟡 | Validate derived flashcards for answer usefulness, requirement traceability, and one-to-one source-question lineage. |
+| P1.21 | Prompt fixture library | 🟢 | Add reusable fixtures for normal JD, thin JD, false premise, injection, malicious company page, misleading interview discussion, and malformed provider output. |
+| P1.22 | Provider fallback quality policy | 🟡 | Define what happens when fallback providers produce materially different outputs; preserve contract/coverage and record provider provenance. |
+| P1.23 | Generation observability | 🟡 | Expose structured stage outcomes/errors so failed extraction, research, generation, repair, and validation can be diagnosed independently. |
+| P1.24 | P0 pin semantics | 🟡 | Decide and implement the explicit persisted representation for pinned/manual questions if the product requires pinning to survive regeneration. |
+| P1.25 | Runtime quality gate | 🟡 | Run the golden suite and verify no P0 regression before promoting P1 changes. |
+
+### P1 implementation evidence
+
+- Implemented: deterministic planning/category strategy, ranked evidence packets, claim model, deduplication, research-gap boundaries, diversity heuristics, difficulty calibration, deterministic quality checks, advisory semantic-judge interface, golden fixtures, prompt-budget controls, batching primitives, observability, and provider-quality policy documentation.
+- Remaining source/runtime work: explicit conflict detector, executable prompt-regression/provider-comparison runners, repair/flashcard quality gates, full observer wiring, persisted pin semantics, and current-head runtime execution.
+- Runtime statuses are intentionally 🟡 until the current GitHub Actions run or equivalent execution is observed.
 
 ### P1 completion gate
 
