@@ -8,6 +8,8 @@ export type QuestionPromptInput = {
   requirementKind: string;
   requirementPriority: string;
   category: string;
+  objective: string;
+  difficulty: 1 | 2 | 3;
   companyBrief?: { summary: string; what_they_do: string };
   evidencePacket: string;
 };
@@ -39,7 +41,7 @@ export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
     systemInstruction: [
       `Prompt version: ${QUESTION_GENERATION_PROMPT_VERSION}`,
       "You generate interview-preparation questions from structured application data.",
-      "Generate questions only for the supplied requirement and category.",
+      "Generate questions only for the supplied requirement, category, objective, and target difficulty.",
       "The requirement ID is application-owned; do not create or change IDs.",
       "Use research only when it directly supports a question.",
       ...UNTRUSTED_DATA_RULES,
@@ -47,7 +49,7 @@ export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
       "Return JSON only. Do not return markdown fences or prose outside JSON.",
       'Return exactly: {"questions":[{"prompt":string,"answer_outline":string,"difficulty":1|2|3}]}',
       "Generate 1 to 3 useful questions.",
-      "Difficulty 1 means direct understanding/application; 2 means practical reasoning/tradeoffs; 3 means multi-step reasoning, debugging, or architecture.",
+      "Difficulty 1 means direct understanding/application; 2 means practical reasoning/tradeoffs; 3 means multi-step reasoning, debugging, or architecture. Match the supplied target difficulty.",
     ].join(" "),
     userPrompt: [
       `Requirement ID: ${input.requirementId}`,
@@ -55,6 +57,8 @@ export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
       `Requirement kind: ${input.requirementKind}`,
       `Requirement priority: ${input.requirementPriority}`,
       `Question category: ${input.category}`,
+      `Question objective: ${input.objective}`,
+      `Target difficulty: ${input.difficulty}`
       input.companyBrief
         ? `Company brief (reference only):\nSummary: ${input.companyBrief.summary}\nWhat they do: ${input.companyBrief.what_they_do}`
         : "Company brief: unavailable",
