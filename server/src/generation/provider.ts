@@ -239,3 +239,24 @@ export function createConfiguredLlmProvider(
       return undefined;
   }
 }
+
+
+export class FallbackLlmProvider implements LlmProvider {
+  constructor(
+    private readonly primary: LlmProvider,
+    private readonly fallback: LlmProvider,
+    private readonly onFallback?: (error: unknown) => void,
+  ) {}
+
+  async generate(request: LlmGenerateRequest): Promise<unknown> {
+    try {
+      return await this.primary.generate(request);
+    } catch (error) {
+      const retryable = error instanceof LlmProviderError &&
+        (error.code === "RATE_LIMITED" || error.code === "TRANSIENT" || error.code === "INVALID_RESPONSE");
+      if (!retryable) throw error;
+      this.onFallback?.(error);
+      return this.fallback.generate(request);
+    }
+  }
+}
