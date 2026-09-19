@@ -35,6 +35,29 @@ export type ResearchResult = {
   };
 };
 
+export function buildResearchEvidencePacket(research: ResearchResult): string {
+  const companyEvidence = research.pages.slice(0, 6).map((page, index) =>
+    [
+      `[COMPANY_PRIMARY_${index + 1}]`,
+      `URL: ${page.url}`,
+      `Title: ${page.title}`,
+      `Evidence: ${page.text.slice(0, 1800)}`,
+    ].join("\\n"),
+  );
+
+  const interviewEvidence = research.public_interview_research.results.slice(0, 8).map((item, index) =>
+    [
+      `[PUBLIC_INTERVIEW_${index + 1}]`,
+      `URL: ${item.url}`,
+      `Title: ${item.title}`,
+      `Evidence: ${item.snippet}`,
+      "This is public discussion, not verified company policy or an official interview process.",
+    ].join("\\n"),
+  );
+
+  return [...companyEvidence, ...interviewEvidence].join("\\n\\n");
+}
+
 export type ResearchOptions = {
   maxPages?: number;
   allowLocalhost?: boolean;
