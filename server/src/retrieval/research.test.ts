@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { researchCompany } from "./research.js";
+import { researchCompany, buildResearchEvidencePacket } from "./research.js";
 
 function response(body: string, status = 200, contentType = "text/html") {
   return new Response(body, { status, headers: { "content-type": contentType } });
@@ -53,4 +53,24 @@ test("stops company crawling when robots.txt disallows the root", async () => {
   assert.equal(pageCalls, 0);
   assert.equal(result.robots.allowed, false);
   assert.equal(result.pages.length, 0);
+});
+
+
+test("builds source-labeled evidence packets without treating public discussion as official fact", () => {
+  const packet = buildResearchEvidencePacket({
+    company_url: "https://example.com/",
+    pages: [{ url: "https://example.com/about", title: "About", text: "Builds developer tools.", links: [] }],
+    robots: { checked: true, allowed: true, source: "https://example.com/robots.txt", reason: "allowed" },
+    skipped: [],
+    public_interview_research: {
+      attempted: true,
+      found: true,
+      results: [{ title: "Interview thread", url: "https://forum.example/thread", snippet: "Two rounds reported by a candidate." }],
+      note: "found",
+    },
+  });
+  assert.match(packet, /\[COMPANY_PRIMARY_1\]/);
+  assert.match(packet, /https:\/\/example.com\/about/);
+  assert.match(packet, /\[PUBLIC_INTERVIEW_1\]/);
+  assert.match(packet, /not verified company policy/i);
 });
