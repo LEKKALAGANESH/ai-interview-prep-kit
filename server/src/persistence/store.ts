@@ -43,6 +43,9 @@ export class InMemoryKitStore implements KitStore {
     return structuredClone(kit);
   }
 
+  async getPractice(id: string): Promise<PracticeState> { const data = await this.readPractice(); return structuredClone(data[id] ?? { current_index: 0, results: [], completed: false }); }
+  async savePractice(id: string, state: PracticeState): Promise<PracticeState> { const data = await this.readPractice(); data[id] = structuredClone(state); await this.writePractice(data); return structuredClone(state); }
+
   async getById(id: string): Promise<Kit | null> {
     const kit = this.kits.get(id);
     return kit ? structuredClone(kit) : null;
