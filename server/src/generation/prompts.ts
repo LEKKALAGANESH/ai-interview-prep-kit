@@ -58,7 +58,7 @@ export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
       `Requirement priority: ${input.requirementPriority}`,
       `Question category: ${input.category}`,
       `Question objective: ${input.objective}`,
-      `Target difficulty: ${input.difficulty}`
+      `Target difficulty: ${input.difficulty}`,
       input.companyBrief
         ? `Company brief (reference only):\nSummary: ${input.companyBrief.summary}\nWhat they do: ${input.companyBrief.what_they_do}`
         : "Company brief: unavailable",
