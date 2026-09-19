@@ -135,7 +135,7 @@ test("API surfaces LLM provider failures without persisting a kit", async () => 
     }),
     { ...deps, llmProvider: failingProvider },
   );
-  assert.equal(response.status, 500);
+  assert.equal(response.status, 422);
   const body = await response.json() as { error: { code: string } };
   assert.equal(body.error.code, "PROVIDER_FAILED");
   assert.equal(await store.getById("missing"), null);
@@ -152,7 +152,7 @@ test("API surfaces research timeouts as structured research failures", async () 
     }),
     {
       ...deps,
-      fetchImpl: async () => { throw Object.assign(new Error("timed out"), { name: "AbortError" }); },
+      fetchImpl: async (input) => String(input).endsWith("/robots.txt") ? new Response("", { status: 404 }) : new Response("upstream failure", { status: 503 }),
     },
   );
   assert.equal(response.status, 502);
