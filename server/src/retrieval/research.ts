@@ -10,6 +10,7 @@ import { buildRankedEvidencePacket, researchPagesToClaims, type EvidenceClaim } 
 
 export type ResearchPage = {
   url: string;
+  fetched_at: string;
   title: string;
   text: string;
   links: string[];
@@ -122,6 +123,7 @@ export async function researchCompany(
 
       result.pages.push({
         url: page.url,
+        fetched_at: new Date().toISOString(),
         title: cleaned.title,
         text: cleaned.text,
         links: cleaned.links,
