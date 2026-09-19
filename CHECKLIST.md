@@ -403,3 +403,25 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 15 | Final verification | 🟡 Active |
 
 **Working rule:** The known Step 9 test failure is deferred; Step 10 can proceed, but Step 9 remains 🟡 until that failure and the final runtime/audit verification are resolved.
+
+
+## UI / UX implementation — 2026-09-19
+
+Research basis: shadcn/ui composition/accessibility principles, Vercel Geist typography/grid/contrast principles, Vercel interaction/loading guidance, and current Next.js + Tailwind + shadcn open-source dashboard patterns.
+
+- UI.1 🟢 Landing experience redesigned around one clear generation task.
+- UI.2 🟢 Generated kit split into Overview / Question bank / Study plan / Practice.
+- UI.3 🟢 Requirement-level coverage and source visibility added.
+- UI.4 🟢 Question editing changed from per-keystroke API writes to explicit local save/discard.
+- UI.5 🟢 Responsive desktop/mobile layout and semantic focus states added.
+- UI.6 🟢 Loading, error, saved-state, and practice progress feedback added.
+- UI.7 🟢 Reduced-motion behavior added.
+- UI.8 🟢 UI/UX research documented in `docs/ui-ux-research.md`.
+- UI.9 🟡 Runtime visual/browser verification still needs to be executed in an environment with the frontend dependencies/runtime available.
+
+Latest UI commits:
+- `d753782` — frontend workspace redesign
+- `84704b3` — UI design system and responsive styling
+- `d95fc44` — focused practice mode
+- `821907c` — practice styling
+- `2197e99` — UI/UX research documentation
