@@ -18,6 +18,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run evaluate -- --help
+      - run: npm run regression --workspace evaluation
       - run: npm run start --workspace server &
         env:
           PORT: 4000
