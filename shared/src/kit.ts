@@ -179,6 +179,7 @@ export const KitSchema = z.object({
 });
 
 export type Requirement = z.infer<typeof RequirementSchema>;
+export type Role = z.infer<typeof RoleSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 export type Flashcard = z.infer<typeof FlashcardSchema>;
 export type CompanyBrief = z.infer<typeof CompanyBriefSchema>;
@@ -187,7 +188,7 @@ export type Schedule = z.infer<typeof ScheduleSchema>;
 export type Coverage = z.infer<typeof CoverageSchema>;
 export type Kit = z.infer<typeof KitSchema>;
 
-export const EvaluationCaseSchema = BatchKitInputSchema.element;
+export const EvaluationCaseSchema = z.object({ id: z.string().min(1), jd: z.string().min(1), company_url: z.string().url(), days: z.number().int().min(1).max(60) });
 export const EvaluationInputSchema = BatchKitInputSchema;
 
 export const EvaluationResultSchema = z.object({
