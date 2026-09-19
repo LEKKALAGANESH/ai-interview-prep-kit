@@ -1,0 +1,32 @@
+name: P1 Provider Comparison
+
+on:
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: "Comma-separated configured providers (minimum two)"
+        required: true
+        default: "gemini,openai"
+        type: string
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EVALUATION_PROVIDERS: ${{ inputs.providers }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run provider-compare --workspace evaluation
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p1-provider-comparison
+          path: evaluation/.artifacts/providers/
