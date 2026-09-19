@@ -10,6 +10,9 @@ import {
   QuestionGenerationError,
   type GenerateQuestionOptions,
 } from "./generator.js";
+import { buildQuestionPlan, type QuestionPlan } from "./planner.js";
+import { filterDuplicateQuestions } from "./quality.js";
+import type { Role } from "@trao/interview-prep-shared/kit.js";
 
 export type InitialQuestionSetOptions = GenerateQuestionOptions & {
   companyBrief?: {
@@ -18,6 +21,7 @@ export type InitialQuestionSetOptions = GenerateQuestionOptions & {
     sources: string[];
   };
   research?: ResearchResult;
+  role?: Role;
 };
 
 async function generateQuestionsForPlans(
