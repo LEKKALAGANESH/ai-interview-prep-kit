@@ -4,6 +4,7 @@ import { buildSchedule } from "@trao/interview-prep-shared/schedule.js";
 import type { ResearchResult } from "../retrieval/research.js";
 import { generateQuestionSetWithCoverage, type QuestionSetGenerationOptions } from "../generation/pipeline.js";
 import { validateFlashcards } from "../generation/quality-gates.js";
+import { observeStage, type GenerationObserver } from "../generation/observability.js";
 
 export type BuildKitOptions = QuestionSetGenerationOptions & {
   research: ResearchResult;
@@ -11,6 +12,7 @@ export type BuildKitOptions = QuestionSetGenerationOptions & {
   role: Role;
   companyBrief: CompanyBrief;
   flashcards?: Flashcard[];
+  observer?: GenerationObserver;
 };
 
 function buildFlashcards(questions: Kit["questions"]): Flashcard[] {
@@ -29,7 +31,7 @@ export class KitAssemblyError extends Error {
   }
 }
 
-export type BuildKitContext = Pick<BuildKitOptions, "research" | "company" | "role" | "companyBrief" | "flashcards">;
+export type BuildKitContext = Pick<BuildKitOptions, "research" | "company" | "role" | "companyBrief" | "flashcards" | "observer">;
 
 export function assembleKit(input: NormalizedKitInput, context: BuildKitContext, questions: Kit["questions"], coverage: Kit["coverage"]): Kit {
   const schedule = buildSchedule(input.days_available, context.role.requirements, questions);
