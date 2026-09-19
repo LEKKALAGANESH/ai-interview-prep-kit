@@ -74,3 +74,18 @@ test("builds source-labeled evidence packets without treating public discussion 
   assert.match(packet, /\[PUBLIC_INTERVIEW_1\]/);
   assert.match(packet, /not verified company policy/i);
 });
+
+
+test("records freshness timestamps for retrieved pages", async () => {
+  const result = await researchCompany("https://example.com/", {
+    fetchImpl: async (input) => {
+      if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
+      return new Response("<html><title>Example</title><body>Evidence</body></html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    },
+  });
+  assert.equal(result.pages.length, 1);
+  assert.match(result.pages[0].fetched_at, /^2026|^20/);
+});
