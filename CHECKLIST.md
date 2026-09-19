@@ -458,3 +458,14 @@ Latest UI commits:
 - 🟢 Frontend generation failures are logged with `[PrepKit frontend]` and display an actionable message plus backend job ID.
 - 🟢 Added automated coverage for provider 404 diagnostics.
 - 🟢 CI run `35456585705` passed all existing build/test/runtime/browser-audit checks.
+
+
+## Provider model refresh — 2026-09-19
+
+- 🟢 Gemini default updated from `gemini-2.5-flash` to `gemini-3.6-flash`.
+- 🟢 Groq default updated from retired `llama-3.3-70b-versatile` to `openai/gpt-oss-120b`.
+- 🟢 OpenAI default updated from `gpt-5` to `gpt-5.5`.
+- 🟢 Anthropic default updated from `claude-sonnet-4-5` to `claude-sonnet-5`.
+- 🟢 Ollama remains `llama3.1:8b`, which is an available Ollama library model.
+- 🟢 Frontend provider selector and `.env.example` updated to match server defaults.
+- 🟢 Current model choices were checked against provider documentation on 2026-09-19.
