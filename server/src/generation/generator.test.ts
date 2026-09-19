@@ -102,7 +102,7 @@ test("research context is passed as reference data", async () => {
       category: "company-fit",
       research: {
         company_url: "https://example.com",
-        pages: [{ url: "https://example.com/about", title: "About", text: "Build developer tools.", links: [] }],
+        pages: [{ url: "https://example.com/about", fetched_at: "2026-09-19T00:00:00.000Z", title: "About", text: "Build developer tools.", links: [] }],
         robots: { checked: true, allowed: true, source: "https://example.com/robots.txt", reason: "Allowed" },
         skipped: [],
         public_interview_research: {
