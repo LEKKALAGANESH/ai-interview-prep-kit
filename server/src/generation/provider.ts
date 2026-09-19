@@ -94,7 +94,7 @@ function parseJsonText(text: string, provider: string): unknown {
 export class GeminiProvider implements LlmProvider {
   constructor(
     private readonly apiKey: string,
-    private readonly model = "gemini-2.5-flash",
+    private readonly model = "gemini-3.6-flash",
     private readonly fetchImpl: typeof fetch = fetch,
     private readonly timeoutMs = DEFAULT_LLM_TIMEOUT_MS,
   ) {}
@@ -234,22 +234,22 @@ export function createConfiguredLlmProvider(
     case "gemini": {
       const apiKey = process.env.GEMINI_API_KEY?.trim();
       if (!apiKey) return undefined;
-      return new GeminiProvider(apiKey, model || process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash", fetchImpl);
+      return new GeminiProvider(apiKey, model || process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash", fetchImpl);
     }
     case "openai": {
       const apiKey = process.env.OPENAI_API_KEY?.trim();
       if (!apiKey) return undefined;
-      return new OpenAIProvider("OpenAI", "https://api.openai.com/v1/chat/completions", apiKey, model || "gpt-5");
+      return new OpenAIProvider("OpenAI", "https://api.openai.com/v1/chat/completions", apiKey, model || "gpt-5.5");
     }
     case "anthropic": {
       const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
       if (!apiKey) return undefined;
-      return new AnthropicProvider(apiKey, model || "claude-sonnet-4-5", fetchImpl);
+      return new AnthropicProvider(apiKey, model || "claude-sonnet-5", fetchImpl);
     }
     case "groq": {
       const apiKey = process.env.GROQ_API_KEY?.trim();
       if (!apiKey) return undefined;
-      return new GroqProvider("Groq", "https://api.groq.com/openai/v1/chat/completions", apiKey, model || "llama-3.3-70b-versatile", fetchImpl);
+      return new GroqProvider("Groq", "https://api.groq.com/openai/v1/chat/completions", apiKey, model || "openai/gpt-oss-120b", fetchImpl);
     }
     case "ollama":
       return new OllamaProvider(process.env.OLLAMA_BASE_URL?.trim() ? `${process.env.OLLAMA_BASE_URL.replace(/\/$/, "")}/api/chat` : "http://127.0.0.1:11434/api/chat", model || process.env.OLLAMA_MODEL?.trim() || "llama3.1:8b", fetchImpl);
