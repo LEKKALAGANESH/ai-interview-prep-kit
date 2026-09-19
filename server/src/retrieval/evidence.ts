@@ -67,3 +67,19 @@ export function buildRankedEvidencePacket(claims: EvidenceClaim[], query = "", m
   }
   return blocks.join("\n\n");
 }
+
+export type EvidenceConflict = { key: string; claims: EvidenceClaim[] };
+
+export function detectEvidenceConflicts(claims: EvidenceClaim[]): EvidenceConflict[] {
+  const groups = new Map<string, EvidenceClaim[]>();
+  for (const claim of dedupeEvidence(claims)) {
+    const key = normalize(claim.claim).split(" ").slice(0, 5).join(" ");
+    if (!key) continue;
+    const list = groups.get(key) ?? [];
+    list.push(claim);
+    groups.set(key, list);
+  }
+  return [...groups.entries()]
+    .filter(([, items]) => new Set(items.map((item) => normalize(item.evidence))).size > 1 && items.length > 1)
+    .map(([key, items]) => ({ key, claims: items }));
+}
