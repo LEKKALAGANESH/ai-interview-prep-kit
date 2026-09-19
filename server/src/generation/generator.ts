@@ -3,7 +3,7 @@ import type { ResearchResult } from "../retrieval/research.js";
 import { createConfiguredLlmProvider, LlmProviderError, type LlmProvider } from "./provider.js";
 import { buildQuestionGenerationPrompt } from "./prompts.js";
 import { buildResearchEvidencePacket } from "../retrieval/research.js";
-import { GeneratedQuestionBatchSchema, type GeneratedQuestionBatch } from "./schema.js";
+import { GeneratedQuestionBatchSchema } from "./schema.js";
 
 export type QuestionCategory = Question["category"];
 
