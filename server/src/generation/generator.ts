@@ -90,7 +90,7 @@ export async function generateQuestionsForRequirement(
       objective: context.objective ?? `Assess practical understanding and application of: ${context.requirement.text}`,
       difficulty: context.difficulty ?? 2,
       companyBrief: context.companyBrief,
-      evidencePacket: context.research ? buildResearchEvidencePacket(context.research) : "No supporting evidence available.",
+      evidencePacket: context.research ? buildResearchEvidencePacket(context.research, context.requirement.text) : "No supporting evidence available.",
     });
     raw = await observeStage(options.observer, "generation", () => callWithRetry(provider, prompt, options));
   } catch (error) {
