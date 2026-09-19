@@ -22,6 +22,7 @@
   "exports": {
     "./pipeline/orchestrator.js": "./src/pipeline/orchestrator.ts",
     "./persistence/store.js": "./src/persistence/store.ts",
-    "./generation/prompts.js": "./src/generation/prompts.ts"
+    "./generation/prompts.js": "./src/generation/prompts.ts",
+    "./generation/quality.js": "./src/generation/quality.ts"
   }
 }
