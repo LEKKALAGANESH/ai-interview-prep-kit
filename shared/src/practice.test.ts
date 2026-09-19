@@ -26,12 +26,12 @@ test("records confidence and completes after final question",()=>{
 });
 
 test("low-confidence items are prioritized in the next queue",()=>{
- const k=kit(); const state={current_index:0,results:[{question_id:"q2",confidence:"low",practiced_at:"now"}],completed:false};
+ const k=kit(); const state: PracticeState={current_index:0,results:[{question_id:"q2",confidence:"low",practiced_at:"now"}],completed:false};
  assert.deepEqual(buildPracticeQueue(k,state),["q2","q1"]);
 });
 
 test("coverage reports requirements reached by practiced questions",()=>{
- const result=practiceCoverage(kit(),{current_index:1,results:[{question_id:"q1",confidence:"high",practiced_at:"now"}],completed:false});
+ const result=practiceCoverage(kit(),{current_index:1,results:[{question_id:"q1",confidence:"high",practiced_at:"now"}],completed:false} as PracticeState);
  assert.deepEqual(result.covered_requirement_ids,["r1"]);
  assert.deepEqual(result.uncovered_requirement_ids,["r2"]);
 });
