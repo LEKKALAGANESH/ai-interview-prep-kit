@@ -156,6 +156,8 @@ test("propagates persistence failures and never reports a successful save", asyn
     async save() {
       throw new Error("database unavailable");
     },
+    async getPractice() { return { current_index: 0, results: [], completed: false }; },
+    async savePractice(_id, state) { return state; },
   };
 
   await assert.rejects(
