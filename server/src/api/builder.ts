@@ -1,7 +1,7 @@
 import { KitSchema } from "@trao/interview-prep-shared/kit.js";
 import { applyBuilderEdit, type BuilderEdit } from "@trao/interview-prep-shared/builder.js";
 import type { KitStore, ResearchProvenance } from "../persistence/store.js";
-import { createConfiguredLlmProvider } from "../generation/provider.js";
+import { createConfiguredLlmProvider, type LlmProviderName } from "../generation/provider.js";
 import { generateQuestionsForRequirement } from "../generation/generator.js";
 import { regenerateScopedQuestions } from "@trao/interview-prep-shared/builder.js";
 
@@ -28,7 +28,7 @@ export async function handleBuilder(request: Request, store: KitStore, kitId: st
       const requirement = current.role.requirements.find((item) => existing.requirement_ids.includes(item.id));
       if (!requirement) return json({error:{code:"BUILDER_EDIT_INVALID",message:"Question has no valid requirement"}},422);
       const body = raw as {provider?:unknown;model?:unknown};
-      const provider = createConfiguredLlmProvider(undefined, { provider: typeof body.provider === "string" ? body.provider : undefined, model: typeof body.model === "string" ? body.model : undefined });
+      const provider = createConfiguredLlmProvider(undefined, { provider: typeof body.provider === "string" ? body.provider as LlmProviderName : undefined, model: typeof body.model === "string" ? body.model : undefined });
       if (!provider) return json({error:{code:"LLM_NOT_CONFIGURED",message:"The selected regeneration provider is not configured"}},503);
       const provenance = await store.getResearchProvenance(kitId);
       const research = provenanceToResearch(current.source.company_url, provenance);
