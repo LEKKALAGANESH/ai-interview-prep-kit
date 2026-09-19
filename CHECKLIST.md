@@ -4,16 +4,16 @@
 
 | ID | P2 checklist item | Status | Definition of done |
 |---|---|:---:|---|
-| P2.1 | Clean-clone reproducibility | ⬜ | Fresh clone installs, tests, builds, and evaluates with documented commands. |
-| P2.2 | Runtime CI evidence | ⬜ | Current assessment commit has successful CI evidence for test/build/evaluator workflows. |
+| P2.1 | Clean-clone reproducibility | 🟢 | Fresh clone installs, tests, builds, and evaluates with documented commands. |
+| P2.2 | Runtime CI evidence | 🟢 | Current assessment commit has successful CI evidence for test/build/evaluator workflows. |
 | P2.3 | Five-case evaluator SLA | ⬜ | Five representative cases complete within 15 minutes including retries. |
-| P2.4 | Durable idempotency verification | ⬜ | Duplicate requests remain coalesced across restarts/process boundaries for the selected persistence strategy. |
-| P2.5 | Persistence recovery | ⬜ | Interrupted writes and restart recovery are tested without partial valid-state publication. |
+| P2.4 | Durable idempotency verification | 🟢 | Duplicate requests remain coalesced across restarts/process boundaries for the selected persistence strategy. |
+| P2.5 | Persistence recovery | 🟢 | Interrupted writes and restart recovery are tested without partial valid-state publication. |
 | P2.6 | API contract integration suite | ⬜ | End-to-end API tests cover success, validation, research, LLM, persistence, duplicate, and timeout paths. |
-| P2.7 | Security regression suite | ⬜ | SSRF, private-network, content-size, redirect, prompt-injection, and secret-exfiltration fixtures run automatically. |
-| P2.8 | Retrieval freshness policy | ⬜ | Evidence freshness and stale-source handling are explicit and tested. |
-| P2.9 | Evidence provenance persistence | ⬜ | Important generated claims retain source URL/type/evidence provenance where the product exposes research. |
-| P2.10 | Prompt/version artifact persistence | ⬜ | Evaluations persist provider/model/prompt versions and quality metrics. |
+| P2.7 | Security regression suite | 🟢 | SSRF, private-network, content-size, redirect, prompt-injection, and secret-exfiltration fixtures run automatically. |
+| P2.8 | Retrieval freshness policy | 🟢 | Evidence freshness and stale-source handling are explicit and tested. |
+| P2.9 | Evidence provenance persistence | 🟢 | Important generated claims retain source URL/type/evidence provenance where the product exposes research. |
+| P2.10 | Prompt/version artifact persistence | 🟢 | Evaluations persist provider/model/prompt versions and quality metrics. |
 | P2.11 | Provider failover drill | ⬜ | A provider failure exercises bounded fallback while preserving schema, coverage, and provenance. |
 | P2.12 | Load/concurrency test | ⬜ | Concurrent generation, reads, edits, and practice updates are tested for race safety. |
 | P2.13 | Large-JD performance | ⬜ | Large but valid JDs remain within documented latency/context limits. |
@@ -21,13 +21,13 @@
 | P2.15 | Accessibility regression | ⬜ | Keyboard, focus, semantic controls, responsive layouts, and screen-reader-critical flows are regression-tested. |
 | P2.16 | Builder persistence regression | ⬜ | Edits, reorder, add/delete, scoped regeneration, and manual content survive reload and regeneration. |
 | P2.17 | Practice persistence regression | ⬜ | Confidence, queue state, completion, and resume behavior survive reload/restart. |
-| P2.18 | Appendix A/B conformance audit | ⬜ | Final persisted kits and evaluator output are mechanically checked against assessment contracts. |
-| P2.19 | Documentation audit | ⬜ | README, checklist, architecture, env, evaluation, and security docs match current code. |
+| P2.18 | Appendix A/B conformance audit | 🟢 | Final persisted kits and evaluator output are mechanically checked against assessment contracts. |
+| P2.19 | Documentation audit | 🟡 | README, checklist, architecture, env, evaluation, and security docs match current code. |
 | P2.20 | Final submission audit | ⬜ | No known blocking failures, runtime evidence is attached, and assessment submission artifacts are reproducible. |
 
-### P2 gate
+### P2 implementation status\n\nP2 is now active. Initial hardening completed: clean-clone command documentation, current-head CI evidence, durable request-lock/idempotency tests, interrupted-write recovery tests, SSRF/security regression fixtures, retrieval freshness timestamps, persisted research provenance sidecar, evaluation artifact persistence, and Appendix A/B conformance audit helpers. Remaining P2 work requires broader API integration coverage, real five-case SLA measurement, load/performance/accessibility/builder/practice regression evidence, provider failover execution, and final documentation/submission audit.\n\n### P2 gate
 
-P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regression, persistence/idempotency verification, and final Appendix A/B audit are all complete.
+P2 remains open until the remaining runtime/performance/accessibility/integration evidence and final submission audit are complete.
 
 ---
 
