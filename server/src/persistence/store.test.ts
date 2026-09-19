@@ -88,3 +88,20 @@ test("persists kits across store instances", async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+
+test("persists pinned question IDs independently from Appendix A kit shape", async () => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(process.cwd(), "kit-pin-test-"));
+  const filePath = join(directory, "kits.json");
+  try {
+    const first = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const id = buildKitId(input);
+    await first.savePinnedQuestions(id, { question_ids: ["q1"], updated_at: "2026-09-19T00:00:00.000Z" });
+    const second = new (await import("./store.js")).JsonFileKitStore(filePath);
+    assert.deepEqual(await second.getPinnedQuestions(id), { question_ids: ["q1"], updated_at: "2026-09-19T00:00:00.000Z" });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
