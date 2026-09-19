@@ -68,7 +68,7 @@ test("generates, validates, and persists the complete kit", async () => {
 
   assert.ok(result.id);
   assert.equal(result.reused, false);
-  assert.equal(result.kit.coverage.can_ship, undefined);
+  assert.equal(result.kit.coverage.uncovered_requirement_ids.length, 0);
   assert.equal(result.kit.schedule.days.length, 2);
 
   const loaded = await store.getById(result.id);
@@ -153,6 +153,7 @@ test("propagates persistence failures and never reports a successful save", asyn
     async withRequestLock(_id, operation) {
       return operation();
     },
+    async update() { throw new Error("not expected"); },
     async save() {
       throw new Error("database unavailable");
     },
