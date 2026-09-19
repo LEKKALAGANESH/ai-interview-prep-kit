@@ -1,7 +1,7 @@
 import { extractRole } from "../extraction/pipeline.js";
 import { createLlmRoleExtractionProvider } from "../generation/llm-extraction.js";
 import { createConfiguredLlmProvider } from "../generation/provider.js";
-import { researchCompany, type ResearchOptions } from "../retrieval/research.js";
+import { researchCompany, researchPagesToClaims, type ResearchOptions } from "../retrieval/research.js";
 import { validateExternalUrl } from "../retrieval/url-validator.js";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { CompanyBrief } from "@trao/interview-prep-shared/kit.js";
@@ -114,7 +114,7 @@ export async function generateKitFromInput(
     );
   }
 
-  return generateAndPersistKit(
+  const result = await generateAndPersistKit(
     input,
     {
       company: companyNameFromUrl(companyUrl),
@@ -126,4 +126,20 @@ export async function generateKitFromInput(
     },
     options.store,
   );
+  await observeStage(options.observer, "provenance", () =>
+    options.store.saveResearchProvenance(result.id, {
+      researched_at: new Date().toISOString(),
+      claims: [
+        ...researchPagesToClaims(research.pages),
+        ...research.public_interview_research.results.map((item) => ({
+          claim: item.title,
+          source_url: item.url,
+          source_type: "public-interview" as const,
+          evidence: item.snippet,
+          confidence_basis: "public discussion; not verified company policy or official process",
+        })),
+      ],
+    }),
+  );
+  return result;
 }
