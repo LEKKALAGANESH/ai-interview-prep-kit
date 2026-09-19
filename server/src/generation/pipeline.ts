@@ -20,25 +20,23 @@ export type InitialQuestionSetOptions = GenerateQuestionOptions & {
   research?: ResearchResult;
 };
 
-function categoryForRequirement(requirement: Requirement): Question["category"] {
-  if (requirement.kind === "behavioural") return "behavioural";
-  if (requirement.kind === "domain") return "system-design";
-  return "technical";
-}
-
-async function generateQuestionsForRequirements(
+async function generateQuestionsForPlans(
+  plans: QuestionPlan[],
   requirements: Requirement[],
   options: InitialQuestionSetOptions,
 ): Promise<Question[]> {
   const questions: Question[] = [];
-
-  for (const requirement of requirements) {
-    const category = categoryForRequirement(requirement);
+  const byId = new Map(requirements.map((item) => [item.id, item]));
+  for (const plan of plans) {
+    const requirement = byId.get(plan.requirement_id);
+    if (!requirement) continue;
     questions.push(
       ...(await generateQuestionsForRequirement(
         {
           requirement,
-          category,
+          category: plan.category,
+          objective: plan.objective,
+          difficulty: plan.difficulty,
           companyBrief: options.companyBrief,
           research: options.research,
         },
@@ -46,8 +44,14 @@ async function generateQuestionsForRequirements(
       )),
     );
   }
+  return filterDuplicateQuestions(questions);
+}
 
-  return questions;
+async function generateQuestionsForRequirements(
+  requirements: Requirement[],
+  options: InitialQuestionSetOptions,
+): Promise<Question[]> {
+  return generateQuestionsForPlans(buildQuestionPlan(requirements, options.role), requirements, options);
 }
 
 export async function generateInitialQuestionSet(
