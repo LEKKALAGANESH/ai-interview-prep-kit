@@ -23,7 +23,7 @@ const companyBrief: CompanyBrief = {
 
 const research = {
   company_url: "https://example.com/",
-  pages: [{ url: "https://example.com/", title: "Home", text: "Company", links: [] }],
+  pages: [{ url: "https://example.com/", fetched_at: "2026-09-19T00:00:00.000Z", title: "Home", text: "Company", links: [] }],
   robots: { checked: true, allowed: true, source: "https://example.com/robots.txt", reason: "allowed" },
   skipped: [],
   public_interview_research: {
