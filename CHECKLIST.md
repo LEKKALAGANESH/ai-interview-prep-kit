@@ -9,16 +9,16 @@
 | P2.3 | Five-case evaluator SLA | ⬜ | Five representative cases complete within 15 minutes including retries. |
 | P2.4 | Durable idempotency verification | 🟢 | Duplicate requests remain coalesced across restarts/process boundaries for the selected persistence strategy. |
 | P2.5 | Persistence recovery | 🟢 | Interrupted writes and restart recovery are tested without partial valid-state publication. |
-| P2.6 | API contract integration suite | 🟡 | End-to-end API tests cover success, validation, research, LLM, persistence, duplicate, and timeout paths. |
+| P2.6 | API contract integration suite | 🟢 | End-to-end API tests cover success, validation, research, LLM, persistence, duplicate, and timeout paths. |
 | P2.7 | Security regression suite | 🟢 | SSRF, private-network, content-size, redirect, prompt-injection, and secret-exfiltration fixtures run automatically. |
-| P2.8 | Retrieval freshness policy | 🟢 | Evidence freshness and stale-source handling are explicit and tested. |
+| P2.8 | Retrieval freshness policy | 🟡 | Evidence freshness and stale-source handling are explicit and tested. |
 | P2.9 | Evidence provenance persistence | 🟢 | Important generated claims retain source URL/type/evidence provenance where the product exposes research. |
 | P2.10 | Prompt/version artifact persistence | 🟢 | Evaluations persist provider/model/prompt versions and quality metrics. |
 | P2.11 | Provider failover drill | 🟡 | A provider failure exercises bounded fallback while preserving schema, coverage, and provenance. |
 | P2.12 | Load/concurrency test | 🟡 | Concurrent generation, reads, edits, and practice updates are tested for race safety. |
 | P2.13 | Large-JD performance | 🟡 | Large but valid JDs remain within documented latency/context limits. |
 | P2.14 | Large-research performance | 🟡 | Evidence ranking and prompt budgeting remain bounded under maximum retrieval. |
-| P2.15 | Accessibility regression | 🟡 | Keyboard, focus, semantic controls, responsive layouts, and screen-reader-critical flows are regression-tested. |
+| P2.15 | Accessibility regression | 🟢 | Keyboard, focus, semantic controls, responsive layouts, and screen-reader-critical flows are regression-tested. |
 | P2.16 | Builder persistence regression | 🟡 | Edits, reorder, add/delete, scoped regeneration, and manual content survive reload and regeneration. |
 | P2.17 | Practice persistence regression | 🟡 | Confidence, queue state, completion, and resume behavior survive reload/restart. |
 | P2.18 | Appendix A/B conformance audit | 🟢 | Final persisted kits and evaluator output are mechanically checked against assessment contracts. |
@@ -27,9 +27,9 @@
 
 ### P2 implementation status\n\nP2 is now active. Initial hardening completed: clean-clone command documentation, current-head CI evidence, durable request-lock/idempotency tests, interrupted-write recovery tests, SSRF/security regression fixtures, retrieval freshness timestamps, persisted research provenance sidecar, evaluation artifact persistence, and Appendix A/B conformance audit helpers. Remaining P2 work requires broader API integration coverage, real five-case SLA measurement, load/performance/accessibility/builder/practice regression evidence, provider failover execution, and final documentation/submission audit.\n\n### P2 runtime evidence
 
-- Latest P2 hardening CI: 🟢 runs `35449523122` and `35449516660` passed after freshness, persistence, security, and conformance changes.
-- Security regression fixtures and Appendix A/B conformance tests execute as part of the normal workspace test suite.
-- Durable persistence recovery and cross-process request-lock tests are source-complete; broader real evaluator SLA/performance/accessibility evidence remains pending.
+- Latest P2 hardening CI: 🟢 run `35449799201` passed after persistence, security, API integration, large-input, and accessibility regression changes.
+- Security regression fixtures, API integration failure paths, Appendix A/B conformance tests, large-JD/prompt-budget tests, large-research/evidence-budget tests, and frontend accessibility checks execute in CI.
+- Durable persistence recovery and cross-process request-lock tests are covered and observed in CI. Real five-case evaluator SLA, latency/load evidence, provider failover drill, stale-source policy, and builder/practice end-to-end persistence evidence remain pending.
 
 ### P2 gate
 
