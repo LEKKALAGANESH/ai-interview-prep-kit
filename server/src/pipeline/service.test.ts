@@ -159,6 +159,8 @@ test("propagates persistence failures and never reports a successful save", asyn
     },
     async getPractice() { return { current_index: 0, results: [], completed: false }; },
     async savePractice(_id, state) { return state; },
+    async getPinnedQuestions() { return { question_ids: [], updated_at: new Date(0).toISOString() }; },
+    async savePinnedQuestions(_id, state) { return state; },
   };
 
   await assert.rejects(
