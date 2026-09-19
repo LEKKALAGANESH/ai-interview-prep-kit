@@ -4,12 +4,15 @@ import { createConfiguredLlmProvider, LlmProviderError, type LlmProvider } from 
 import { buildQuestionGenerationPrompt } from "./prompts.js";
 import { buildResearchEvidencePacket } from "../retrieval/research.js";
 import { GeneratedQuestionBatchSchema } from "./schema.js";
+import { observeStage, type GenerationObserver } from "./observability.js";
 
 export type QuestionCategory = Question["category"];
 
 export type QuestionGenerationContext = {
   requirement: Requirement;
   category: QuestionCategory;
+  objective?: string;
+  difficulty?: 1 | 2 | 3;
   companyBrief?: CompanyBrief;
   research?: ResearchResult;
 };
@@ -20,6 +23,7 @@ export type GenerateQuestionOptions = {
   attempts?: number;
   retryDelayMs?: number;
   sleep?: (ms: number) => Promise<void>;
+  observer?: GenerationObserver;
 };
 
 export class QuestionGenerationError extends Error {
@@ -83,10 +87,12 @@ export async function generateQuestionsForRequirement(
       requirementKind: context.requirement.kind,
       requirementPriority: context.requirement.priority,
       category: context.category,
+      objective: context.objective ?? `Assess practical understanding and application of: ${context.requirement.text}`,
+      difficulty: context.difficulty ?? 2,
       companyBrief: context.companyBrief,
       evidencePacket: context.research ? buildResearchEvidencePacket(context.research) : "No supporting evidence available.",
     });
-    raw = await callWithRetry(provider, prompt, options);
+    raw = await observeStage(options.observer, "generation", () => callWithRetry(provider, prompt, options));
   } catch (error) {
     throw new QuestionGenerationError(
       "PROVIDER_FAILED",
