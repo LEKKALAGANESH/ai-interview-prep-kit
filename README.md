@@ -107,6 +107,10 @@ Coverage is deterministic application logic. It compares generated question `req
 
 The Step 8 scheduler consumes the final Step 7 question set and the extracted requirements. It validates the requested 1–60 day range, orders questions deterministically by requirement priority and difficulty, distributes question IDs across exactly the requested number of days, derives each day's focus from the assigned requirement text, and calculates integer minutes at 10 minutes per question. Scheduling does not regenerate or mutate questions, so Step 7 coverage is preserved.
 
+## Production hardening
+
+P2 hardening policies and reproducibility commands are documented in `docs/p2-production-hardening.md`. The durable JSON store uses atomic writes and cross-process request locks for a single shared store path. Research pages receive retrieval freshness timestamps, and source-level research claims are persisted in a provenance sidecar without changing Appendix A. Retrieval/security regressions and Appendix A/B conformance checks run in the automated test suite.
+
 ## Persistence and idempotency
 
 Kit persistence uses a `KitStore` abstraction with both in-memory and durable JSON-backed implementations. Each normalized generation request receives a deterministic ID derived from the normalized company URL, job description, and requested study days. The service checks for an existing kit before generation and coalesces concurrent identical requests in one process; the durable store also serializes file writes with an atomic lock and survives process restarts. Persistence errors propagate instead of being reported as successful generation, and a kit is never saved before final validation and shippable coverage checks pass.
