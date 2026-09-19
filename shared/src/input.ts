@@ -26,6 +26,8 @@ export const BatchKitInputSchema = z.array(
     jd: z.string().trim().min(1, "Job description is required"),
     company_url: HttpUrlSchema,
     days: z.number().int().min(1).max(60),
+    llm_provider: z.enum(["gemini","openai","anthropic","groq","ollama"]).optional(),
+    llm_model: z.string().trim().min(1).max(200).optional(),
   }),
 ).superRefine((cases, ctx) => {
   const seen = new Map<string, number>();
