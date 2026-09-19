@@ -235,17 +235,17 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 11.1 | Display generated kit | ⬜ |
-| 11.2 | Inline edit questions/answers | ⬜ |
-| 11.3 | Reorder questions | ⬜ |
-| 11.4 | Move questions between days | ⬜ |
-| 11.5 | Add and delete questions | ⬜ |
-| 11.6 | Preserve manual edits during scoped regeneration | ⬜ |
-| 11.7 | Persist builder changes | ⬜ |
-| 11.8 | Loading/error states | ⬜ |
-| 11.9 | Keyboard accessibility | ⬜ |
-| 11.10 | Responsive laptop/mobile UI | ⬜ |
-| 11.11 | Add builder tests | ⬜ |
+| 11.1 | Display generated kit | 🟢 |
+| 11.2 | Inline edit questions/answers | 🟢 |
+| 11.3 | Reorder questions | 🟢 |
+| 11.4 | Move questions between days | 🟢 |
+| 11.5 | Add and delete questions | 🟢 |
+| 11.6 | Preserve manual edits during scoped regeneration | 🟢 |
+| 11.7 | Persist builder changes | 🟢 |
+| 11.8 | Loading/error states | 🟢 |
+| 11.9 | Keyboard accessibility | 🟢 |
+| 11.10 | Responsive laptop/mobile UI | 🟢 |
+| 11.11 | Add builder tests | 🟡 |
 
 ### Step 11 implementation notes
 
@@ -426,3 +426,25 @@ Latest UI commits:
 - `821907c` — practice styling
 - `2197e99` — UI/UX research documentation
 
+
+
+## UI completion pass — 2026-09-19
+
+| # | Required UI/UX fix | Status | Implementation evidence |
+|---:|---|:---:|---|
+| 1 | Real generation-progress UI | 🟢 | Added asynchronous generation jobs with server-side observer events and a polling progress surface. UI displays the actual current pipeline stage; no synthetic percentage is used. |
+| 2 | Flashcard UI | 🟢 | Added dedicated Flashcards workspace tab with reveal/hide cards derived from canonical flashcards. |
+| 3 | Pin/unpin | 🟢 | Added durable pin sidecar storage plus GET/POST pin API and Question Bank controls. |
+| 4 | Scoped regeneration | 🟢 | Added PATCH scoped regeneration using the selected provider, persisted provenance evidence, and replacement by the existing question ID. |
+| 5 | Move questions between days | 🟢 | Added per-question day selector plus previous/next-day controls; schedule minutes and coverage remain application-derived. |
+| 6 | Failed-save draft loss | 🟢 | PATCH now returns success/failure; local drafts are cleared only after confirmed successful persistence. |
+| 7 | Authentication/session flow | 🟢 | Added optional HTTP-only cookie workspace session create/read/delete flow and visible session controls. This is a lightweight assessment session, not an external identity provider. |
+| 8 | Better research/provenance presentation | 🟢 | Added provenance API and actionable source links with source type, confidence basis, and capture timestamp. |
+| 9 | Complete provider keyboard interaction | 🟢 | Provider selector supports Arrow Up/Down, Home/End, Enter, Escape, selected state, and focusable listbox semantics. |
+| 10 | Runtime mobile/browser audit | 🟡 | Responsive CSS and semantic controls are implemented; GitHub CI build/runtime health is green, but a real browser/device viewport audit is not available in this execution environment and is not claimed as passed. |
+
+### UI implementation verification
+
+- Latest CI run 35455748383 passed npm test, npm run build, evaluator CLI help, evaluation regression, server startup, and /health.
+- The CI result verifies source/build/runtime health but does not constitute a visual browser/device audit.
+- A local browser/Playwright pass should be the final evidence for item 10 before declaring the UI visually/runtime-complete.
