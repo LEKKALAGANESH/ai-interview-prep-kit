@@ -33,3 +33,21 @@ test("allows localhost explicitly for local evaluator cases", () => {
     "localhost",
   );
 });
+
+
+test("rejects credential-bearing URLs", () => {
+  assert.throws(() => validateExternalUrl("https://user:pass@example.com"), /credentials/i);
+});
+
+test("rejects IPv6 loopback", () => {
+  assert.throws(() => validateExternalUrl("http://[::1]:8080"), /private|loopback/i);
+});
+
+test("rejects cloud metadata address", () => {
+  assert.throws(() => validateExternalUrl("http://169.254.169.254/latest/meta-data/"), /private|loopback/i);
+});
+
+test("allows localhost only when explicitly enabled", () => {
+  assert.throws(() => validateExternalUrl("http://localhost:4000"));
+  assert.equal(validateExternalUrl("http://localhost:4000", { allowLocalhost: true }).hostname, "localhost");
+});
