@@ -56,7 +56,8 @@ async function generateQuestionsForRequirements(
   requirements: Requirement[],
   options: InitialQuestionSetOptions,
 ): Promise<Question[]> {
-  return generateQuestionsForPlans(buildQuestionPlan(requirements, options.role), requirements, options);
+  const plans = buildQuestionPlan(requirements, options.role);
+  return generateQuestionsForPlans(plans, requirements, options);
 }
 
 export async function generateInitialQuestionSet(
