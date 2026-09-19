@@ -76,3 +76,25 @@ test("maps Ollama chat responses into provider output", async () => {
   });
   assert.deepEqual(await provider.generate({ systemInstruction: "s", userPrompt: "u" }), { ok: true });
 });
+
+
+test("falls back on bounded provider failures", async () => {
+  const { FallbackLlmProvider } = await import("./provider.js");
+  let fallbackObserved = false;
+  const provider = new FallbackLlmProvider(
+    { async generate() { throw new LlmProviderError("TRANSIENT", "primary unavailable"); } },
+    { async generate() { return { ok: true }; } },
+    () => { fallbackObserved = true; },
+  );
+  assert.deepEqual(await provider.generate({ systemInstruction: "s", userPrompt: "u" }), { ok: true });
+  assert.equal(fallbackObserved, true);
+});
+
+test("does not fail over configuration errors", async () => {
+  const { FallbackLlmProvider } = await import("./provider.js");
+  const provider = new FallbackLlmProvider(
+    { async generate() { throw new LlmProviderError("CONFIGURATION", "bad key"); } },
+    { async generate() { return { ok: true }; } },
+  );
+  await assert.rejects(provider.generate({ systemInstruction: "s", userPrompt: "u" }), /bad key/);
+});
