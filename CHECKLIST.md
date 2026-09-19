@@ -52,17 +52,17 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 | P1.11 | Semantic LLM-as-judge evaluation | 🟢 | Add an independent judge for relevance, specificity, grounding, answer usefulness, difficulty fit, and diversity; judge never overrides deterministic contract/coverage. |
 | P1.12 | Golden evaluation dataset | 🟢 | Add representative regression cases covering technical, behavioural, domain, thin JD, research gaps, injection, malformed output, and edge schedules. |
 | P1.13 | Prompt regression evaluation | 🟢 | Record prompt version + model/provider and compare golden-case results across prompt changes. |
-| P1.14 | Provider/model comparison | 🟢 | Evaluate configured providers/models on the same golden cases without changing application-owned contracts. |
-| P1.15 | Quality scorecard | 🟢 | Produce per-case and aggregate metrics for schema validity, requirement coverage, relevance, specificity, groundedness, diversity, and difficulty fit. |
-| P1.16 | Cost/latency instrumentation | 🟢 | Capture provider/model, attempts, latency, token usage when available, and generation stage without logging secrets or raw sensitive inputs. |
+| P1.14 | Provider/model comparison | 🟡 | Comparison runner/workflow is implemented; execution still requires at least two configured providers. |
+| P1.15 | Quality scorecard | 🟡 | Scorecard implementation exists; real-provider scorecard has not yet been reviewed from a completed golden run. |
+| P1.16 | Cost/latency instrumentation | 🟡 | Stage timing/provider metadata plumbing is implemented; token/cost evidence depends on provider responses and has not yet been reviewed in a real-provider run. |
 | P1.17 | Prompt-budget control | 🟢 | Bound evidence/context size and preserve the highest-value evidence when prompts approach provider limits. |
 | P1.18 | Generation batching policy | 🟢 | Define and test batching boundaries so quality, latency, and provider limits remain predictable. |
 | P1.19 | Repair quality gate | 🟢 | Require repaired questions to satisfy the same schema, relevance, grounding, diversity, and difficulty checks as first-pass questions. |
 | P1.20 | Flashcard quality validation | 🟢 | Validate derived flashcards for answer usefulness, requirement traceability, and one-to-one source-question lineage. |
 | P1.21 | Prompt fixture library | 🟢 | Add reusable fixtures for normal JD, thin JD, false premise, injection, malicious company page, misleading interview discussion, and malformed provider output. |
 | P1.22 | Provider fallback quality policy | 🟢 | Define what happens when fallback providers produce materially different outputs; preserve contract/coverage and record provider provenance. |
-| P1.23 | Generation observability | 🟡 | Expose structured stage outcomes/errors so failed extraction, research, generation, repair, and validation can be diagnosed independently. |
-| P1.24 | P0 pin semantics | 🟡 | Decide and implement the explicit persisted representation for pinned/manual questions if the product requires pinning to survive regeneration. |
+| P1.23 | Generation observability | 🟢 | Extraction, research, planning, generation, repair, validation, and persistence now emit structured stage events through the pipeline observer. |
+| P1.24 | P0 pin semantics | 🟢 | Added persisted `PinnedQuestionState` sidecar storage (`question_ids`, `updated_at`) without changing Appendix A kit shape; JSON and in-memory stores are covered by persistence tests. |
 | P1.25 | Runtime quality gate | 🟡 | Run the golden suite and verify no P0 regression before promoting P1 changes. |
 
 ### P1 implementation evidence
@@ -83,8 +83,8 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 
 ### P1 runtime verification
 
-- Runtime/build verification: 🟢 current-head CI passed on commit `ec2faa913781ff4096f79680f0c8edd3626127f1` (GitHub Actions run `35447853327`).
-- Evaluator runtime: 🟡 evaluator CLI smoke step passed in CI, but the full golden dataset has not yet been run with a configured real provider.
+- Runtime/build verification: 🟢 current-head CI passed on commit `0c63e100976cae236cfaeebfe9f1eefd411c8af8` (GitHub Actions run `35448625955`).
+- Evaluator runtime: 🟡 CLI smoke and prompt-regression execution pass in CI; the full golden dataset still needs a configured real provider.
 - Quality-gate verification: 🟡 source-level gates and golden fixtures are present, but the full golden evaluation with real provider output has not yet been executed and reviewed.
 
 ### P1 completion gate
