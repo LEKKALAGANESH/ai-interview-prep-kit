@@ -8,7 +8,6 @@ export function createLlmRoleExtractionProvider(
   return {
     async extractRole({ jobDescription }) {
       const response = await provider.generate(buildRoleExtractionPrompt({ jobDescription }));
-;
 
       return response;
     },
