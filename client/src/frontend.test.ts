@@ -6,7 +6,7 @@ test("generation payload contains required fields",()=>{const payload={jd:"React
 import { readFile } from "node:fs/promises";
 
 test("interactive frontend controls remain keyboard-accessible by native semantics", async () => {
-  for (const path of ["client/app/page.tsx", "client/app/practice.tsx"]) {
+  for (const path of ["../app/page.tsx", "../app/practice.tsx"]) {
     const source = await readFile(new URL(`../${path}`, import.meta.url), "utf8");
     const buttons = [...source.matchAll(/<button([^>]*)>([\\s\\S]*?)<\\/button>/g)];
     assert.ok(buttons.length > 0, `${path} should contain native buttons`);
