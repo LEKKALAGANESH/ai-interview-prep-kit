@@ -1,4 +1,4 @@
-export type GenerationStage = "extraction" | "research" | "planning" | "generation" | "repair" | "validation" | "persistence";
+export type GenerationStage = "extraction" | "research" | "planning" | "generation" | "repair" | "validation" | "persistence" | "provenance";
 
 export type GenerationEvent = {
   stage: GenerationStage;
