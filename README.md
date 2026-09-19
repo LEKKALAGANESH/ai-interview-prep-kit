@@ -1,10 +1,28 @@
 # AI Interview Prep Kit
 
+[![CI](https://github.com/LEKKALAGANESH/ai-interview-prep-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/LEKKALAGANESH/ai-interview-prep-kit/actions/workflows/ci.yml)
+![Node](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Turn a job description and a company website into a personalised, requirement-traced interview preparation kit: categorised questions, flashcards, an N-day study plan, and practice tracking.
 
 Built for the Trao Full-Stack Engineering Assessment.
 
 ![Overview](docs/screenshots/01-overview-company-brief.png)
+
+## Table of contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Project structure](#project-structure)
+- [Architecture](#architecture)
+- [Getting started](#getting-started)
+- [API](#api)
+- [Testing and evaluation](#testing-and-evaluation)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
@@ -55,15 +73,29 @@ Cards are derived from the validated question set, so they keep requirement line
 |---|---|
 | ![Study plan](docs/screenshots/14-study-plan.png) | ![Practice session](docs/screenshots/15-practice-session.png) |
 
-## Architecture
+## Project structure
 
 ```
-client/       Next.js + Tailwind frontend
-server/       Node.js HTTP API: retrieval, extraction, generation, scheduling, persistence
-shared/       TypeScript contracts, Zod validation, Appendix A model
-evaluation/   Batch evaluation CLI and quality/regression tooling
-docs/         Design notes, research, hardening policy, screenshots
+.
+├── client/          Next.js + Tailwind frontend
+│   ├── app/         Pages, layout and global styles
+│   └── src/         Frontend tests
+├── server/          Node.js HTTP API
+│   └── src/
+│       ├── api/          Routes and request handling
+│       ├── retrieval/    Safe page fetching, robots.txt, link ranking, research
+│       ├── extraction/   JD requirement extraction
+│       ├── generation/   Prompts, providers, question generation and repair pass
+│       ├── pipeline/     End-to-end orchestration and kit assembly
+│       └── persistence/  Kit store (in-memory and durable JSON)
+├── shared/          Appendix A model, Zod validation, coverage and scheduling logic
+├── evaluation/      Batch evaluation CLI, quality and regression tools
+├── docs/            Design notes, research, hardening policy, screenshots
+├── .github/         CI and quality workflows
+└── CHECKLIST.md     Final verification checklist
 ```
+
+## Architecture
 
 ### Pipeline
 
@@ -135,3 +167,23 @@ Further commands: `npm run regression`, `npm run quality` and `npm run provider-
 - [UI/UX research](docs/ui-ux-research.md)
 - [LLM research notes](docs/llm-research/README.md)
 - [Verification checklist](CHECKLIST.md)
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repo and create a branch: `git checkout -b feature/short-name`.
+2. Make your change and add or update tests.
+3. Run `npm test` and `npm run build` and make sure both pass.
+4. Commit with a short, clear message (for example `fix: handle empty JD`).
+5. Push the branch and open a pull request describing what changed and why.
+
+Please open an issue first for large changes. Never commit secrets: `.env` is git-ignored, so keep API keys there.
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+## Author
+
+**LEKKALAGANESH**: [github.com/LEKKALAGANESH](https://github.com/LEKKALAGANESH)
