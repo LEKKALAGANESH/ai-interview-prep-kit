@@ -71,6 +71,15 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 - Remaining source/runtime work: executable prompt-regression/provider-comparison runners, full observer wiring across extraction/research/persistence, persisted pin semantics, and current-head runtime execution.
 - Runtime statuses are intentionally 🟡 until the current GitHub Actions run or equivalent execution is observed.
 
+### P1 status summary
+
+| Area | Status |
+|---|:---:|
+| P1 checklist definition | 🟢 |
+| P1 implementation | 🟢 source-level; P1.24 remains 🟡 |
+| P1 runtime verification | 🟢 current CI run `35447784502` |
+| P1 quality-gate verification | 🟡 golden suite/semantic thresholds not yet executed |
+
 ### P1 completion gate
 
 - No P0 regression.
@@ -104,9 +113,9 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 ### P0 verification status
 
 - **Source-level implementation:** 🟢 for 11/12 items; S1.9 remains 🟡 only for the missing explicit persisted pin concept.
-- **Runtime verification of the new Sprint 1 commits:** 🟡 — GitHub reports no workflow run for the latest head, and this environment cannot reach GitHub from a shell, so tests are not being falsely claimed as executed.
+- **Runtime verification of the new Sprint 1 commits:** 🟢 — GitHub Actions run `35447784502` passed `npm install`, all workspace tests, all workspace builds, evaluator CLI help, server start, and `/health`.
 - **New tests added:** centralized prompt safety, source-labeled research evidence, deterministic flashcard derivation.
-- **P0 gate:** keep runtime status 🟡 until the updated test/build workflow executes successfully.
+- **P0 gate:** runtime verification is now 🟢. S1.9 remains 🟡 because explicit persisted pin semantics are still not represented in Appendix A.
 - **P1 started:** source-level P1 implementation is now active below; P0 is not being declared runtime-green prematurely.
 
 ---
@@ -335,10 +344,10 @@ The latest CI verification reached the server test suite with **one remaining kn
 
 | # | Checklist | Status |
 |---:|---|:---:|
-| 15.1 | Root npm install works from clean clone | 🟡 |
-| 15.2 | Root npm test works | 🟡 |
+| 15.1 | Root npm install works from clean clone | 🟢 |
+| 15.2 | Root npm test works | 🟢 |
 | 15.3 | Root npm run build works | 🟡 |
-| 15.4 | Mandatory evaluator command works | 🟡 |
+| 15.4 | Mandatory evaluator command works | 🟢 |
 | 15.5 | Five evaluation cases under 15 minutes | 🟡 |
 | 15.6 | GitHub Actions covers full repository | 🟢 |
 | 15.7 | No secrets committed | 🟢 |
@@ -347,7 +356,7 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 15.10 | Appendix B verified | 🟢 |
 | 15.11 | Edge cases verified | 🟡 |
 | 15.12 | Security/SSRF/content-size checks verified | 🟢 |
-| 15.13 | Steps 1–14 regression check | 🟡 |
+| 15.13 | Steps 1–14 regression check | 🟢 |
 | 15.14 | Final clean-clone audit | 🟡 |
 | 15.15 | Final submission readiness | 🟡 |
 
@@ -358,7 +367,7 @@ The latest CI verification reached the server test suite with **one remaining kn
 - Root workspace builds previously stopped because server, shared, and evaluation had no build scripts or TypeScript configs. Each package now has a strict tsc --noEmit build/typecheck target.
 - Added a five-case evaluator fixture at evaluation/cases.example.json. Use an actual filename in PowerShell; <cases.json> is placeholder notation and is interpreted as shell syntax.
 - CI now installs and verifies the full workspace with root npm install, npm test, npm run build, evaluator CLI help, and server health.
-- Items 15.1–15.5 and 15.11/15.13–15.15 remain yellow until the updated code is actually executed and the resulting CI/local evidence is reviewed.
+- CI runtime evidence now confirms 15.1–15.4 and 15.13 on the current head. Items 15.5, 15.11, 15.14, and 15.15 remain yellow pending the actual five-case evaluator SLA, broader edge-case run, final clean-clone audit, and final submission gate.
 
 ## Overall Progress
 
@@ -372,12 +381,12 @@ The latest CI verification reached the server test suite with **one remaining kn
 | 6 | Coverage | 🟢 |
 | 7 | Coverage repair | 🟢 |
 | 8 | Scheduling | 🟢 |
-| 9 | Backend pipeline/persistence/API | 🟡 |
+| 9 | Backend pipeline/persistence/API | 🟢 |
 | 10 | Mandatory evaluator | 🟡 Active |
 | 11 | Builder | 🟡 Active |
-| 12 | Practice mode | ⬜ |
+| 12 | Practice mode | 🟢 |
 | 13 | Frontend | 🟡 Active |
 | 14 | Backend hardening | 🟡 Active |
-| 15 | Final verification | ⬜ |
+| 15 | Final verification | 🟡 Active |
 
 **Working rule:** The known Step 9 test failure is deferred; Step 10 can proceed, but Step 9 remains 🟡 until that failure and the final runtime/audit verification are resolved.
