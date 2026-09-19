@@ -1,3 +1,31 @@
+# Sprint 1 — LLM Quality & Reliability (P0)
+
+**Goal:** Make the LLM path grounded, requirement-aware, schema-valid, deterministic at the application boundary, resilient to provider failures, and safe against untrusted reference data.
+
+| ID | P0 item | Status | Evidence |
+|---|---|:---:|---|
+| S1.1 | Audit existing LLM pipeline against the research docs | 🟢 | Existing extraction → research → generation → coverage → repair → schedule → validation flow reviewed. |
+| S1.2 | Harden requirement extraction | 🟢 | Zod boundary, deterministic IDs, conservative dedupe, JD evidence/priority safeguards, thin-input behavior. |
+| S1.3 | Centralize prompt architecture | 🟢 | Added `server/src/generation/prompts.ts`; extraction and question generation now use dedicated prompt builders. |
+| S1.4 | Ground generation in source-labeled research evidence | 🟢 | Added `buildResearchEvidencePacket()`; company pages and public discussion are explicitly separated and URL-labeled. |
+| S1.5 | Requirement-first question planning | 🟢 | Generation iterates one requirement at a time and assigns category/requirement IDs in application code. |
+| S1.6 | Schema-validated question generation | 🟢 | Generated output passes `GeneratedQuestionBatchSchema`; IDs are application-owned; malformed output is rejected. |
+| S1.7 | Deterministic coverage | 🟢 | `checkCoverage()` owns coverage and shippability; invalid references are non-coverage. |
+| S1.8 | Bounded coverage repair | 🟢 | Second pass targets only uncovered requirements and preserves successful first-pass questions. |
+| S1.9 | Preserve user edits during scoped regeneration | 🟡 | Scoped regeneration preserves non-scoped/manual content; no separate persisted `pinned` field exists in Appendix A. |
+| S1.10 | Flashcard generation from validated questions | 🟢 | Flashcards are now deterministically derived from final validated questions. |
+| S1.11 | Provider reliability | 🟢 | Provider abstraction, 60s request timeout, rate-limit/transient classification, bounded exponential retry, malformed-response rejection. |
+| S1.12 | Security / prompt-injection boundary | 🟢 | JD/web/search data is untrusted; centralized prompts prohibit instruction following from reference data; SSRF/content limits remain enforced. |
+
+### P0 verification status
+
+- **Source-level implementation:** 🟢 for 11/12 items; S1.9 remains 🟡 only for the missing explicit persisted pin concept.
+- **Runtime verification of the new Sprint 1 commits:** 🟡 — GitHub reports no workflow run for the latest head, and this environment cannot reach GitHub from a shell, so tests are not being falsely claimed as executed.
+- **New tests added:** centralized prompt safety, source-labeled research evidence, deterministic flashcard derivation.
+- **P0 gate:** keep runtime status 🟡 until the updated test/build workflow executes successfully.
+
+---
+
 # AI Interview Prep Kit — Master Checklist
 
 ## Steps 1–10 — Current Checklist
