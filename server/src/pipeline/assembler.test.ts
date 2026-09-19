@@ -70,6 +70,9 @@ test("assembles a schema-valid kit from final questions and coverage", () => {
 
   assert.equal(kit.source.jd_chars, "React frontend engineer".length);
   assert.equal(kit.schedule.days_available, 2);
+  assert.equal(kit.flashcards.length, 2);
+  assert.equal(kit.flashcards[0].front, questions[0].prompt);
+  assert.deepEqual(kit.flashcards[0].requirement_ids, ["r1"]);
   assert.deepEqual(
     kit.schedule.days.flatMap((day) => day.question_ids),
     questions.map((question) => question.id),
