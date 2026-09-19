@@ -2,6 +2,7 @@ import type { Kit, CompanyBrief, Flashcard, Role } from "@trao/interview-prep-sh
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import { buildValidatedKit, type BuildKitOptions } from "./assembler.js";
 import { buildKitId, type KitStore } from "../persistence/store.js";
+import { observeStage, type GenerationObserver } from "../generation/observability.js";
 
 export type GenerateAndPersistKitOptions = Omit<BuildKitOptions, "role" | "company" | "companyBrief" | "research"> & {
   role: Role;
@@ -9,6 +10,7 @@ export type GenerateAndPersistKitOptions = Omit<BuildKitOptions, "role" | "compa
   companyBrief: CompanyBrief;
   research: BuildKitOptions["research"];
   flashcards?: Flashcard[];
+  observer?: GenerationObserver;
 };
 
 export type PersistedKitResult = {
@@ -32,7 +34,7 @@ async function generateAndPersistOnce(
   }
 
   const kit = await buildValidatedKit(input, options);
-  const saved = await store.save(id, kit);
+  const saved = await observeStage(options.observer, "persistence", () => store.save(id, kit));
 
   return {
     id,
