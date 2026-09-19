@@ -85,10 +85,10 @@ Cards are derived from the validated question set, so they keep requirement line
 │       ├── api/          Routes and request handling
 │       ├── retrieval/    Safe page fetching, robots.txt, link ranking, research
 │       ├── extraction/   JD requirement extraction
-│       ├── generation/   Prompts, providers and question generation
-│       ├── pipeline/     Coverage, repair pass and scheduling
+│       ├── generation/   Prompts, providers, question generation and repair pass
+│       ├── pipeline/     End-to-end orchestration and kit assembly
 │       └── persistence/  Kit store (in-memory and durable JSON)
-├── shared/          TypeScript contracts, Zod validation, Appendix A model
+├── shared/          Appendix A model, Zod validation, coverage and scheduling logic
 ├── evaluation/      Batch evaluation CLI, quality and regression tools
 ├── docs/            Design notes, research, hardening policy, screenshots
 ├── .github/         CI and quality workflows
