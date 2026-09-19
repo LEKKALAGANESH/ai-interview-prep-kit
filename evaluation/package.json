@@ -6,7 +6,10 @@
   "scripts": {
     "build": "tsc --noEmit",
     "evaluate": "tsx src/cli.ts",
-    "test": "tsx --test src/*.test.ts"
+    "test": "tsx --test src/*.test.ts",
+    "regression": "tsx src/prompt-regression-cli.ts",
+    "quality": "tsx src/quality-cli.ts",
+    "provider-compare": "tsx src/provider-comparison-cli.ts"
   },
   "dependencies": {
     "@trao/interview-prep-server": "file:../server",
