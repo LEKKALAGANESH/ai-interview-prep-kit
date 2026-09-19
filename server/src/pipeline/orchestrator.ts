@@ -7,6 +7,7 @@ import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model
 import type { CompanyBrief } from "@trao/interview-prep-shared/kit.js";
 import { generateAndPersistKit, type PersistedKitResult } from "./service.js";
 import type { KitStore } from "../persistence/store.js";
+import { observeStage, type GenerationObserver } from "../generation/observability.js";
 
 export class ApplicationPipelineError extends Error {
   constructor(
@@ -49,6 +50,7 @@ export type ApplicationPipelineOptions = {
   research?: Omit<ResearchOptions, "fetchImpl">;
   llmProvider?: ReturnType<typeof createConfiguredLlmProvider>;
   allowLocalhost?: boolean;
+  observer?: GenerationObserver;
 };
 
 export async function generateKitFromInput(
@@ -81,11 +83,11 @@ export async function generateKitFromInput(
 
   let research: Awaited<ReturnType<typeof researchCompany>>;
   try {
-    research = await researchCompany(companyUrl, {
+    research = await observeStage(options.observer, "research", () => researchCompany(companyUrl, {
       ...options.research,
       allowLocalhost: options.allowLocalhost,
       fetchImpl: options.fetchImpl,
-    });
+    }));
   } catch (error) {
     throw new ApplicationPipelineError(
       "RESEARCH_FAILED",
@@ -102,9 +104,9 @@ export async function generateKitFromInput(
 
   let role;
   try {
-    role = await extractRole(input.job_description, {
+    role = await observeStage(options.observer, "extraction", () => extractRole(input.job_description, {
       provider: createLlmRoleExtractionProvider(provider),
-    });
+    }));
   } catch (error) {
     throw new ApplicationPipelineError(
       "EXTRACTION_FAILED",
@@ -120,6 +122,7 @@ export async function generateKitFromInput(
       companyBrief: buildCompanyBrief(research),
       research,
       provider,
+      observer: options.observer,
     },
     options.store,
   );
