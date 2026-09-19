@@ -8,8 +8,8 @@ export type QuestionPromptInput = {
   requirementKind: string;
   requirementPriority: string;
   category: string;
-  objective: string;
-  difficulty: 1 | 2 | 3;
+  objective?: string;
+  difficulty?: 1 | 2 | 3;
   companyBrief?: { summary: string; what_they_do: string };
   evidencePacket: string;
 };
@@ -57,8 +57,8 @@ export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
       `Requirement kind: ${input.requirementKind}`,
       `Requirement priority: ${input.requirementPriority}`,
       `Question category: ${input.category}`,
-      `Question objective: ${input.objective}`,
-      `Target difficulty: ${input.difficulty}`,
+      `Question objective: ${input.objective ?? `Assess practical understanding and application of: ${input.requirementText}`}`,
+      `Target difficulty: ${input.difficulty ?? 2}`,
       input.companyBrief
         ? `Company brief (reference only):\nSummary: ${input.companyBrief.summary}\nWhat they do: ${input.companyBrief.what_they_do}`
         : "Company brief: unavailable",
