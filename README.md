@@ -1,126 +1,137 @@
-# The AI Interview Prep Kit
+# AI Interview Prep Kit
 
-Implementation of the Trao Full-Stack Engineering Assessment: **The AI Interview Prep Kit**.
+Turn a job description and a company website into a personalised, requirement-traced interview preparation kit: categorised questions, flashcards, an N-day study plan, and practice tracking.
+
+Built for the Trao Full-Stack Engineering Assessment.
+
+![Overview](docs/screenshots/01-overview-company-brief.png)
+
+## Features
+
+- **Structured JD extraction**: requirements with stable IDs, a `kind` (technical, behavioural, domain) and a `priority` (must, nice).
+- **Company research**: secure page retrieval, link ranking and optional public interview research, all stored with provenance.
+- **Requirement-traced questions**: every question points to one or more requirement IDs.
+- **Deterministic coverage engine**: finds uncovered requirements and runs a bounded second pass to fill the gaps. The LLM never decides whether coverage exists.
+- **Deterministic study plan**: exactly N days (1-60), 10 minutes per question.
+- **Editable kit**: edit, add, delete, reorder, pin, move between days, and regenerate a single question. Pinned and edited content survives regeneration.
+- **Flashcards and practice mode** with per-requirement practice coverage.
+- **Multiple LLM providers**: Gemini, OpenAI, Anthropic Claude, Groq, and local Ollama.
+- **Batch evaluation CLI** that keeps going when a single case fails.
+
+## Screenshots
+
+### Overview
+
+Company brief, coverage score, role requirements with coverage status, and research provenance.
+
+| | |
+|---|---|
+| ![Company brief](docs/screenshots/01-overview-company-brief.png) | ![Coverage and requirements](docs/screenshots/02-overview-coverage-and-requirements.png) |
+| ![Requirements list](docs/screenshots/03-overview-requirements-list.png) | ![Uncovered requirements and provenance](docs/screenshots/04-overview-uncovered-and-provenance.png) |
+
+### Question bank
+
+Edit answers in place, pin questions, assign days, and regenerate a single question. Saves are transactional, so a failed API write keeps your local draft.
+
+| | |
+|---|---|
+| ![Question bank](docs/screenshots/05-question-bank.png) | ![Edit a question](docs/screenshots/06-question-bank-edit-question.png) |
+| ![Day assignment](docs/screenshots/07-question-bank-day-assignment.png) | ![Behavioural question](docs/screenshots/08-question-bank-behavioural.png) |
+| ![Technical question](docs/screenshots/09-question-bank-technical.png) | ![Last question](docs/screenshots/10-question-bank-last-question.png) |
+
+### Flashcards
+
+Cards are derived from the validated question set, so they keep requirement lineage.
+
+| | |
+|---|---|
+| ![Flashcards](docs/screenshots/11-flashcards.png) | ![Flashcard grid](docs/screenshots/12-flashcards-grid.png) |
+
+![Reveal answer](docs/screenshots/13-flashcards-reveal-answer.png)
+
+### Study plan and practice
+
+| | |
+|---|---|
+| ![Study plan](docs/screenshots/14-study-plan.png) | ![Practice session](docs/screenshots/15-practice-session.png) |
 
 ## Architecture
 
-- `client/` — Next.js + Tailwind frontend
-- `server/` — Node.js HTTP application/API with separated retrieval, extraction, generation, scheduling, and persistence modules
-- `shared/` — shared TypeScript contracts, validation, and Appendix A model
-- `evaluation/` — mandatory `npm run evaluate -- --input <cases.json> --output <kits.json>` CLI
-- `tests/` — cross-cutting automated tests
-
-## Core pipeline
-
-1. Validate and authenticate the user.
-2. Extract structured requirements from the supplied job description.
-3. Retrieve and clean individual company pages.
-4. Discover/rank relevant site links instead of hard-coding hiring URLs.
-5. Research public interview discussion where available.
-6. Generate categorized questions with requirement IDs.
-7. Run deterministic requirement coverage checks.
-8. Generate missing questions in a second pass.
-9. Build a deterministic N-day schedule.
-10. Validate the complete Appendix A structure before persistence.
-11. Support editing, reordering, adding/deleting, pinning, and scoped regeneration.
-12. Track flashcard practice coverage/confidence.
-13. Support multi-role batch evaluation.
-14. Support selectable Gemini, OpenAI, Anthropic Claude, Groq, and local Ollama providers.
-
-## JD extraction
-
-The extraction boundary is deliberately separate from retrieval and later question generation.
-
 ```
-pasted JD
-  ↓
-RoleExtractionProvider
-  ↓
-structured raw role
-  ↓
-Zod validation
-  ↓
-deterministic normalization
-  ↓
-Appendix A role
+client/       Next.js + Tailwind frontend
+server/       Node.js HTTP API: retrieval, extraction, generation, scheduling, persistence
+shared/       TypeScript contracts, Zod validation, Appendix A model
+evaluation/   Batch evaluation CLI and quality/regression tooling
+docs/         Design notes, research, hardening policy, screenshots
 ```
 
-Requirements use the exact Appendix A fields:
+### Pipeline
 
-- `id`
-- `text`
-- `kind`: `technical | behavioural | domain`
-- `priority`: `must | nice`
+1. Validate and normalise the request (`jd`, `company_url`, `days`).
+2. Retrieve and clean company pages; rank relevant links instead of hard-coding hiring URLs.
+3. Research public interview discussion when a search key is configured.
+4. Extract requirements from the JD (validated with Zod, then normalised).
+5. Generate questions per requirement and category.
+6. Run the deterministic coverage check and repair only the missing requirements (bounded second pass).
+7. Build the N-day schedule.
+8. Validate the full Appendix A structure, then persist. A kit is never saved before it passes validation and shippable coverage.
 
-Requirement IDs are assigned deterministically within a kit. Equivalent requirement wording is normalized conservatively, and a duplicate is upgraded to `must` if any occurrence is explicitly classified as must-have.
+### Design decisions
 
-The extraction layer does not invent requirements for thin descriptions. Missing details remain missing. Job-description text is passed to the provider as data; instruction-like text inside a JD is not treated as an application instruction.
+- **Untrusted input**: JD text, company pages and search results are passed to the model as reference data, never as instructions.
+- **Validated output**: model JSON is checked against a schema before it becomes application state. Requirement IDs are assigned by application code, not accepted from the model.
+- **Honest output**: thin input gives a thin kit. Missing requirements or company facts are not invented, and gaps are recorded.
+- **Idempotent generation**: the request ID is derived from the normalised URL, JD and day count. Identical requests are coalesced, and the durable JSON store uses atomic writes with cross-process locks.
+- **Secure fetching**: URL and SSRF validation, content-type and size limits, timeouts, redirect validation, robots.txt handling, and bounded retry with backoff.
 
-Provider output is validated before it becomes application state. Invalid structured output and provider failures become explicit extraction errors rather than unchecked TypeScript casts.
+## Getting started
 
-## Data integrity rules
+Requires Node.js 20 or newer.
 
-- Every requirement has a stable ID.
-- Every question references one or more requirement IDs.
-- Must-have requirements must be covered before a kit is considered shippable.
-- User-edited/user-added/pinned content survives scoped regeneration.
-- Durations are integer minutes.
-- Thin input produces a thin, honest kit; unsupported requirements or company facts are not fabricated.
+```bash
+npm install
+cp .env.example .env      # add at least one provider key
+npm run dev:server        # API on http://localhost:$PORT
+npm run dev               # frontend on http://localhost:3000
+```
 
-## Evaluation
+### Configuration
 
-The required command is:
+| Variable | Purpose |
+|---|---|
+| `LLM_PROVIDER` | `gemini`, `openai`, `anthropic`, `groq` or `ollama` |
+| `LLM_MODEL` | Override the default model for the chosen provider |
+| `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY` | Provider credentials (server-side only, never sent to the browser) |
+| `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | Local Ollama setup |
+| `BRAVE_SEARCH_API_KEY` | Enables public interview research |
+| `KIT_STORE_FILE` | Kit store path (default `.data/kits.json`) |
+| `PORT` | API port |
 
-`npm run evaluate -- --input <cases.json> --output <kits.json>`
+Default models (checked 2026-09-19): Gemini `gemini-3.6-flash`, OpenAI `gpt-5.5`, Anthropic `claude-sonnet-5`, Groq `openai/gpt-oss-120b`, Ollama `llama3.1:8b`.
 
-Step 10 is the mandatory batch evaluator. It must accept an array of cases containing `id`, `jd`, `company_url`, and `days`; run the same pipeline used by the application; use the requested day count; emit the Appendix B structure; and continue processing when an individual case fails. The evaluator must also cover the assessment's invalid/timeout URLs, thin JDs, missing hiring pages, absent public interview discussion, malformed model JSON, rate-limit/transient failures, duplicate cases, 1-day/60-day cases, and local company URLs with relative links.
+## API
 
-## Security
+- `POST /api/kits`: generate a kit from `{ jd, company_url, days }`
+- Kit builder and practice routes for editing, regeneration and practice tracking
+- `GET /health`
 
-External URLs are validated before fetching. Production deployments must reject private/loopback destinations. Retrieved web content is treated as untrusted content, not executable instructions. Fetches enforce expected content types, size limits, timeouts, redirect validation, and backoff/rate-limit behavior.
+Missing credentials, unusable company retrieval, extraction failures and unshippable coverage are returned as structured errors.
 
-## Status
+## Testing and evaluation
 
-Steps 1–9 are implemented incrementally: the shared Appendix A contract, input validation/normalization, secure retrieval/research, JD extraction, LLM question generation, deterministic coverage, bounded second-pass repair, deterministic scheduling, final schema validation, durable persistence, idempotency, and raw-input API orchestration are in place.
+```bash
+npm test                                                     # all workspaces
+npm run evaluate -- --input <cases.json> --output <kits.json>
+```
 
-The final verification checklist tracks runtime and clean-clone evidence separately from source-level implementation status. Step 10 evaluation work is now active while Step 9 remains tracked as 🟡 until the deferred test and final runtime/audit verification are resolved.
+The evaluator reads an array of `{ id, jd, company_url, days }` cases, runs the same pipeline as the app, and writes the Appendix B output. It covers invalid and timing-out URLs, thin JDs, missing hiring pages, absent interview discussion, malformed model JSON, rate limits, duplicate cases, 1-day and 60-day plans, and local URLs with relative links. See `evaluation/README.md`.
 
-## Public interview research
+Further commands: `npm run regression`, `npm run quality` and `npm run provider-compare` (in `evaluation/`).
 
-Company crawling is separate from public interview research. When the `BRAVE_SEARCH_API_KEY` environment variable is configured, the retrieval pipeline searches the public web for interview-process and interview-question discussions using the company hostname. Search results are stored as research evidence and are not treated as instructions. If no provider is configured or the search fails, the kit records that gap honestly rather than fabricating interview information.
+## Documentation
 
-## Retrieval test coverage
-
-The server test suite covers URL/SSRF validation, HTTP content limits and redirects, retry behavior, robots.txt decisions and redirects, HTML cleaning, link ranking, company crawling, and public interview research.
-
-## Question generation
-
-Question generation is deliberately separated by requirement and category. Prompt construction is centralized in `server/src/generation/prompts.ts` with explicit versions (`role-extraction:v1`, `question-generation:v1`) so prompt changes are reviewable and regression-testable. The generation pipeline selects `technical` for technical requirements, `behavioural` for behavioural requirements, and `system-design` for domain requirements. The model receives the selected requirement ID and a source-labeled research evidence packet, but requirement IDs are assigned by application code rather than accepted from model output. Company-primary pages and public interview discussion are explicitly labeled; public discussion is never presented as verified company policy.
-
-The default LLM adapter is Gemini using `GEMINI_MODEL` (default `gemini-3.6-flash`). The current UI/server provider defaults are Gemini `gemini-3.6-flash`, OpenAI `gpt-5.5`, Anthropic `claude-sonnet-5`, Groq `openai/gpt-oss-120b`, and local Ollama `llama3.1:8b`. The application can also select OpenAI, Anthropic Claude, Groq, or local Ollama through the server-side provider configuration; provider API keys are never sent by the browser. Generated JSON is validated with Zod before questions become application state. Flashcards are then derived deterministically from the final validated question set, so the flashcard layer does not introduce a second unsupported generation path. Rate-limit and transient provider errors are retried with bounded exponential backoff; malformed responses are rejected. Job-description, company-page, and public-search text is explicitly treated as untrusted reference data in the generation prompt.
-
-## Coverage engine
-
-Coverage is deterministic application logic. It compares generated question `requirement_ids` against extracted requirement IDs, separates uncovered `must` and `nice` requirements, rejects invalid references as non-coverage, preserves requirement ordering, and exposes `can_ship`. Initial generation immediately runs this coverage check; the complete question pipeline then uses uncovered requirements for a bounded second pass. Only missing requirements are regenerated, successful first-pass questions are preserved, and final coverage is re-checked after the repair pass. Persistent generation failures are recorded per requirement/pass and a kit remains non-shippable when a must-have requirement is still uncovered. The LLM is never asked to decide whether coverage exists.
-
-## Deterministic scheduling
-
-The Step 8 scheduler consumes the final Step 7 question set and the extracted requirements. It validates the requested 1–60 day range, orders questions deterministically by requirement priority and difficulty, distributes question IDs across exactly the requested number of days, derives each day's focus from the assigned requirement text, and calculates integer minutes at 10 minutes per question. Scheduling does not regenerate or mutate questions, so Step 7 coverage is preserved.
-
-## Production hardening
-
-P2 hardening policies and reproducibility commands are documented in `docs/p2-production-hardening.md`. The durable JSON store uses atomic writes and cross-process request locks for a single shared store path. Research pages receive retrieval freshness timestamps, and source-level research claims are persisted in a provenance sidecar without changing Appendix A. Retrieval/security regressions and Appendix A/B conformance checks run in the automated test suite.
-
-## Persistence and idempotency
-
-Kit persistence uses a `KitStore` abstraction with both in-memory and durable JSON-backed implementations. Each normalized generation request receives a deterministic ID derived from the normalized company URL, job description, and requested study days. The service checks for an existing kit before generation and coalesces concurrent identical requests in one process; the durable store also serializes file writes with an atomic lock and survives process restarts. Persistence errors propagate instead of being reported as successful generation, and a kit is never saved before final validation and shippable coverage checks pass.
-
-## Raw-input application pipeline
-
-The API now owns the application pipeline boundary: a validated request containing only `jd`, `company_url`, and `days` is normalized, researched, extracted through the configured LLM, converted into a deterministic company brief from retrieved evidence, passed through question generation and coverage repair, scheduled, schema-validated, and persisted. Missing LLM credentials, unusable company retrieval, extraction failures, and unshippable coverage are returned as structured API errors.
-
-The Node runtime exposes `POST /api/kits`, kit builder/practice routes, and `GET /health`. The default durable store path is `.data/kits.json`, configurable with `KIT_STORE_FILE`.
-
-## Current provider model defaults — September 2026
-
-These defaults were refreshed against the providers' current model documentation on 2026-09-19. Override them with `LLM_MODEL` or the provider-specific environment variables when needed. Gemini uses `gemini-3.6-flash`; OpenAI uses `gpt-5.5`; Anthropic uses `claude-sonnet-5`; Groq uses `openai/gpt-oss-120b`; Ollama uses `llama3.1:8b`.
+- [Assessment process](docs/START_TO_END_ASSESSMENT_PROCESS.md)
+- [Production hardening](docs/p2-production-hardening.md)
+- [UI/UX research](docs/ui-ux-research.md)
+- [LLM research notes](docs/llm-research/README.md)
+- [Verification checklist](CHECKLIST.md)
