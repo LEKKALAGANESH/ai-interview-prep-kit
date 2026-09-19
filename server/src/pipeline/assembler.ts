@@ -3,6 +3,7 @@ import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model
 import { buildSchedule } from "@trao/interview-prep-shared/schedule.js";
 import type { ResearchResult } from "../retrieval/research.js";
 import { generateQuestionSetWithCoverage, type QuestionSetGenerationOptions } from "../generation/pipeline.js";
+import { validateFlashcards } from "../generation/quality-gates.js";
 
 export type BuildKitOptions = QuestionSetGenerationOptions & {
   research: ResearchResult;
@@ -49,6 +50,8 @@ export function assembleKit(input: NormalizedKitInput, context: Omit<BuildKitOpt
   };
   const parsed = KitSchema.safeParse(kit);
   if (!parsed.success) throw new KitAssemblyError("FINAL_KIT_INVALID", "Final kit failed schema validation");
+  const flashcardCheck = validateFlashcards(parsed.data.flashcards, parsed.data.questions);
+  if (!flashcardCheck.valid) throw new KitAssemblyError("FINAL_KIT_INVALID", "Flashcards failed source-question lineage validation");
   if (parsed.data.coverage.uncovered_requirement_ids.some((id) =>
     parsed.data.role.requirements.some((requirement) => requirement.id === id && requirement.priority === "must"),
   )) {
