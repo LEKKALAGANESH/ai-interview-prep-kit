@@ -13,6 +13,7 @@ import {
 import { buildQuestionPlan, type QuestionPlan } from "./planner.js";
 import { filterDuplicateQuestions } from "./quality.js";
 import type { Role } from "@trao/interview-prep-shared/kit.js";
+import { observeStage } from "./observability.js";
 
 export type InitialQuestionSetOptions = GenerateQuestionOptions & {
   companyBrief?: {
@@ -151,12 +152,12 @@ export async function generateQuestionSetWithCoverage(
     }
 
     const previousQuestionCount = questions.length;
-    const repairQuestions = await generateBestEffortPass(
+    const repairQuestions = await observeStage(options.observer, "repair", () => generateBestEffortPass(
       missingRequirements,
       options,
       pass,
       generationErrors,
-    );
+    ), { attempt: pass });
 
     questions = [...questions, ...repairQuestions];
     coverage = checkCoverage(requirements, questions, pass);
