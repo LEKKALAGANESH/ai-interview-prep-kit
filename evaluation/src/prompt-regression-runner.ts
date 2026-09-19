@@ -13,7 +13,7 @@ export type PromptRegressionFixture = {
 
 export function buildPromptRegressionSnapshot(fixtures: PromptRegressionFixture[]) {
   return fixtures.map((fixture) => {
-    const prompt = buildQuestionGenerationPrompt(fixture);
+    const prompt = buildQuestionGenerationPrompt({ ...fixture, evidencePacket: "No supporting evidence available." });
     return {
       requirement_id: fixture.requirementId,
       prompt_version: QUESTION_GENERATION_PROMPT_VERSION,
