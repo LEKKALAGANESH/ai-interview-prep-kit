@@ -14,7 +14,7 @@ export async function handleSession(request:Request):Promise<Response>{
   }
   if(request.method==="DELETE"){
     const token=tokenFrom(request);if(token)sessions.delete(token);
-    return json({authenticated:false,session:null},{"headers":""} as any);
+    return json({authenticated:false,session:null},200,{"set-cookie":`${cookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`});
   }
   if(request.method!=="POST")return json({error:{code:"METHOD_NOT_ALLOWED",message:"Only GET, POST and DELETE are supported"}},405);
   let raw:unknown;try{raw=await request.json()}catch{return json({error:{code:"INVALID_JSON",message:"Request body must contain valid JSON"}},400)}
@@ -23,5 +23,5 @@ export async function handleSession(request:Request):Promise<Response>{
   const name=typeof body.name==="string"?body.name.trim():"";const email=typeof body.email==="string"?body.email.trim().toLowerCase():"";
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email))return json({error:{code:"VALIDATION_ERROR",message:"Enter a valid name and email"}},422);
   const token=randomBytes(24).toString("hex");const session={id:token,name,email,created_at:new Date().toISOString()};sessions.set(token,session);
-  return json({authenticated:true,session},{headers:{"set-cookie":`${cookieName}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`}} as any);
+  return json({authenticated:true,session},200,{"set-cookie":`${cookieName}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`});
 }
