@@ -4,6 +4,8 @@ import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
 import type { PracticeState } from "@trao/interview-prep-shared/practice.js";
 
+export type PinnedQuestionState = { question_ids: string[]; updated_at: string };
+
 export interface KitStore {
   update(id: string, kit: Kit): Promise<Kit>;
   save(id: string, kit: Kit): Promise<Kit>;
@@ -11,6 +13,8 @@ export interface KitStore {
   withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T>;
   getPractice(id: string): Promise<PracticeState>;
   savePractice(id: string, state: PracticeState): Promise<PracticeState>;
+  getPinnedQuestions(id: string): Promise<PinnedQuestionState>;
+  savePinnedQuestions(id: string, state: PinnedQuestionState): Promise<PinnedQuestionState>;
 }
 
 function stableHash(value: string): string {
@@ -37,6 +41,7 @@ export function buildKitId(input: NormalizedKitInput): string {
 export class InMemoryKitStore implements KitStore {
   private readonly kits = new Map<string, Kit>();
   private readonly practice = new Map<string, PracticeState>();
+  private readonly pinned = new Map<string, PinnedQuestionState>();
   private readonly locks = new Map<string, Promise<void>>();
 
   async save(id: string, kit: Kit): Promise<Kit> {
@@ -51,6 +56,8 @@ export class InMemoryKitStore implements KitStore {
 
   async getPractice(id: string): Promise<PracticeState> { return structuredClone(this.practice.get(id) ?? { current_index: 0, results: [], completed: false }); }
   async savePractice(id: string, state: PracticeState): Promise<PracticeState> { this.practice.set(id, structuredClone(state)); return structuredClone(state); }
+  async getPinnedQuestions(id: string): Promise<PinnedQuestionState> { return structuredClone(this.pinned.get(id) ?? { question_ids: [], updated_at: new Date(0).toISOString() }); }
+  async savePinnedQuestions(id: string, state: PinnedQuestionState): Promise<PinnedQuestionState> { this.pinned.set(id, structuredClone(state)); return structuredClone(state); }
 
   async update(id: string, kit: Kit): Promise<Kit> {
     if (!this.kits.has(id)) throw new Error(`Unknown kit: ${id}`);
@@ -131,6 +138,8 @@ export class JsonFileKitStore implements KitStore {
     catch(error) { if(error && typeof error==="object" && "code" in error && (error as {code?:string}).code==="ENOENT") return {}; throw error; }
   }
   private async writePractice(data: Record<string, PracticeState>): Promise<void> { await writeFile(`${this.filePath}.practice.tmp`,JSON.stringify(data),"utf8"); await rename(`${this.filePath}.practice.tmp`,`${this.filePath}.practice`); }
+  private async readPinned(): Promise<Record<string, PinnedQuestionState>> { const path = `${this.filePath}.pinned`; try { return JSON.parse(await readFile(path, "utf8")) as Record<string, PinnedQuestionState>; } catch(error) { if(error && typeof error==="object" && "code" in error && (error as {code?:string}).code==="ENOENT") return {}; throw error; } }
+  private async writePinned(data: Record<string, PinnedQuestionState>): Promise<void> { await writeFile(`${this.filePath}.pinned.tmp`,JSON.stringify(data),"utf8"); await rename(`${this.filePath}.pinned.tmp`,`${this.filePath}.pinned`); }
   private async writeAll(kits: Record<string, Kit>): Promise<void> {
     const tempPath = `${this.filePath}.tmp`;
     await writeFile(tempPath, JSON.stringify(kits), "utf8");
@@ -186,6 +195,8 @@ export class JsonFileKitStore implements KitStore {
 
   async getPractice(id: string): Promise<PracticeState> { const data = await this.readPractice(); return structuredClone(data[id] ?? { current_index: 0, results: [], completed: false }); }
   async savePractice(id: string, state: PracticeState): Promise<PracticeState> { const data = await this.readPractice(); data[id] = structuredClone(state); await this.writePractice(data); return structuredClone(state); }
+  async getPinnedQuestions(id: string): Promise<PinnedQuestionState> { const data = await this.readPinned(); return structuredClone(data[id] ?? { question_ids: [], updated_at: new Date(0).toISOString() }); }
+  async savePinnedQuestions(id: string, state: PinnedQuestionState): Promise<PinnedQuestionState> { const data = await this.readPinned(); data[id] = structuredClone(state); await this.writePinned(data); return structuredClone(state); }
 }
 
 export function createKitStore(): KitStore {
