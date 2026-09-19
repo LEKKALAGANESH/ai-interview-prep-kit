@@ -13,10 +13,13 @@ type GeminiResponse = {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
 };
 
+export type LlmProviderErrorCode = "CONFIGURATION" | "RATE_LIMITED" | "TRANSIENT" | "INVALID_RESPONSE";
+
 export class LlmProviderError extends Error {
   constructor(
-    public readonly code: "CONFIGURATION" | "RATE_LIMITED" | "TRANSIENT" | "INVALID_RESPONSE",
+    public readonly code: LlmProviderErrorCode,
     message: string,
+    public readonly details?: { provider?: string; status?: number; endpoint?: string; model?: string; upstream_message?: string },
   ) {
     super(message);
     this.name = "LlmProviderError";
@@ -33,10 +36,20 @@ async function readJson(response: Response, provider: string): Promise<Record<st
   }
 }
 
-function classifyHttp(status: number, provider: string): never {
-  if (status === 429) throw new LlmProviderError("RATE_LIMITED", `${provider} rate limit reached`);
-  if (status >= 500) throw new LlmProviderError("TRANSIENT", `${provider} returned HTTP ${status}`);
-  throw new LlmProviderError("CONFIGURATION", `${provider} returned HTTP ${status}`);
+function extractUpstreamMessage(payload: Record<string, unknown>): string | undefined {
+  const error = payload.error;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && typeof (error as Record<string, unknown>).message === "string") return (error as Record<string, string>).message;
+  return typeof payload.message === "string" ? payload.message : undefined;
+}
+
+function classifyHttp(status: number, provider: string, endpoint: string, model: string, upstreamMessage?: string): never {
+  const suffix = upstreamMessage ? `: ${upstreamMessage}` : "";
+  if (status === 401 || status === 403) throw new LlmProviderError("CONFIGURATION", `${provider} authentication/authorization failed (HTTP ${status})${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
+  if (status === 404) throw new LlmProviderError("CONFIGURATION", `${provider} endpoint or model was not found (HTTP 404). Check the configured endpoint/model${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
+  if (status === 429) throw new LlmProviderError("RATE_LIMITED", `${provider} rate limit reached${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
+  if (status >= 500) throw new LlmProviderError("TRANSIENT", `${provider} returned HTTP ${status}${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
+  throw new LlmProviderError("CONFIGURATION", `${provider} returned HTTP ${status}${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
 }
 
 async function requestJson(
@@ -45,6 +58,7 @@ async function requestJson(
   provider: string,
   fetchImpl: typeof fetch,
   timeoutMs: number,
+  model = "",
 ): Promise<Record<string, unknown>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -61,7 +75,11 @@ async function requestJson(
   } finally {
     clearTimeout(timeout);
   }
-  if (!response.ok) classifyHttp(response.status, provider);
+  if (!response.ok) {
+    let upstreamMessage: string | undefined;
+    try { upstreamMessage = extractUpstreamMessage((await response.clone().json()) as Record<string, unknown>); } catch {}
+    classifyHttp(response.status, provider, endpoint, model, upstreamMessage);
+  }
   return readJson(response, provider);
 }
 
@@ -92,7 +110,7 @@ export class GeminiProvider implements LlmProvider {
         contents: [{ role: "user", parts: [{ text: request.userPrompt }] }],
         generationConfig: { responseMimeType: "application/json" },
       }),
-    }, "Gemini", this.fetchImpl, this.timeoutMs);
+    }, "Gemini", this.fetchImpl, this.timeoutMs, this.model);
     const response = payload as GeminiResponse;
     const text = response.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("").trim();
     if (!text) throw new LlmProviderError("INVALID_RESPONSE", "Gemini returned no generated content");
@@ -127,7 +145,7 @@ class OpenAICompatibleProvider implements LlmProvider {
         ],
         response_format: { type: "json_object" },
       }),
-    }, this.name, this.fetchImpl, this.timeoutMs);
+    }, this.name, this.fetchImpl, this.timeoutMs, this.model);
     const choices = Array.isArray(payload.choices) ? payload.choices as Array<Record<string, unknown>> : [];
     const message = choices[0]?.message as Record<string, unknown> | undefined;
     const text = typeof message?.content === "string" ? message.content : "";
@@ -160,7 +178,7 @@ export class OllamaProvider implements LlmProvider {
           { role: "user", content: request.userPrompt },
         ],
       }),
-    }, "Ollama", this.fetchImpl, this.timeoutMs);
+    }, "Ollama", this.fetchImpl, this.timeoutMs, this.model);
     const message = payload.message as Record<string, unknown> | undefined;
     const text = typeof message?.content === "string" ? message.content : "";
     if (!text) throw new LlmProviderError("INVALID_RESPONSE", "Ollama returned no generated content");
@@ -192,7 +210,7 @@ export class AnthropicProvider implements LlmProvider {
         system: request.systemInstruction,
         messages: [{ role: "user", content: request.userPrompt }],
       }),
-    }, "Anthropic", this.fetchImpl, this.timeoutMs);
+    }, "Anthropic", this.fetchImpl, this.timeoutMs, this.model);
     const content = Array.isArray(payload.content) ? payload.content as Array<Record<string, unknown>> : [];
     const text = typeof content[0]?.text === "string" ? content[0].text : "";
     if (!text) throw new LlmProviderError("INVALID_RESPONSE", "Anthropic returned no generated content");
