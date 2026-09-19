@@ -83,7 +83,8 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 
 ### P1 runtime verification
 
-- Runtime/build verification: 🟢 current-head CI passed.
+- Runtime/build verification: 🟢 current-head CI passed on commit `ec2faa913781ff4096f79680f0c8edd3626127f1` (GitHub Actions run `35447853327`).
+- Evaluator runtime: 🟡 evaluator CLI smoke step passed in CI, but the full golden dataset has not yet been run with a configured real provider.
 - Quality-gate verification: 🟡 source-level gates and golden fixtures are present, but the full golden evaluation with real provider output has not yet been executed and reviewed.
 
 ### P1 completion gate
