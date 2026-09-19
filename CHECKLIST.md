@@ -67,6 +67,7 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 
 ### P1 implementation evidence
 
+- **Current-head CI verification:** 🟢 GitHub Actions run `35447853327` passed after the final build/test fixes. The workflow completed npm install, npm test, npm build, evaluator help, server start, and `/health` verification on commit `ec2faa913781ff4096f79680f0c8edd3626127f1`.
 - Implemented: deterministic planning/category strategy, ranked evidence packets, claim model, deduplication/conflict detection, research-gap boundaries, diversity heuristics, difficulty calibration, deterministic quality checks, advisory semantic-judge interface, golden fixtures, regression/provider comparison primitives, quality scorecard, prompt-budget controls, batching primitives, observability, and provider-quality policy documentation.
 - Remaining source/runtime work: executable prompt-regression/provider-comparison runners, full observer wiring across extraction/research/persistence, persisted pin semantics, and current-head runtime execution.
 - Runtime statuses are intentionally 🟡 until the current GitHub Actions run or equivalent execution is observed.
@@ -79,6 +80,11 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 | P1 implementation | 🟢 source-level; P1.24 remains 🟡 |
 | P1 runtime verification | 🟢 current CI run `35447784502` |
 | P1 quality-gate verification | 🟡 golden suite/semantic thresholds not yet executed |
+
+### P1 runtime verification
+
+- Runtime/build verification: 🟢 current-head CI passed.
+- Quality-gate verification: 🟡 source-level gates and golden fixtures are present, but the full golden evaluation with real provider output has not yet been executed and reviewed.
 
 ### P1 completion gate
 
