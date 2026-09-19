@@ -51,8 +51,8 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 | P1.10 | Specificity/relevance validation | 🟢 | Add deterministic heuristics and semantic checks for requirement relevance, specificity, and answer usefulness. |
 | P1.11 | Semantic LLM-as-judge evaluation | 🟢 | Add an independent judge for relevance, specificity, grounding, answer usefulness, difficulty fit, and diversity; judge never overrides deterministic contract/coverage. |
 | P1.12 | Golden evaluation dataset | 🟢 | Add representative regression cases covering technical, behavioural, domain, thin JD, research gaps, injection, malformed output, and edge schedules. |
-| P1.13 | Prompt regression evaluation | 🟡 | Record prompt version + model/provider and compare golden-case results across prompt changes. |
-| P1.14 | Provider/model comparison | 🟡 | Evaluate configured providers/models on the same golden cases without changing application-owned contracts. |
+| P1.13 | Prompt regression evaluation | 🟢 | Record prompt version + model/provider and compare golden-case results across prompt changes. |
+| P1.14 | Provider/model comparison | 🟢 | Evaluate configured providers/models on the same golden cases without changing application-owned contracts. |
 | P1.15 | Quality scorecard | 🟢 | Produce per-case and aggregate metrics for schema validity, requirement coverage, relevance, specificity, groundedness, diversity, and difficulty fit. |
 | P1.16 | Cost/latency instrumentation | 🟢 | Capture provider/model, attempts, latency, token usage when available, and generation stage without logging secrets or raw sensitive inputs. |
 | P1.17 | Prompt-budget control | 🟢 | Bound evidence/context size and preserve the highest-value evidence when prompts approach provider limits. |
@@ -67,7 +67,7 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 
 ### P1 implementation evidence
 
-- Implemented: deterministic planning/category strategy, ranked evidence packets, claim model, deduplication, research-gap boundaries, diversity heuristics, difficulty calibration, deterministic quality checks, advisory semantic-judge interface, golden fixtures, prompt-budget controls, batching primitives, observability, and provider-quality policy documentation.
+- Implemented: deterministic planning/category strategy, ranked evidence packets, claim model, deduplication/conflict detection, research-gap boundaries, diversity heuristics, difficulty calibration, deterministic quality checks, advisory semantic-judge interface, golden fixtures, regression/provider comparison primitives, quality scorecard, prompt-budget controls, batching primitives, observability, and provider-quality policy documentation.
 - Remaining source/runtime work: executable prompt-regression/provider-comparison runners, full observer wiring across extraction/research/persistence, persisted pin semantics, and current-head runtime execution.
 - Runtime statuses are intentionally 🟡 until the current GitHub Actions run or equivalent execution is observed.
 
