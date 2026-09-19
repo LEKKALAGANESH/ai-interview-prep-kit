@@ -98,3 +98,24 @@ test("does not fail over configuration errors", async () => {
   );
   await assert.rejects(provider.generate({ systemInstruction: "s", userPrompt: "u" }), /bad key/);
 });
+
+
+test("classifies provider 404 with actionable model diagnostics", async () => {
+  const { GroqProvider } = await import("./provider.js");
+  const provider = new GroqProvider("Groq", "https://api.groq.com/openai/v1/chat/completions", "key", "missing-model", async () =>
+    new Response(JSON.stringify({ error: { message: "model not found" } }), { status: 404, headers: { "content-type": "application/json" } }),
+  );
+  await assert.rejects(
+    provider.generate({ systemInstruction: "s", userPrompt: "u" }),
+    (error: unknown) => {
+      assert.ok(error instanceof LlmProviderError);
+      assert.equal(error.code, "CONFIGURATION");
+      assert.equal(error.details?.status, 404);
+      assert.equal(error.details?.provider, "Groq");
+      assert.equal(error.details?.model, "missing-model");
+      assert.equal(error.details?.upstream_message, "model not found");
+      assert.match(error.message, /endpoint or model was not found/);
+      return true;
+    },
+  );
+});
