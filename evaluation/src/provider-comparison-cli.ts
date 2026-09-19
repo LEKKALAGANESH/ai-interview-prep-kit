@@ -1,7 +1,9 @@
+import { mkdir } from "node:fs/promises";
 import { runProviderComparison } from "./provider-comparison-runner.js";
 
 const inputPath = process.argv[2] ?? "golden-cases.json";
 const outputDir = process.argv[3] ?? ".artifacts/providers";
+await mkdir(outputDir, { recursive: true });
 const providers = (process.env.EVALUATION_PROVIDERS ?? "").split(",").map((item) => item.trim()).filter(Boolean);
 if (providers.length < 2) throw new Error("Set EVALUATION_PROVIDERS to at least two configured provider names");
 const runs = providers.map((provider) => ({
