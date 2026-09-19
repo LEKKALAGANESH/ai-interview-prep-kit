@@ -13,6 +13,7 @@ import {
 import { buildQuestionPlan, type QuestionPlan } from "./planner.js";
 import { filterDuplicateQuestions } from "./quality.js";
 import type { Role } from "@trao/interview-prep-shared/kit.js";
+import { repairQualityGate } from "./quality-gates.js";
 
 export type InitialQuestionSetOptions = GenerateQuestionOptions & {
   companyBrief?: {
@@ -158,7 +159,8 @@ export async function generateQuestionSetWithCoverage(
       generationErrors,
     );
 
-    questions = [...questions, ...repairQuestions];
+    const gatedRepair = repairQualityGate(repairQuestions, requirements);
+    questions = [...questions, ...gatedRepair.accepted];
     coverage = checkCoverage(requirements, questions, pass);
 
     if (questions.length === previousQuestionCount || findUncoveredRequirements(requirements, questions).length === 0) {
