@@ -138,7 +138,7 @@ test("API surfaces LLM provider failures without persisting a kit", async () => 
   assert.equal(response.status, 500);
   const body = await response.json() as { error: { code: string } };
   assert.equal(body.error.code, "PROVIDER_FAILED");
-  assert.equal((await store.getById("missing")).valueOf(), null);
+  assert.equal(await store.getById("missing"), null);
 });
 
 test("API surfaces research timeouts as structured research failures", async () => {
