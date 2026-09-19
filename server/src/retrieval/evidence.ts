@@ -7,6 +7,7 @@ export type EvidenceClaim = {
   evidence: string;
   confidence_basis: string;
   relevance?: number;
+  freshness_at?: string;
 };
 
 export type RankedEvidence = EvidenceClaim & { score: number };
@@ -46,6 +47,7 @@ export function researchPagesToClaims(pages: ResearchPage[]): EvidenceClaim[] {
     source_type: "company-primary",
     evidence: page.text.slice(0, 1800),
     confidence_basis: "company primary page",
+    freshness_at: page.fetched_at,
   }));
 }
 
