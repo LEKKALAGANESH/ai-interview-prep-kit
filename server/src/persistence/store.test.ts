@@ -150,3 +150,31 @@ test("durable request lock coalesces concurrent same-id operations", async () =>
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+
+test("persists research provenance across durable store instances", async () => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(process.cwd(), "kit-provenance-test-"));
+  const filePath = join(directory, "kits.json");
+  try {
+    const first = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const id = buildKitId(input);
+    const state = {
+      researched_at: "2026-09-19T00:00:00.000Z",
+      claims: [{
+        claim: "Example company",
+        source_url: "https://example.com/",
+        source_type: "company-primary" as const,
+        evidence: "Example evidence",
+        confidence_basis: "company primary page",
+        freshness_at: "2026-09-19T00:00:00.000Z",
+      }],
+    };
+    await first.saveResearchProvenance(id, state);
+    const second = new (await import("./store.js")).JsonFileKitStore(filePath);
+    assert.deepEqual(await second.getResearchProvenance(id), state);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
