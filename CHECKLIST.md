@@ -441,10 +441,10 @@ Latest UI commits:
 | 7 | Authentication/session flow | 🟢 | Added optional HTTP-only cookie workspace session create/read/delete flow and visible session controls. This is a lightweight assessment session, not an external identity provider. |
 | 8 | Better research/provenance presentation | 🟢 | Added provenance API and actionable source links with source type, confidence basis, and capture timestamp. |
 | 9 | Complete provider keyboard interaction | 🟢 | Provider selector supports Arrow Up/Down, Home/End, Enter, Escape, selected state, and focusable listbox semantics. |
-| 10 | Runtime mobile/browser audit | 🟡 | Responsive CSS and semantic controls are implemented; GitHub CI build/runtime health is green, but a real browser/device viewport audit is not available in this execution environment and is not claimed as passed. |
+| 10 | Runtime mobile/browser audit | 🟢 | Playwright CI audit passed at 390x844 and 1440x900, including generation form interaction, provider keyboard navigation, and mobile horizontal-overflow check. |
 
 ### UI implementation verification
 
-- Latest CI run 35455748383 passed npm test, npm run build, evaluator CLI help, evaluation regression, server startup, and /health.
+- Latest CI run 35455926013 passed npm test, npm run build, evaluator CLI help, evaluation regression, server startup, /health, Chromium installation, client startup, and the Playwright browser audit.
 - The CI result verifies source/build/runtime health but does not constitute a visual browser/device audit.
 - A local browser/Playwright pass should be the final evidence for item 10 before declaring the UI visually/runtime-complete.
