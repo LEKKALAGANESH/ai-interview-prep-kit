@@ -119,3 +119,43 @@ test("concurrent identical requests return one persisted kit", async () => {
   assert.equal(second.status, 200);
   assert.equal((await first.json()).id, (await second.json()).id);
 });
+
+
+test("API surfaces LLM provider failures without persisting a kit", async () => {
+  const store = new InMemoryKitStore();
+  const deps = dependencies(store);
+  const failingProvider: LlmProvider = {
+    async generate() { throw new Error("provider unavailable"); },
+  };
+  const response = await handleGenerateKit(
+    new Request("http://localhost/api/kits", {
+      method: "POST",
+      body: JSON.stringify({ jd: "We need Python engineers.", company_url: "https://example.com", days: 1 }),
+      headers: { "content-type": "application/json" },
+    }),
+    { ...deps, llmProvider: failingProvider },
+  );
+  assert.equal(response.status, 500);
+  const body = await response.json() as { error: { code: string } };
+  assert.equal(body.error.code, "PROVIDER_FAILED");
+  assert.equal((await store.getById("missing")).valueOf(), null);
+});
+
+test("API surfaces research timeouts as structured research failures", async () => {
+  const store = new InMemoryKitStore();
+  const deps = dependencies(store);
+  const response = await handleGenerateKit(
+    new Request("http://localhost/api/kits", {
+      method: "POST",
+      body: JSON.stringify({ jd: "We need Python engineers.", company_url: "https://timeout.test", days: 1 }),
+      headers: { "content-type": "application/json" },
+    }),
+    {
+      ...deps,
+      fetchImpl: async () => { throw Object.assign(new Error("timed out"), { name: "AbortError" }); },
+    },
+  );
+  assert.equal(response.status, 502);
+  const body = await response.json() as { error: { code: string } };
+  assert.equal(body.error.code, "RESEARCH_FAILED");
+});
