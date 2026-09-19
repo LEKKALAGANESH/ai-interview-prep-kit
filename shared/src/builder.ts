@@ -74,6 +74,12 @@ export function regenerateScopedQuestions(
     if (index < 0) throw new Error(`Unknown scoped question: ${id}`);
     if (!replacement.has(id)) throw new Error(`Missing regenerated question: ${id}`);
     next.questions[index] = structuredClone(replacement.get(id)!);
+    const flashcard = next.flashcards.find((card) => card.id === `fc_${id}`);
+    if (flashcard) {
+      flashcard.front = next.questions[index].prompt;
+      flashcard.back = next.questions[index].answer_outline;
+      flashcard.requirement_ids = [...next.questions[index].requirement_ids];
+    }
   }
   return KitSchema.parse(next);
 }
