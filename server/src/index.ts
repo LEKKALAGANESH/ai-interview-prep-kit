@@ -40,7 +40,7 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
     response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
   }
 
-  const generationJobMatch = request.url?.match(/^\\/api\\/generation\\/jobs(?:\\/([^/?]+))?$/);
+  const generationJobMatch = request.url?.match(/^\/api\/generation\/jobs(?:\/([^/?]+))?$/);
   if (generationJobMatch) {
     if (generationJobMatch[1] && request.method === "GET") {
       const result=getGenerationJob(decodeURIComponent(generationJobMatch[1]));
@@ -53,10 +53,10 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
     }
   }
 
-  const pinsMatch=request.url?.match(/^\\/api\\/kits\\/([^/?]+)\\/pins$/);
+  const pinsMatch=request.url?.match(/^\/api\/kits\/([^/?]+)\/pins$/);
   if(pinsMatch){ const result=await handlePins(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>,body:request.method==="GET"||request.method==="HEAD"?undefined:await readBody(request)}),store,decodeURIComponent(pinsMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
 
-  const provenanceMatch=request.url?.match(/^\\/api\\/kits\\/([^/?]+)\\/provenance$/);
+  const provenanceMatch=request.url?.match(/^\/api\/kits\/([^/?]+)\/provenance$/);
   if(provenanceMatch){ const result=await handleProvenance(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>}),store,decodeURIComponent(provenanceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
 
   if (request.url === "/health") {
