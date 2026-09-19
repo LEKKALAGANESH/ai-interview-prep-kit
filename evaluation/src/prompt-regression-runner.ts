@@ -1,4 +1,4 @@
-import { buildQuestionGenerationPrompt, PROMPT_VERSIONS } from "@trao/interview-prep-server/generation/prompts.js";
+import { buildQuestionGenerationPrompt, QUESTION_GENERATION_PROMPT_VERSION } from "@trao/interview-prep-server/generation/prompts.js";
 import { compareRegressionRuns, type RegressionRecord } from "./regression.js";
 
 export type PromptRegressionFixture = {
@@ -16,7 +16,7 @@ export function buildPromptRegressionSnapshot(fixtures: PromptRegressionFixture[
     const prompt = buildQuestionGenerationPrompt(fixture);
     return {
       requirement_id: fixture.requirementId,
-      prompt_version: PROMPT_VERSIONS.questionGeneration,
+      prompt_version: QUESTION_GENERATION_PROMPT_VERSION,
       system_instruction: prompt.systemInstruction,
       user_prompt: prompt.userPrompt,
     };
