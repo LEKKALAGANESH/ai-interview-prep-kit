@@ -12,6 +12,15 @@ export type BuildKitOptions = QuestionSetGenerationOptions & {
   flashcards?: Flashcard[];
 };
 
+function buildFlashcards(questions: Kit["questions"]): Flashcard[] {
+  return questions.map((question) => ({
+    id: `fc_${question.id}`,
+    front: question.prompt,
+    back: question.answer_outline,
+    requirement_ids: [...question.requirement_ids],
+  }));
+}
+
 export class KitAssemblyError extends Error {
   constructor(public readonly code: "COVERAGE_NOT_SHIPPABLE" | "FINAL_KIT_INVALID", message: string) {
     super(message);
@@ -34,7 +43,7 @@ export function assembleKit(input: NormalizedKitInput, context: Omit<BuildKitOpt
     company_brief: context.companyBrief,
     role: context.role,
     questions,
-    flashcards: context.flashcards ?? [],
+    flashcards: context.flashcards ?? buildFlashcards(questions),
     schedule: { days_available: input.days_available, days: schedule },
     coverage,
   };
