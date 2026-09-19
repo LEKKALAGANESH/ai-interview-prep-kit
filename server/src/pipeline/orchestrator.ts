@@ -1,7 +1,8 @@
 import { extractRole } from "../extraction/pipeline.js";
 import { createLlmRoleExtractionProvider } from "../generation/llm-extraction.js";
 import { createConfiguredLlmProvider } from "../generation/provider.js";
-import { researchCompany, researchPagesToClaims, type ResearchOptions } from "../retrieval/research.js";
+import { researchCompany, type ResearchOptions } from "../retrieval/research.js";
+import { researchPagesToClaims } from "../retrieval/evidence.js";
 import { validateExternalUrl } from "../retrieval/url-validator.js";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { CompanyBrief } from "@trao/interview-prep-shared/kit.js";
