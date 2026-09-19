@@ -23,3 +23,14 @@ test("question prompt separates requirement identity from untrusted evidence", (
   assert.match(prompt.systemInstruction, /do not create or change IDs/i);
   assert.match(prompt.systemInstruction, /Do not present an inference or public discussion as a verified company fact/i);
 });
+
+
+test("bounds very large job descriptions while preserving head and tail", async () => {
+  const { buildRoleExtractionPrompt } = await import("./prompts.js");
+  const jd = "HEAD".repeat(8000) + "MIDDLE".repeat(3000) + "TAIL".repeat(8000);
+  const prompt = buildRoleExtractionPrompt({ jobDescription: jd });
+  assert.ok(prompt.userPrompt.length <= 30100);
+  assert.match(prompt.userPrompt, /TRUNCATED FOR PROMPT BUDGET/);
+  assert.match(prompt.userPrompt, /HEAD/);
+  assert.match(prompt.userPrompt, /TAIL/);
+});
