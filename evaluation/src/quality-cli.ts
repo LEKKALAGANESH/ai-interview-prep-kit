@@ -1,8 +1,10 @@
+import { mkdir } from "node:fs/promises";
 import { runQualityEvaluation } from "./quality-runner.js";
 
 const inputPath = process.argv[2] ?? "golden-cases.json";
 const outputPath = process.argv[3] ?? ".artifacts/golden-output.json";
 const metadataPath = process.argv[4] ?? ".artifacts/golden-quality.json";
+await mkdir(".artifacts", { recursive: true });
 const provider = process.env.LLM_PROVIDER?.trim() || "gemini";
 const model = process.env.LLM_MODEL?.trim() || process.env.GEMINI_MODEL?.trim() || "default";
 
