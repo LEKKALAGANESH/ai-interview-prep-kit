@@ -448,3 +448,13 @@ Latest UI commits:
 - Latest CI run 35455926013 passed npm test, npm run build, evaluator CLI help, evaluation regression, server startup, /health, Chromium installation, client startup, and the Playwright browser audit.
 - The CI result verifies source/build/runtime health but does not constitute a visual browser/device audit.
 - A local browser/Playwright pass should be the final evidence for item 10 before declaring the UI visually/runtime-complete.
+
+
+## Error handling hardening — 2026-09-19
+
+- 🟢 Provider HTTP errors now preserve provider, HTTP status, endpoint, model, and safe upstream error message.
+- 🟢 HTTP 404 is classified as a configuration/provider endpoint-or-model problem instead of a generic failure.
+- 🟢 Backend generation failures are logged as structured JSON with `layer`, `component`, `job_id`, code, message, and safe diagnostics.
+- 🟢 Frontend generation failures are logged with `[PrepKit frontend]` and display an actionable message plus backend job ID.
+- 🟢 Added automated coverage for provider 404 diagnostics.
+- 🟢 CI run `35456585705` passed all existing build/test/runtime/browser-audit checks.
