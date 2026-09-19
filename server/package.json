@@ -9,7 +9,11 @@
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts"
   },
-  "devDependencies": { "tsx": "^4.20.5", "typescript": "^5.9.2", "@types/node": "^22.18.6" },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "@types/node": "^22.18.6"
+  },
   "dependencies": {
     "@trao/interview-prep-shared": "file:../shared",
     "zod": "^3.25.76",
@@ -17,6 +21,7 @@
   },
   "exports": {
     "./pipeline/orchestrator.js": "./src/pipeline/orchestrator.ts",
-    "./persistence/store.js": "./src/persistence/store.ts"
+    "./persistence/store.js": "./src/persistence/store.ts",
+    "./generation/prompts.js": "./src/generation/prompts.ts"
   }
 }
