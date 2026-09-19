@@ -25,7 +25,13 @@
 | P2.19 | Documentation audit | 🟡 | README, checklist, architecture, env, evaluation, and security docs match current code. |
 | P2.20 | Final submission audit | ⬜ | No known blocking failures, runtime evidence is attached, and assessment submission artifacts are reproducible. |
 
-### P2 implementation status\n\nP2 is now active. Initial hardening completed: clean-clone command documentation, current-head CI evidence, durable request-lock/idempotency tests, interrupted-write recovery tests, SSRF/security regression fixtures, retrieval freshness timestamps, persisted research provenance sidecar, evaluation artifact persistence, and Appendix A/B conformance audit helpers. Remaining P2 work requires broader API integration coverage, real five-case SLA measurement, load/performance/accessibility/builder/practice regression evidence, provider failover execution, and final documentation/submission audit.\n\n### P2 gate
+### P2 implementation status\n\nP2 is now active. Initial hardening completed: clean-clone command documentation, current-head CI evidence, durable request-lock/idempotency tests, interrupted-write recovery tests, SSRF/security regression fixtures, retrieval freshness timestamps, persisted research provenance sidecar, evaluation artifact persistence, and Appendix A/B conformance audit helpers. Remaining P2 work requires broader API integration coverage, real five-case SLA measurement, load/performance/accessibility/builder/practice regression evidence, provider failover execution, and final documentation/submission audit.\n\n### P2 runtime evidence
+
+- Latest P2 hardening CI: 🟢 runs `35449523122` and `35449516660` passed after freshness, persistence, security, and conformance changes.
+- Security regression fixtures and Appendix A/B conformance tests execute as part of the normal workspace test suite.
+- Durable persistence recovery and cross-process request-lock tests are source-complete; broader real evaluator SLA/performance/accessibility evidence remains pending.
+
+### P2 gate
 
 P2 remains open until the remaining runtime/performance/accessibility/integration evidence and final submission audit are complete.
 
