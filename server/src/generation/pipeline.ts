@@ -56,7 +56,7 @@ async function generateQuestionsForRequirements(
   requirements: Requirement[],
   options: InitialQuestionSetOptions,
 ): Promise<Question[]> {
-  const plans = buildQuestionPlan(requirements, options.role);
+  const plans = await observeStage(options.observer, "planning", async () => buildQuestionPlan(requirements, options.role));
   return generateQuestionsForPlans(plans, requirements, options);
 }
 
