@@ -44,7 +44,7 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 | P1.3 | Context ranking | 🟢 | Rank research evidence by direct relevance, company authority, interview signal, freshness, source quality, and length before prompt assembly. |
 | P1.4 | Evidence claim model | 🟢 | Represent important research claims with claim, source URL, source type, evidence, and confidence basis before LLM consumption. |
 | P1.5 | Research deduplication | 🟢 | Deduplicate equivalent evidence/pages and avoid repeated context consuming prompt budget. |
-| P1.6 | Research conflict handling | 🟡 | Detect conflicting company/interview evidence and prevent the model from silently choosing an unsupported claim. |
+| P1.6 | Research conflict handling | 🟢 | Detect conflicting company/interview evidence and prevent the model from silently choosing an unsupported claim. |
 | P1.7 | Research-gap behavior | 🟢 | When evidence is missing, generate only what is supported by the JD/available evidence and explicitly avoid invented company-specific facts. |
 | P1.8 | Question diversity checks | 🟢 | Detect near-duplicate questions within and across requirements/categories and regenerate only the affected items. |
 | P1.9 | Difficulty calibration | 🟢 | Enforce documented difficulty semantics and verify that generated difficulty matches reasoning depth, not superficial wording. |
@@ -57,10 +57,10 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 | P1.16 | Cost/latency instrumentation | 🟢 | Capture provider/model, attempts, latency, token usage when available, and generation stage without logging secrets or raw sensitive inputs. |
 | P1.17 | Prompt-budget control | 🟢 | Bound evidence/context size and preserve the highest-value evidence when prompts approach provider limits. |
 | P1.18 | Generation batching policy | 🟢 | Define and test batching boundaries so quality, latency, and provider limits remain predictable. |
-| P1.19 | Repair quality gate | 🟡 | Require repaired questions to satisfy the same schema, relevance, grounding, diversity, and difficulty checks as first-pass questions. |
-| P1.20 | Flashcard quality validation | 🟡 | Validate derived flashcards for answer usefulness, requirement traceability, and one-to-one source-question lineage. |
+| P1.19 | Repair quality gate | 🟢 | Require repaired questions to satisfy the same schema, relevance, grounding, diversity, and difficulty checks as first-pass questions. |
+| P1.20 | Flashcard quality validation | 🟢 | Validate derived flashcards for answer usefulness, requirement traceability, and one-to-one source-question lineage. |
 | P1.21 | Prompt fixture library | 🟢 | Add reusable fixtures for normal JD, thin JD, false premise, injection, malicious company page, misleading interview discussion, and malformed provider output. |
-| P1.22 | Provider fallback quality policy | 🟡 | Define what happens when fallback providers produce materially different outputs; preserve contract/coverage and record provider provenance. |
+| P1.22 | Provider fallback quality policy | 🟢 | Define what happens when fallback providers produce materially different outputs; preserve contract/coverage and record provider provenance. |
 | P1.23 | Generation observability | 🟡 | Expose structured stage outcomes/errors so failed extraction, research, generation, repair, and validation can be diagnosed independently. |
 | P1.24 | P0 pin semantics | 🟡 | Decide and implement the explicit persisted representation for pinned/manual questions if the product requires pinning to survive regeneration. |
 | P1.25 | Runtime quality gate | 🟡 | Run the golden suite and verify no P0 regression before promoting P1 changes. |
@@ -68,7 +68,7 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 ### P1 implementation evidence
 
 - Implemented: deterministic planning/category strategy, ranked evidence packets, claim model, deduplication, research-gap boundaries, diversity heuristics, difficulty calibration, deterministic quality checks, advisory semantic-judge interface, golden fixtures, prompt-budget controls, batching primitives, observability, and provider-quality policy documentation.
-- Remaining source/runtime work: explicit conflict detector, executable prompt-regression/provider-comparison runners, repair/flashcard quality gates, full observer wiring, persisted pin semantics, and current-head runtime execution.
+- Remaining source/runtime work: executable prompt-regression/provider-comparison runners, full observer wiring across extraction/research/persistence, persisted pin semantics, and current-head runtime execution.
 - Runtime statuses are intentionally 🟡 until the current GitHub Actions run or equivalent execution is observed.
 
 ### P1 completion gate
