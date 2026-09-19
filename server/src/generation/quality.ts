@@ -52,7 +52,7 @@ export function assessQuestionQuality(
 export function filterDuplicateQuestions(questions: Question[]): Question[] {
   const kept: Question[] = [];
   for (const question of questions) {
-    if (!kept.some((item) => overlap(item.prompt, question.prompt) >= 0.8)) kept.push(question);
+    if (!kept.some((item) => item.category === question.category && item.requirement_ids.join("|") === question.requirement_ids.join("|") && overlap(item.prompt, question.prompt) >= 0.8)) kept.push(question);
   }
   return kept;
 }
