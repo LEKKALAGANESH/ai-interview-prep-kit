@@ -89,3 +89,17 @@ test("records freshness timestamps for retrieved pages", async () => {
   assert.equal(result.pages.length, 1);
   assert.match(result.pages[0].fetched_at, /^2026|^20/);
 });
+
+
+test("research evidence packet stays bounded under maximum claim volume", async () => {
+  const claims = Array.from({ length: 100 }, (_, index) => ({
+    claim: `Claim ${index}`,
+    source_url: `https://example.com/page/${index}`,
+    source_type: "company-primary" as const,
+    evidence: "x".repeat(1800),
+    confidence_basis: "company primary page",
+  }));
+  const { buildRankedEvidencePacket } = await import("./evidence.js");
+  const packet = buildRankedEvidencePacket(claims, "Claim", 9000);
+  assert.ok(packet.length <= 9000);
+});
