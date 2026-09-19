@@ -12,7 +12,7 @@ export type GenerationJob = {
   label: string;
   events: GenerationEvent[];
   result?: { id: string; kit: Awaited<ReturnType<typeof generateKitFromInput>>["kit"] };
-  error?: { code: string; message: string };
+  error?: { code: string; message: string; details?: Record<string, unknown> };
   created_at: string;
   updated_at: string;
 };
@@ -74,10 +74,21 @@ export async function createGenerationJob(
       job.updated_at = new Date().toISOString();
     } catch (error) {
       const code = error && typeof error === "object" && "code" in error ? String((error as { code: unknown }).code) : "KIT_GENERATION_FAILED";
+      const details = error && typeof error === "object" && "details" in error ? (error as { details?: unknown }).details : undefined;
+      const message = error instanceof Error ? error.message : "Kit generation failed";
+      console.error(JSON.stringify({
+        layer: "backend",
+        component: "generation-job",
+        job_id: id,
+        code,
+        message,
+        details,
+        timestamp: new Date().toISOString(),
+      }));
       job.status = "failed";
       job.stage = "failed";
       job.label = labels.failed;
-      job.error = { code, message: error instanceof Error ? error.message : "Kit generation failed" };
+      job.error = { code, message, ...(details && typeof details === "object" ? { details: details as Record<string, unknown> } : {}) };
       job.updated_at = new Date().toISOString();
     }
   })();
