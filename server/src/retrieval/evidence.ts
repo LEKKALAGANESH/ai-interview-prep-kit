@@ -53,9 +53,10 @@ export function buildRankedEvidencePacket(claims: EvidenceClaim[], query = "", m
   const ranked = rankEvidence(claims, query);
   let used = 0;
   const blocks: string[] = [];
+  const counters = { "company-primary": 0, "public-interview": 0, other: 0 };
   for (const item of ranked) {
     const block = [
-      `[${item.source_type === "company-primary" ? "COMPANY_PRIMARY" : item.source_type === "public-interview" ? "PUBLIC_INTERVIEW" : "OTHER"}_${blocks.length + 1}]`,
+      `[${item.source_type === "company-primary" ? "COMPANY_PRIMARY" : item.source_type === "public-interview" ? "PUBLIC_INTERVIEW" : "OTHER"}_${++counters[item.source_type]}]`,
       `Source type: ${item.source_type}`,
       `URL: ${item.source_url}`,
       `Claim: ${item.claim}`,
