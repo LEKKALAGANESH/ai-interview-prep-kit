@@ -12,6 +12,7 @@ import { createKitStore, type KitStore } from "@trao/interview-prep-server/persi
 export type EvaluatorOptions = {
   store?: KitStore;
   generate?: typeof generateKitFromInput;
+  concurrency?: number;
 };
 
 function errorResult(id: string, error: unknown): EvaluationResult {
@@ -39,22 +40,27 @@ export async function evaluateCases(
   const generate = options.generate ?? generateKitFromInput;
   const kits: EvaluationResult[] = [];
 
-  for (const item of normalized) {
-    try {
-      const result = await generate(item.input, {
-        store,
-        allowLocalhost: true,
-      });
-      kits.push({
-        id: item.id,
-        status: "ok",
-        kit: result.kit,
-        error: null,
-      });
-    } catch (error) {
-      kits.push(errorResult(item.id, error));
+  const concurrency = Math.max(1, Math.trunc(options.concurrency ?? 2));
+  const results = new Array<EvaluationResult>(normalized.length);
+  let cursor = 0;
+  async function worker(): Promise<void> {
+    while (true) {
+      const index = cursor++;
+      if (index >= normalized.length) return;
+      const item = normalized[index];
+      try {
+        const result = await generate(item.input, {
+          store,
+          allowLocalhost: true,
+        });
+        results[index] = { id: item.id, status: "ok", kit: result.kit, error: null };
+      } catch (error) {
+        results[index] = errorResult(item.id, error);
+      }
     }
   }
+  await Promise.all(Array.from({ length: Math.min(concurrency, normalized.length) }, () => worker()));
+  kits.push(...results);
 
   return EvaluationOutputSchema.parse({
     version: "1.0",
