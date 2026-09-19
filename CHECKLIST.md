@@ -107,6 +107,7 @@ P2 remains open until clean-clone/runtime evidence, evaluator SLA, security regr
 - **Runtime verification of the new Sprint 1 commits:** 🟡 — GitHub reports no workflow run for the latest head, and this environment cannot reach GitHub from a shell, so tests are not being falsely claimed as executed.
 - **New tests added:** centralized prompt safety, source-labeled research evidence, deterministic flashcard derivation.
 - **P0 gate:** keep runtime status 🟡 until the updated test/build workflow executes successfully.
+- **P1 started:** source-level P1 implementation is now active below; P0 is not being declared runtime-green prematurely.
 
 ---
 
