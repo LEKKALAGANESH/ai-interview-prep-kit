@@ -52,8 +52,14 @@ export function assembleKit(input: NormalizedKitInput, context: BuildKitContext,
     schedule: { days_available: input.days_available, days: schedule },
     coverage,
   };
+  context.observer?.({ stage: "validation", status: "started" });
+  const validationStarted = Date.now();
   const parsed = KitSchema.safeParse(kit);
-  if (!parsed.success) throw new KitAssemblyError("FINAL_KIT_INVALID", "Final kit failed schema validation");
+  if (!parsed.success) {
+    context.observer?.({ stage: "validation", status: "failed", duration_ms: Date.now() - validationStarted, error_code: "FINAL_KIT_INVALID" });
+    throw new KitAssemblyError("FINAL_KIT_INVALID", "Final kit failed schema validation");
+  }
+  context.observer?.({ stage: "validation", status: "succeeded", duration_ms: Date.now() - validationStarted });
   const flashcardCheck = validateFlashcards(parsed.data.flashcards, parsed.data.questions);
   if (!flashcardCheck.valid) throw new KitAssemblyError("FINAL_KIT_INVALID", "Flashcards failed source-question lineage validation");
   if (parsed.data.coverage.uncovered_requirement_ids.some((id) =>
