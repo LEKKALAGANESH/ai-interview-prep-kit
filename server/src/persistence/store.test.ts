@@ -105,3 +105,48 @@ test("persists pinned question IDs independently from Appendix A kit shape", asy
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+
+test("ignores interrupted temporary kit writes after restart", async () => {
+  const { mkdtemp, rm, writeFile } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(process.cwd(), "kit-recovery-test-"));
+  const filePath = join(directory, "kits.json");
+  try {
+    const first = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const id = buildKitId(input);
+    await first.save(id, kit);
+    await writeFile(`${filePath}.tmp`, "{broken", "utf8");
+    const restarted = new (await import("./store.js")).JsonFileKitStore(filePath);
+    assert.deepEqual(await restarted.getById(id), kit);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("durable request lock coalesces concurrent same-id operations", async () => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(process.cwd(), "kit-lock-test-"));
+  const filePath = join(directory, "kits.json");
+  try {
+    const first = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const second = new (await import("./store.js")).JsonFileKitStore(filePath);
+    const events: string[] = [];
+    const operation = async (name: string) => first.withRequestLock("same", async () => {
+      events.push(`${name}:start`);
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      events.push(`${name}:end`);
+      return name;
+    });
+    const [a, b] = await Promise.all([operation("a"), second.withRequestLock("same", async () => {
+      events.push("b:start");
+      events.push("b:end");
+      return "b";
+    })]);
+    assert.deepEqual([a, b], ["a", "b"]);
+    assert.deepEqual(events, ["a:start", "a:end", "b:start", "b:end"]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
