@@ -46,8 +46,9 @@ async function callWithRetry(
   request: { systemInstruction: string; userPrompt: string },
   options: GenerateQuestionOptions,
 ): Promise<unknown> {
-  const attempts = Math.max(1, options.attempts ?? 2);
-  const retryDelayMs = options.retryDelayMs ?? 250;
+  // Free-tier 429/503 spikes last seconds, not milliseconds: 4 attempts waiting 2s, 4s, 8s.
+  const attempts = Math.max(1, options.attempts ?? 4);
+  const retryDelayMs = options.retryDelayMs ?? 2000;
   const sleep = options.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   let lastError: unknown;
 
