@@ -213,3 +213,21 @@ export function createKitStore(): KitStore {
   const path = process.env.KIT_STORE_FILE?.trim() || ".data/kits.json";
   return new JsonFileKitStore(path);
 }
+
+
+export class UserScopedKitStore implements KitStore {
+  constructor(private readonly base: KitStore, private readonly userId: string) {}
+
+  private key(id: string): string { return `user:${this.userId}:${id}`; }
+
+  save(id: string, kit: Kit): Promise<Kit> { return this.base.save(this.key(id), kit); }
+  getById(id: string): Promise<Kit | null> { return this.base.getById(this.key(id)); }
+  update(id: string, kit: Kit): Promise<Kit> { return this.base.update(this.key(id), kit); }
+  withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T> { return this.base.withRequestLock(this.key(id), operation); }
+  getPractice(id: string): Promise<PracticeState> { return this.base.getPractice(this.key(id)); }
+  savePractice(id: string, state: PracticeState): Promise<PracticeState> { return this.base.savePractice(this.key(id), state); }
+  getPinnedQuestions(id: string): Promise<PinnedQuestionState> { return this.base.getPinnedQuestions(this.key(id)); }
+  savePinnedQuestions(id: string, state: PinnedQuestionState): Promise<PinnedQuestionState> { return this.base.savePinnedQuestions(this.key(id), state); }
+  getResearchProvenance(id: string): Promise<ResearchProvenance | null> { return this.base.getResearchProvenance(this.key(id)); }
+  saveResearchProvenance(id: string, state: ResearchProvenance): Promise<ResearchProvenance> { return this.base.saveResearchProvenance(this.key(id), state); }
+}
