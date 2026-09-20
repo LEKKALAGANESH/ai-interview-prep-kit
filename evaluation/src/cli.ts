@@ -24,6 +24,11 @@ function readFlag(args: string[], name: string): string {
 
 const args = process.argv.slice(2);
 
+if (args.includes("--help") || args.includes("-h")) {
+  process.stdout.write("Usage: npm run evaluate -- --input <cases.json> --output <kits.json>\n");
+  process.exit(0);
+}
+
 try {
   const inputPath = readFlag(args, "--input");
   const outputPath = readFlag(args, "--output");
