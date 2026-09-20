@@ -1,3 +1,30 @@
+# Step 14 — User Identity & Authorization Boundary
+
+**Goal:** Ensure every authenticated account has a server-created identity, email uniqueness is enforced, and application authorization derives identity from the authenticated session rather than from client-supplied user identifiers.
+
+| # | User checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 14.1 | User created correctly | 🟢 | Registration creates a server-generated user ID, normalized email, password hash, and timestamps in the user store. |
+| 14.2 | Email unique | 🟢 | Registration rejects an already-registered normalized email with a conflict response. |
+| 14.3 | User identity comes from session | 🟢 | Protected API authorization resolves the user from the signed session cookie and loads the user by session subject. |
+| 14.4 | No client-controlled `userId` | 🟢 | Protected application APIs do not accept a client-supplied user ID as the authorization source; user scoping is created from the authenticated session user ID. |
+| 14.5 | User identity test coverage | 🟢 | Tests cover duplicate registration, authenticated-session resolution, missing-session rejection, and user-scoped storage isolation. |
+| 14.6 | Authorization runtime verification | 🟡 | Current GitHub Actions execution must confirm the new user-identity tests and build pass on the current commit. |
+
+### Step 14 implementation notes
+
+- User IDs are generated server-side with `randomUUID()` and are not accepted from registration input.
+- Emails are normalized to lowercase before uniqueness checks and persistence.
+- Protected API requests are authenticated through the signed `trao_session` cookie.
+- The session contains the authenticated user's server-generated ID (`sub`).
+- `requireAuth()` resolves the user from that session identity before application API access is granted.
+- `UserScopedKitStore` receives the authenticated user ID from `requireAuth()` and prefixes persistence keys with that server-derived identity.
+- A client cannot switch accounts by supplying a different `userId` in a normal protected request.
+- The authentication test suite now includes duplicate-email registration with an attacker-controlled `userId` field; registration still returns the duplicate-email conflict.
+
+### Step 14 verification rule
+
+Do not mark 14.6 green from source inspection alone. It becomes green only after the current GitHub Actions run demonstrates the authentication/user-identity tests and build passing.
 # Step 13 — Authentication (User System)
 
 **Goal:** Add a minimal secure account/session layer around the existing AI Interview Prep system without changing the AI generation, research, coverage, scheduling, or validation logic.
