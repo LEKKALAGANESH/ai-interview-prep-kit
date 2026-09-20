@@ -10,6 +10,7 @@ export type ResearchProvenance = { researched_at: string; claims: Array<{ claim:
 
 export interface KitStore {
   update(id: string, kit: Kit): Promise<Kit>;
+  delete(id: string): Promise<boolean>;
   save(id: string, kit: Kit): Promise<Kit>;
   getById(id: string): Promise<Kit | null>;
   withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T>;
@@ -70,6 +71,14 @@ export class InMemoryKitStore implements KitStore {
     if (!this.kits.has(id)) throw new Error(`Unknown kit: ${id}`);
     this.kits.set(id, structuredClone(kit));
     return structuredClone(kit);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const existed = this.kits.delete(id);
+    this.practice.delete(id);
+    this.pinned.delete(id);
+    this.provenance.delete(id);
+    return existed;
   }
 
   async withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T> {
@@ -202,6 +211,19 @@ export class JsonFileKitStore implements KitStore {
     });
   }
 
+  async delete(id: string): Promise<boolean> {
+    return this.withLock(async () => {
+      const kits = await this.readAll();
+      if (!kits[id]) return false;
+      delete kits[id];
+      await this.writeAll(kits);
+      const practice = await this.readPractice(); delete practice[id]; await this.writePractice(practice);
+      const pinned = await this.readPinned(); delete pinned[id]; await this.writePinned(pinned);
+      const provenance = await this.readProvenance(); delete provenance[id]; await this.writeProvenance(provenance);
+      return true;
+    });
+  }
+
   async getPractice(id: string): Promise<PracticeState> { const data = await this.readPractice(); return structuredClone(data[id] ?? { current_index: 0, results: [], completed: false }); }
   async savePractice(id: string, state: PracticeState): Promise<PracticeState> { const data = await this.readPractice(); data[id] = structuredClone(state); await this.writePractice(data); return structuredClone(state); }
   async getPinnedQuestions(id: string): Promise<PinnedQuestionState> { const data = await this.readPinned(); return structuredClone(data[id] ?? { question_ids: [], updated_at: new Date(0).toISOString() }); }
@@ -225,6 +247,7 @@ export class UserScopedKitStore implements KitStore {
   save(id: string, kit: Kit): Promise<Kit> { return this.base.save(this.key(id), kit); }
   getById(id: string): Promise<Kit | null> { return this.base.getById(this.key(id)); }
   update(id: string, kit: Kit): Promise<Kit> { return this.base.update(this.key(id), kit); }
+  delete(id: string): Promise<boolean> { return this.base.delete(this.key(id)); }
   withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T> { return this.base.withRequestLock(this.key(id), operation); }
   getPractice(id: string): Promise<PracticeState> { return this.base.getPractice(this.key(id)); }
   savePractice(id: string, state: PracticeState): Promise<PracticeState> { return this.base.savePractice(this.key(id), state); }
