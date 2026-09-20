@@ -2,6 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { UserStore } from "./store.js";
+import { hashPassword, verifyPassword, sessionCookie, authenticateRequest } from "./service.js";
+
+async function withStore() {
+  const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
+  return { dir, store: new UserStore(`${dir}/users.json`) };
+}
+
+test("hashes passwords without storing plaintext", async () => {
+  const { dir, store } = await withStore();
+  try {
 
 process.env.SESSION_SECRET = "test-secret";
 
@@ -21,12 +32,16 @@ test("hashes passwords with a one-way scrypt hash", async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test("verifies correct and rejects incorrect passwords", async () => {
 test("verifies correct passwords and rejects incorrect passwords", async () => {
   const hash = await hashPassword("correct horse battery staple");
   assert.equal(await verifyPassword("correct horse battery staple", hash), true);
   assert.equal(await verifyPassword("wrong password", hash), false);
 });
 
+test("session survives a new request and expires", async () => {
+  const { dir, store } = await withStore();
+  try {
 test("session survives a new request and rejects an expired session", async () => {
   const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
   try {

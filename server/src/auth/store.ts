@@ -11,6 +11,10 @@ export type AuthUser = {
   updated_at: string;
 };
 
+type UserFile = Record<string, AuthUser>;
+
+export class UserStore {
+  constructor(private readonly filePath = process.env.AUTH_STORE_FILE?.trim() || ".data/users.json") {}
 export interface AuthUserStore {
   getByEmail(email: string): Promise<AuthUser | null>;
   getById(id: string): Promise<AuthUser | null>;
@@ -30,6 +34,13 @@ export class UserStore implements AuthUserStore {
     try {
       const raw = await readFile(this.filePath, "utf8");
       const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("User store file must contain an object");
+      }
+      return parsed as UserFile;
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error &&
+          (error as { code?: string }).code === "ENOENT") return {};
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("User store file must contain an object");
       return parsed as UserFile;
     } catch (error) {
@@ -59,6 +70,11 @@ export class UserStore implements AuthUserStore {
   }
 
   async create(email: string, passwordHash: string): Promise<AuthUser> {
+    const users = await this.readAll();
+    const normalized = email.trim().toLowerCase();
+    if (Object.values(users).some((user) => user.email === normalized)) {
+      throw new Error("EMAIL_ALREADY_REGISTERED");
+    }
     if (this.mongo) return this.mongo.create(email, passwordHash);
     const users = await this.readAll();
     const normalized = email.trim().toLowerCase();
