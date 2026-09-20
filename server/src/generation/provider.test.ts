@@ -126,3 +126,12 @@ test("Groq 'Failed to generate JSON' 400 is classified as a retryable INVALID_RE
   await assert.rejects(() => provider.generate({ systemInstruction: "s", userPrompt: "u" }), (error: unknown) =>
     error instanceof LlmProviderError && error.code === "INVALID_RESPONSE");
 });
+
+test("parseJsonText accepts fenced or prose-wrapped JSON and rejects non-JSON", async () => {
+  const { parseJsonText } = await import("./provider.js");
+  assert.deepEqual(parseJsonText('{"a":1}', "X"), { a: 1 });
+  assert.deepEqual(parseJsonText('```json\n{"a":1}\n```', "X"), { a: 1 });
+  assert.deepEqual(parseJsonText('Here you go: {"a":{"b":2}} hope it helps', "X"), { a: { b: 2 } });
+  assert.throws(() => parseJsonText("no json here", "X"), LlmProviderError);
+  assert.throws(() => parseJsonText('{"a":', "X"), LlmProviderError);
+});

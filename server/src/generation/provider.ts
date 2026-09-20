@@ -84,12 +84,17 @@ async function requestJson(
   return readJson(response, provider);
 }
 
-function parseJsonText(text: string, provider: string): unknown {
-  try {
-    return JSON.parse(text.trim()) as unknown;
-  } catch {
-    throw new LlmProviderError("INVALID_RESPONSE", `${provider} returned non-JSON generated content`);
+// Tolerates code fences and a sentence around the object: models without an enforced JSON mode do both.
+export function parseJsonText(text: string, provider: string): unknown {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  for (const candidate of [trimmed, trimmed.slice(trimmed.indexOf("{"), trimmed.lastIndexOf("}") + 1)]) {
+    try {
+      return JSON.parse(candidate) as unknown;
+    } catch {
+      // try the next candidate
+    }
   }
+  throw new LlmProviderError("INVALID_RESPONSE", `${provider} returned non-JSON generated content`);
 }
 
 export class GeminiProvider implements LlmProvider {
