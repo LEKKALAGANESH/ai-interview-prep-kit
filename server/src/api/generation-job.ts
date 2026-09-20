@@ -10,6 +10,7 @@ export type GenerationJob = {
   id: string;
   status: "queued" | "running" | "complete" | "failed";
   stage: JobStage;
+  failed_stage?: JobStage; // the stage that was running when the job failed (stage itself becomes "failed")
   label: string;
   events: GenerationEvent[];
   result?: { id: string; kit: Awaited<ReturnType<typeof generateKitFromInput>>["kit"] };
@@ -108,6 +109,7 @@ export async function createGenerationJob(
         timestamp: new Date().toISOString(),
       }));
       job.status = "failed";
+      job.failed_stage = job.stage;
       job.stage = "failed";
       job.label = labels.failed;
       job.error = { code, message, ...(details && typeof details === "object" ? { details: details as Record<string, unknown> } : {}) };
