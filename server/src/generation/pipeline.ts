@@ -6,6 +6,7 @@ import {
 } from "@trao/interview-prep-shared/coverage.js";
 import type { ResearchResult } from "../retrieval/research.js";
 import {
+  generateQuestionsForCategoryBatch,
   generateQuestionsForRequirement,
   QuestionGenerationError,
   type GenerateQuestionOptions,
@@ -108,31 +109,46 @@ async function generateBestEffortPass(
   pass: number,
   generationErrors: QuestionGenerationAttemptError[],
 ): Promise<Question[]> {
+  // One provider call per question category (not per requirement): fewer calls and smaller total prompts on free tiers.
+  const plans = await observeStage(options.observer, "planning", async () => buildQuestionPlan(requirements, options.role));
+  const byId = new Map(requirements.map((item) => [item.id, item]));
+  const groups = new Map<QuestionPlan["category"], QuestionPlan[]>();
+  for (const plan of plans) groups.set(plan.category, [...(groups.get(plan.category) ?? []), plan]);
+  const batches = [...groups.entries()];
+
   // Bounded concurrency; results are stored by index so output order stays deterministic.
-  const results = new Array<Question[]>(requirements.length).fill([]);
-  const errors = new Array<QuestionGenerationAttemptError | undefined>(requirements.length);
+  const results = new Array<Question[]>(batches.length).fill([]);
+  const errors = new Array<QuestionGenerationAttemptError[]>(batches.length).fill([]);
   let cursor = 0;
 
   async function worker(): Promise<void> {
-    while (cursor < requirements.length) {
+    while (cursor < batches.length) {
       const index = cursor++;
-      const requirement = requirements[index];
+      const [category, categoryPlans] = batches[index];
       try {
-        results[index] = await generateQuestionsForRequirements([requirement], options);
+        results[index] = await generateQuestionsForCategoryBatch(
+          categoryPlans.flatMap((plan) => {
+            const requirement = byId.get(plan.requirement_id);
+            return requirement ? [{ requirement, objective: plan.objective, difficulty: plan.difficulty }] : [];
+          }),
+          category,
+          { companyBrief: options.companyBrief, research: options.research },
+          options,
+        );
       } catch (error) {
-        errors[index] = {
-          requirement_id: requirement.id,
+        errors[index] = categoryPlans.map((plan) => ({
+          requirement_id: plan.requirement_id,
           pass,
           code: error instanceof QuestionGenerationError ? error.code : "UNKNOWN",
           message: error instanceof Error ? error.message : "Question generation failed",
-        };
+        }));
       }
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(QUESTION_CONCURRENCY, requirements.length) }, worker));
-  generationErrors.push(...errors.filter((item): item is QuestionGenerationAttemptError => Boolean(item)));
-  return results.flat();
+  await Promise.all(Array.from({ length: Math.min(QUESTION_CONCURRENCY, batches.length) }, worker));
+  generationErrors.push(...errors.flat());
+  return filterDuplicateQuestions(results.flat());
 }
 
 export async function generateQuestionSetWithCoverage(
