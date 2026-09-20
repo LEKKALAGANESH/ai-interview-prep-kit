@@ -41,6 +41,15 @@ export class QuestionGenerationError extends Error {
 }
 
 
+// Providers say how long to wait ("Please try again in 6.1s" / "in 250ms"); honour it, capped at 60s.
+function retryHintMs(error: unknown): number {
+  const text = error instanceof LlmProviderError ? `${error.details?.upstream_message ?? ""} ${error.message}` : "";
+  const match = text.match(/try again in (\d+(?:\.\d+)?)\s*(ms|s|m)\b/i);
+  if (!match) return 0;
+  const unit = match[2].toLowerCase() === "ms" ? 1 : match[2].toLowerCase() === "m" ? 60_000 : 1000;
+  return Math.min(60_000, Math.ceil(Number(match[1]) * unit) + 500);
+}
+
 async function callWithRetry(
   provider: LlmProvider,
   request: { systemInstruction: string; userPrompt: string },
@@ -61,7 +70,7 @@ async function callWithRetry(
         error instanceof LlmProviderError &&
         (error.code === "RATE_LIMITED" || error.code === "TRANSIENT");
       if (!retryable || attempt === attempts) throw error;
-      await sleep(retryDelayMs * 2 ** (attempt - 1));
+      await sleep(Math.max(retryDelayMs * 2 ** (attempt - 1), retryHintMs(error)));
     }
   }
 

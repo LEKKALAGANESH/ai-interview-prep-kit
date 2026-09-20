@@ -128,3 +128,21 @@ test("does not accept an unsupported requirement id from model output because id
   );
   assert.deepEqual(questions[0].requirement_ids, ["r_react"]);
 });
+
+test("rate-limit retry waits for the provider's own 'try again in' hint", async () => {
+  const { LlmProviderError } = await import("./provider.js");
+  const waits: number[] = [];
+  let calls = 0;
+  const provider = {
+    async generate() {
+      calls += 1;
+      if (calls === 1) throw new LlmProviderError("RATE_LIMITED", "Groq rate limit reached", { upstream_message: "Rate limit reached. Please try again in 6.1s." });
+      return { questions: [{ prompt: "Explain X in practice?", answer_outline: "Cover A and B.", difficulty: 2 }] };
+    },
+  };
+  await generateQuestionsForRequirement(
+    { requirement: { id: "r1", text: "Node.js", kind: "technical", priority: "must" }, category: "technical" },
+    { provider, sleep: async (ms: number) => { waits.push(ms); } },
+  );
+  assert.deepEqual(waits, [6600]);
+});
