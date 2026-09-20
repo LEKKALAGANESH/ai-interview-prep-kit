@@ -101,6 +101,7 @@ export type QuestionSetGenerationOptions = InitialQuestionSetOptions & {
 };
 
 // Free-tier providers (e.g. Groq) limit tokens per minute; parallel calls trip that and drop requirements. Override with LLM_CONCURRENCY.
+const MAX_BATCH_REQUIREMENTS = 4;
 const QUESTION_CONCURRENCY = Math.max(1, Number(process.env.LLM_CONCURRENCY) || 2);
 
 async function generateBestEffortPass(
@@ -114,7 +115,10 @@ async function generateBestEffortPass(
   const byId = new Map(requirements.map((item) => [item.id, item]));
   const groups = new Map<QuestionPlan["category"], QuestionPlan[]>();
   for (const plan of plans) groups.set(plan.category, [...(groups.get(plan.category) ?? []), plan]);
-  const batches = [...groups.entries()];
+  // Long batched replies get truncated or malformed (esp. reasoning models), so cap each call at 4 requirements.
+  const batches = [...groups.entries()].flatMap(([category, categoryPlans]) =>
+    Array.from({ length: Math.ceil(categoryPlans.length / MAX_BATCH_REQUIREMENTS) }, (_, i) =>
+      [category, categoryPlans.slice(i * MAX_BATCH_REQUIREMENTS, (i + 1) * MAX_BATCH_REQUIREMENTS)] as [QuestionPlan["category"], QuestionPlan[]]));
 
   // Bounded concurrency; results are stored by index so output order stays deterministic.
   const results = new Array<Question[]>(batches.length).fill([]);

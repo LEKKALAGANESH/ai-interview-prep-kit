@@ -227,17 +227,29 @@ test("runs category batches concurrently but keeps output order deterministic", 
   assert.ok(peak > 1 && peak <= 3, `peak concurrency ${peak}`);
 });
 
-test("N requirements in one category cost exactly one provider call", async () => {
+test("up to 4 requirements in one category cost exactly one provider call", async () => {
   const calls: string[][] = [];
-  const requirements = ["r1", "r2", "r3", "r4", "r5"].map((id) => ({
+  const requirements = ["r1", "r2", "r3", "r4"].map((id) => ({
     id, text: `Skill ${id}`, kind: "technical" as const, priority: "must" as const,
   }));
 
   const { questions, coverage } = await generateQuestionSetWithCoverage(requirements, { provider: batchProvider(() => [fakeQuestion()], calls) });
 
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0], ["r1", "r2", "r3", "r4", "r5"]);
-  assert.equal(questions.length, 5);
+  assert.deepEqual(calls[0], ["r1", "r2", "r3", "r4"]);
+  assert.equal(questions.length, 4);
+  assert.equal(coverage.can_ship, true);
+});
+
+test("a 5th requirement in the same category starts a second call (batches are capped at 4)", async () => {
+  const calls: string[][] = [];
+  const requirements = ["r1", "r2", "r3", "r4", "r5"].map((id) => ({
+    id, text: `Skill ${id}`, kind: "technical" as const, priority: "must" as const,
+  }));
+
+  const { coverage } = await generateQuestionSetWithCoverage(requirements, { provider: batchProvider(() => [fakeQuestion()], calls) });
+
+  assert.deepEqual(calls, [["r1", "r2", "r3", "r4"], ["r5"]]);
   assert.equal(coverage.can_ship, true);
 });
 

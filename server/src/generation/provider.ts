@@ -47,6 +47,7 @@ function classifyHttp(status: number, provider: string, endpoint: string, model:
   const suffix = upstreamMessage ? `: ${upstreamMessage}` : "";
   if (status === 401 || status === 403) throw new LlmProviderError("CONFIGURATION", `${provider} authentication/authorization failed (HTTP ${status})${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   if (status === 404) throw new LlmProviderError("CONFIGURATION", `${provider} endpoint or model was not found (HTTP 404). Check the configured endpoint/model${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
+  if (status === 400 && /failed to generate json/i.test(upstreamMessage ?? "")) throw new LlmProviderError("INVALID_RESPONSE", `${provider} could not produce valid JSON${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   if (status === 429) throw new LlmProviderError("RATE_LIMITED", `${provider} rate limit reached${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   if (status >= 500) throw new LlmProviderError("TRANSIENT", `${provider} returned HTTP ${status}${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   throw new LlmProviderError("CONFIGURATION", `${provider} returned HTTP ${status}${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
@@ -144,6 +145,7 @@ class OpenAICompatibleProvider implements LlmProvider {
           { role: "user", content: request.userPrompt },
         ],
         response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
       }),
     }, this.name, this.fetchImpl, this.timeoutMs, this.model);
     const choices = Array.isArray(payload.choices) ? payload.choices as Array<Record<string, unknown>> : [];

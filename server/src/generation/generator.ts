@@ -68,7 +68,7 @@ async function callWithRetry(
       lastError = error;
       const retryable =
         error instanceof LlmProviderError &&
-        (error.code === "RATE_LIMITED" || error.code === "TRANSIENT");
+        (error.code === "RATE_LIMITED" || error.code === "TRANSIENT" || error.code === "INVALID_RESPONSE");
       if (!retryable || attempt === attempts) throw error;
       await sleep(Math.max(retryDelayMs * 2 ** (attempt - 1), retryHintMs(error)));
     }
