@@ -99,30 +99,39 @@ export type QuestionSetGenerationOptions = InitialQuestionSetOptions & {
   maxPasses?: number;
 };
 
+const QUESTION_CONCURRENCY = 3;
+
 async function generateBestEffortPass(
   requirements: Requirement[],
   options: InitialQuestionSetOptions,
   pass: number,
   generationErrors: QuestionGenerationAttemptError[],
 ): Promise<Question[]> {
-  const questions: Question[] = [];
+  // Bounded concurrency; results are stored by index so output order stays deterministic.
+  const results = new Array<Question[]>(requirements.length).fill([]);
+  const errors = new Array<QuestionGenerationAttemptError | undefined>(requirements.length);
+  let cursor = 0;
 
-  for (const requirement of requirements) {
-    try {
-      questions.push(
-        ...(await generateQuestionsForRequirements([requirement], options)),
-      );
-    } catch (error) {
-      generationErrors.push({
-        requirement_id: requirement.id,
-        pass,
-        code: error instanceof QuestionGenerationError ? error.code : "UNKNOWN",
-        message: error instanceof Error ? error.message : "Question generation failed",
-      });
+  async function worker(): Promise<void> {
+    while (cursor < requirements.length) {
+      const index = cursor++;
+      const requirement = requirements[index];
+      try {
+        results[index] = await generateQuestionsForRequirements([requirement], options);
+      } catch (error) {
+        errors[index] = {
+          requirement_id: requirement.id,
+          pass,
+          code: error instanceof QuestionGenerationError ? error.code : "UNKNOWN",
+          message: error instanceof Error ? error.message : "Question generation failed",
+        };
+      }
     }
   }
 
-  return questions;
+  await Promise.all(Array.from({ length: Math.min(QUESTION_CONCURRENCY, requirements.length) }, worker));
+  generationErrors.push(...errors.filter((item): item is QuestionGenerationAttemptError => Boolean(item)));
+  return results.flat();
 }
 
 export async function generateQuestionSetWithCoverage(

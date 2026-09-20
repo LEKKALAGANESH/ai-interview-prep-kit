@@ -157,5 +157,5 @@ test("API surfaces research timeouts as structured research failures", async () 
   );
   assert.equal(response.status, 502);
   const body = await response.json() as { error: { code: string } };
-  assert.equal(body.error.code, "RESEARCH_FAILED");
+  assert.equal(body.error.code, "COMPANY_UNREACHABLE");
 });

@@ -35,3 +35,8 @@ test("coverage reports requirements reached by practiced questions",()=>{
  assert.deepEqual(result.covered_requirement_ids,["r1"]);
  assert.deepEqual(result.uncovered_requirement_ids,["r2"]);
 });
+
+test("never-practised cards come before high-confidence ones",()=>{
+ const state: PracticeState={current_index:0,results:[{question_id:"q1",confidence:"high",practiced_at:"now"}],completed:false};
+ assert.deepEqual(buildPracticeQueue(kit(),state),["q2","q1"]);
+});

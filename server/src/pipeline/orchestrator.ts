@@ -15,6 +15,7 @@ export class ApplicationPipelineError extends Error {
     public readonly code:
       | "LLM_NOT_CONFIGURED"
       | "RESEARCH_FAILED"
+      | "COMPANY_UNREACHABLE"
       | "EXTRACTION_FAILED",
     message: string,
   ) {
@@ -29,19 +30,30 @@ function companyNameFromUrl(companyUrl: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function buildCompanyBrief(
-  research: Awaited<ReturnType<typeof researchCompany>>,
-): CompanyBrief {
-  const page = research.pages[0];
-  const summary =
-    page?.text.slice(0, 500).trim() ||
-    "No company summary was available from the researched pages.";
+type ResearchResult = Awaited<ReturnType<typeof researchCompany>>;
+
+const MIN_USABLE_PAGE_CHARS = 200;
+const JS_SHELL_TEXT = /skip to content|loading\.{0,3}|enable javascript/gi;
+
+// JS-rendered shells ("Skip to content Loading...") extract to almost nothing.
+function usablePages(research: ResearchResult): ResearchResult["pages"] {
+  return research.pages.filter(
+    (page) => page.text.replace(JS_SHELL_TEXT, "").trim().length >= MIN_USABLE_PAGE_CHARS,
+  );
+}
+
+// ponytail: extractive brief from the first readable page; add LLM synthesis if it reads poorly.
+function buildCompanyBrief(pages: ResearchResult["pages"]): CompanyBrief {
+  const page = pages[0];
+  if (!page) {
+    const note =
+      "Little readable content was found on the company site (it may be rendered by JavaScript or have no public pages), so this brief is based on the job description only.";
+    return { summary: note, what_they_do: note, sources: [] };
+  }
   return {
-    summary,
-    what_they_do:
-      page?.text.slice(0, 1000).trim() ||
-      "No company description was available from the researched pages.",
-    sources: research.pages.map((item) => item.url),
+    summary: page.text.slice(0, 500).trim(),
+    what_they_do: page.text.slice(0, 1000).trim(),
+    sources: pages.map((item) => item.url),
   };
 }
 
@@ -91,15 +103,15 @@ export async function generateKitFromInput(
     }));
   } catch (error) {
     throw new ApplicationPipelineError(
-      "RESEARCH_FAILED",
+      "COMPANY_UNREACHABLE",
       error instanceof Error ? error.message : "Company research failed",
     );
   }
 
   if (research.robots.allowed && research.pages.length === 0) {
     throw new ApplicationPipelineError(
-      "RESEARCH_FAILED",
-      "Company URL could not be retrieved; no usable company page was found",
+      "COMPANY_UNREACHABLE",
+      "Company site unreachable: no page could be retrieved",
     );
   }
 
@@ -115,13 +127,14 @@ export async function generateKitFromInput(
     );
   }
 
+  const goodPages = usablePages(research);
   const result = await generateAndPersistKit(
     input,
     {
       company: companyNameFromUrl(companyUrl),
       role,
-      companyBrief: buildCompanyBrief(research),
-      research,
+      companyBrief: buildCompanyBrief(goodPages),
+      research: { ...research, pages: goodPages },
       provider,
       observer: options.observer,
     },

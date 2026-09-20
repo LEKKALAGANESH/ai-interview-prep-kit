@@ -21,7 +21,11 @@ export function buildPracticeQueue(kit: Kit, state?: PracticeState): string[] {
   const scheduled = kit.schedule.days.flatMap((day) => day.question_ids).filter((id) => valid.has(id));
   const unique = [...new Set(scheduled)];
   return unique.sort((a, b) => {
-    const rank = (id: string) => prior.get(id) === "low" ? 0 : prior.get(id) === "medium" ? 1 : 2;
+    // low first, then never-practised cards, then medium, then high.
+    const rank = (id: string) => {
+      const confidence = prior.get(id);
+      return confidence === "low" ? 0 : !confidence ? 1 : confidence === "medium" ? 2 : 3;
+    };
     return rank(a) - rank(b) || unique.indexOf(a) - unique.indexOf(b);
   });
 }
