@@ -49,3 +49,11 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible,
 @media(max-width:640px){.section-header{flex-direction:column;align-items:stretch}.header-actions{justify-content:flex-start}.alert{flex-wrap:wrap}.topbar{margin-bottom:32px}}
 
 .stage-item.failed{grid-column:1/-1;flex-wrap:wrap;background:#fef3f2;color:#b42318;font-weight:750}.stage-item .stage-error{flex-basis:100%;margin-left:22px;font-weight:500;line-height:1.4;overflow-wrap:anywhere}
+.kit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:14px}
+.kit-card{display:grid;gap:5px;align-content:start;text-align:left;min-height:44px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff;color:inherit;cursor:pointer;font:inherit}
+.kit-card strong{font-size:14px}.kit-card-role{font-size:12px;font-weight:700;color:var(--accent)}
+.kit-card p{margin:0;font-size:11px;line-height:1.45;color:#4d5360;overflow-wrap:anywhere}
+.kit-card-meta{font-size:10px;line-height:1.5;color:#969da7}
+.kit-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kit-card:disabled{opacity:.6;cursor:default}
+@media (hover:hover){.kit-card:hover:not(:disabled){border-color:var(--accent)}}

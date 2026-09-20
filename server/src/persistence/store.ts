@@ -9,6 +9,8 @@ export type PinnedQuestionState = { question_ids: string[]; updated_at: string }
 export type ResearchProvenance = { researched_at: string; claims: Array<{ claim: string; source_url: string; source_type: "company-primary" | "public-interview" | "other"; evidence: string; confidence_basis: string; freshness_at?: string }> };
 
 export interface KitStore {
+  // Unscoped ids of one user's kits, for the "my kits" list. Optional: only the real stores implement it.
+  listForUser?(userId: string): Promise<Array<{ id: string; kit: Kit }>>;
   update(id: string, kit: Kit): Promise<Kit>;
   delete(id: string): Promise<boolean>;
   save(id: string, kit: Kit): Promise<Kit>;
@@ -53,6 +55,11 @@ export class InMemoryKitStore implements KitStore {
   async save(id: string, kit: Kit): Promise<Kit> {
     this.kits.set(id, structuredClone(kit));
     return structuredClone(kit);
+  }
+
+  async listForUser(userId: string): Promise<Array<{ id: string; kit: Kit }>> {
+    const prefix = `user:${userId}:`;
+    return [...this.kits].filter(([key]) => key.startsWith(prefix)).map(([key, kit]) => ({ id: key.slice(prefix.length), kit: structuredClone(kit) }));
   }
 
   async getById(id: string): Promise<Kit | null> {
@@ -196,6 +203,11 @@ export class JsonFileKitStore implements KitStore {
     });
   }
 
+  async listForUser(userId: string): Promise<Array<{ id: string; kit: Kit }>> {
+    const prefix = `user:${userId}:`;
+    return Object.entries(await this.readAll()).filter(([key]) => key.startsWith(prefix)).map(([key, kit]) => ({ id: key.slice(prefix.length), kit }));
+  }
+
   async getById(id: string): Promise<Kit | null> {
     const kits = await this.readAll();
     return kits[id] ? structuredClone(kits[id]) : null;
@@ -244,6 +256,7 @@ export class UserScopedKitStore implements KitStore {
 
   private key(id: string): string { return `user:${this.userId}:${id}`; }
 
+  listForUser(): Promise<Array<{ id: string; kit: Kit }>> { return this.base.listForUser?.(this.userId) ?? Promise.resolve([]); }
   save(id: string, kit: Kit): Promise<Kit> { return this.base.save(this.key(id), kit); }
   getById(id: string): Promise<Kit | null> { return this.base.getById(this.key(id)); }
   update(id: string, kit: Kit): Promise<Kit> { return this.base.update(this.key(id), kit); }
