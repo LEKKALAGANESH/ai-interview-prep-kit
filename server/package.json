@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx --test src/retrieval/*.test.ts src/extraction/*.test.ts src/generation/*.test.ts src/pipeline/*.test.ts src/persistence/*.test.ts src/api/*.test.ts src/auth/*.test.ts",
+    "test": "tsx --test src/retrieval/*.test.ts src/extraction/*.test.ts src/generation/*.test.ts src/pipeline/*.test.ts src/persistence/*.test.ts src/api/*.test.ts src/auth/*.test.ts src/persistence/mongodb.test.ts",
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts"
   },
@@ -17,7 +17,8 @@
   "dependencies": {
     "@trao/interview-prep-shared": "file:../shared",
     "zod": "^3.25.76",
-    "dotenv": "^17.2.2"
+    "dotenv": "^17.2.2",
+    "mongodb": "^6.20.0"
   },
   "exports": {
     "./pipeline/orchestrator.js": "./src/pipeline/orchestrator.ts",
