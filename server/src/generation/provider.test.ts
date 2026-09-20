@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GeminiProvider, LlmProviderError } from "./provider.js";
+import { GeminiProvider, GroqProvider, LlmProviderError } from "./provider.js";
 
 test("maps Gemini JSON content into provider output", async () => {
   const provider = new GeminiProvider("key", "test-model", async (input, init) => {
@@ -118,4 +118,20 @@ test("classifies provider 404 with actionable model diagnostics", async () => {
       return true;
     },
   );
+});
+
+test("Groq 'Failed to generate JSON' 400 is classified as a retryable INVALID_RESPONSE, not a config error", async () => {
+  const provider = new GroqProvider("Groq", "https://api.groq.test/v1/chat/completions", "key", "m",
+    (async () => new Response(JSON.stringify({ error: { message: "Failed to generate JSON. Please adjust your prompt." } }), { status: 400 })) as typeof fetch);
+  await assert.rejects(() => provider.generate({ systemInstruction: "s", userPrompt: "u" }), (error: unknown) =>
+    error instanceof LlmProviderError && error.code === "INVALID_RESPONSE");
+});
+
+test("parseJsonText accepts fenced or prose-wrapped JSON and rejects non-JSON", async () => {
+  const { parseJsonText } = await import("./provider.js");
+  assert.deepEqual(parseJsonText('{"a":1}', "X"), { a: 1 });
+  assert.deepEqual(parseJsonText('```json\n{"a":1}\n```', "X"), { a: 1 });
+  assert.deepEqual(parseJsonText('Here you go: {"a":{"b":2}} hope it helps', "X"), { a: { b: 2 } });
+  assert.throws(() => parseJsonText("no json here", "X"), LlmProviderError);
+  assert.throws(() => parseJsonText('{"a":', "X"), LlmProviderError);
 });

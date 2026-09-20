@@ -142,6 +142,8 @@ Requires Node.js 20 or newer.
 ```bash
 npm install
 cp .env.example .env      # add at least one provider key
+npm run dev:all           # API (:4000) and frontend (:3000) together
+# or separately:
 npm run dev:server        # API on http://localhost:$PORT
 npm run dev               # frontend on http://localhost:3000
 ```

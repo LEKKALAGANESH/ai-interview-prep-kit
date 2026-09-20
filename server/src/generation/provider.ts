@@ -47,6 +47,7 @@ function classifyHttp(status: number, provider: string, endpoint: string, model:
   const suffix = upstreamMessage ? `: ${upstreamMessage}` : "";
   if (status === 401 || status === 403) throw new LlmProviderError("CONFIGURATION", `${provider} authentication/authorization failed (HTTP ${status})${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   if (status === 404) throw new LlmProviderError("CONFIGURATION", `${provider} endpoint or model was not found (HTTP 404). Check the configured endpoint/model${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
+  if (status === 400 && /failed to generate json/i.test(upstreamMessage ?? "")) throw new LlmProviderError("INVALID_RESPONSE", `${provider} could not produce valid JSON${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   if (status === 429) throw new LlmProviderError("RATE_LIMITED", `${provider} rate limit reached${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   if (status >= 500) throw new LlmProviderError("TRANSIENT", `${provider} returned HTTP ${status}${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
   throw new LlmProviderError("CONFIGURATION", `${provider} returned HTTP ${status}${suffix}`, {provider,status,endpoint,model,upstream_message:upstreamMessage});
@@ -83,12 +84,17 @@ async function requestJson(
   return readJson(response, provider);
 }
 
-function parseJsonText(text: string, provider: string): unknown {
-  try {
-    return JSON.parse(text.trim()) as unknown;
-  } catch {
-    throw new LlmProviderError("INVALID_RESPONSE", `${provider} returned non-JSON generated content`);
+// Tolerates code fences and a sentence around the object: models without an enforced JSON mode do both.
+export function parseJsonText(text: string, provider: string): unknown {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  for (const candidate of [trimmed, trimmed.slice(trimmed.indexOf("{"), trimmed.lastIndexOf("}") + 1)]) {
+    try {
+      return JSON.parse(candidate) as unknown;
+    } catch {
+      // try the next candidate
+    }
   }
+  throw new LlmProviderError("INVALID_RESPONSE", `${provider} returned non-JSON generated content`);
 }
 
 export class GeminiProvider implements LlmProvider {
@@ -144,6 +150,7 @@ class OpenAICompatibleProvider implements LlmProvider {
           { role: "user", content: request.userPrompt },
         ],
         response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
       }),
     }, this.name, this.fetchImpl, this.timeoutMs, this.model);
     const choices = Array.isArray(payload.choices) ? payload.choices as Array<Record<string, unknown>> : [];

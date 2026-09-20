@@ -65,6 +65,11 @@ export class MongoKitStore implements KitStore {
     return structuredClone(kit);
   }
 
+  async listForUser(userId: string): Promise<Array<{ id: string; kit: Kit }>> {
+    const docs = await (await this.kitCollection()).find({ user_id: userId }).sort({ updated_at: -1 }).toArray();
+    return docs.map((doc) => ({ id: doc.kit_id, kit: structuredClone(doc.kit) }));
+  }
+
   async getById(id: string): Promise<Kit | null> {
     const { userId, kitId } = scopeParts(id);
     const doc = await (await this.kitCollection()).findOne({ user_id: userId, kit_id: kitId });

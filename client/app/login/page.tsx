@@ -2,6 +2,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { friendlyError } from "../api";
+import PasswordInput from "../password-input";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -37,7 +38,7 @@ export default function LoginPage() {
       <p className="mt-2 text-slate-600">Log in to access your interview preparation kits.</p>
       <form onSubmit={submit} className="mt-6 grid gap-4">
         <label className="grid gap-2"><span className="font-medium">Email</span><input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="min-h-11 rounded-xl border p-3"/></label>
-        <label className="grid gap-2"><span className="font-medium">Password</span><input required minLength={8} type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} className="min-h-11 rounded-xl border p-3"/></label>
+        <label className="grid gap-2"><span className="font-medium">Password</span><PasswordInput autoComplete="current-password" value={password} onChange={setPassword}/></label>
         {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
         <button disabled={loading} className="min-h-11 rounded-xl bg-indigo-600 px-5 font-semibold text-white disabled:opacity-60">{loading ? "Logging in..." : "Log in"}</button>
       </form>

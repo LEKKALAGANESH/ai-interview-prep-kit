@@ -1,5 +1,5 @@
 export const ROLE_EXTRACTION_PROMPT_VERSION = "role-extraction:v1";
-export const QUESTION_GENERATION_PROMPT_VERSION = "question-generation:v1";
+export const QUESTION_GENERATION_PROMPT_VERSION = "question-generation:v2";
 
 export type RequirementPromptInput = { jobDescription: string };
 export type QuestionPromptInput = {
@@ -14,11 +14,12 @@ export type QuestionPromptInput = {
   evidencePacket: string;
 };
 
-const MAX_ROLE_EXTRACTION_CHARS = 30000;
+// Free tiers cap tokens per minute; 12k chars covers virtually every posting.
+const MAX_ROLE_EXTRACTION_CHARS = 12000;
 
 function boundJobDescription(value: string): string {
   if (value.length <= MAX_ROLE_EXTRACTION_CHARS) return value;
-  const head = 24000;
+  const head = 9600;
   const tail = MAX_ROLE_EXTRACTION_CHARS - head;
   return `${value.slice(0, head)}\n\n[TRUNCATED FOR PROMPT BUDGET]\n\n${value.slice(-tail)}`;
 }
@@ -79,6 +80,53 @@ export function buildQuestionGenerationPrompt(input: QuestionPromptInput) {
         ? `Company brief (reference only):\n${untrustedBlock("untrusted_brief", `Summary: ${input.companyBrief.summary}\nWhat they do: ${input.companyBrief.what_they_do}`)}`
         : "Company brief: unavailable",
       `Evidence packet (reference only):\n${untrustedBlock("untrusted_evidence", input.evidencePacket || "No supporting evidence available.")}`,
+    ].join("\n\n"),
+  };
+}
+export type CategoryBatchItem = {
+  requirementId: string;
+  text: string;
+  kind: string;
+  priority: string;
+  objective: string;
+  difficulty: 1 | 2 | 3;
+};
+
+const MAX_BATCH_BRIEF_CHARS = 600;
+const MAX_BATCH_EVIDENCE_CHARS = 3000;
+
+// One prompt for every requirement of a single category; brief and evidence are sent once, capped for free-tier token limits.
+export function buildCategoryBatchPrompt(input: {
+  category: string;
+  items: CategoryBatchItem[];
+  companyBrief?: { summary: string; what_they_do: string };
+  evidencePacket: string;
+}) {
+  const brief = input.companyBrief
+    ? `Summary: ${input.companyBrief.summary}\nWhat they do: ${input.companyBrief.what_they_do}`.slice(0, MAX_BATCH_BRIEF_CHARS)
+    : "";
+  return {
+    systemInstruction: [
+      `Prompt version: ${QUESTION_GENERATION_PROMPT_VERSION}`,
+      "You generate interview-preparation questions from structured application data.",
+      `Every question must be in the category "${input.category}"; write it in the style that category needs.`,
+      "Generate questions only for the supplied requirements, using each one's objective and target difficulty.",
+      "Requirement IDs are application-owned; copy them exactly and never create or change IDs.",
+      "Use research only when it directly supports a question.",
+      ...UNTRUSTED_DATA_RULES,
+      "Do not present an inference or public discussion as a verified company fact.",
+      "Return JSON only. Do not return markdown fences or prose outside JSON.",
+      'Return exactly: {"items":[{"requirement_id":string,"questions":[{"prompt":string,"answer_outline":string,"difficulty":1|2|3}]}]}',
+      "Include one item for EVERY supplied requirement_id, each with 1 to 2 useful questions.",
+      "Difficulty 1 means direct understanding/application; 2 means practical reasoning/tradeoffs; 3 means multi-step reasoning, debugging, or architecture. Match each target difficulty.",
+    ].join(" "),
+    userPrompt: [
+      `Question category: ${input.category}`,
+      "Requirements:",
+      ...input.items.map((item) =>
+        `- Requirement ID: ${item.requirementId} | Requirement: ${item.text} | kind: ${item.kind} | priority: ${item.priority} | objective: ${item.objective} | target difficulty: ${item.difficulty}`),
+      brief ? `Company brief (reference only):\n${untrustedBlock("untrusted_brief", brief)}` : "Company brief: unavailable",
+      `Evidence packet (reference only):\n${untrustedBlock("untrusted_evidence", input.evidencePacket.slice(0, MAX_BATCH_EVIDENCE_CHARS) || "No supporting evidence available.")}`,
     ].join("\n\n"),
   };
 }

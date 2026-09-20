@@ -1,4 +1,5 @@
 import { isCrossSiteMutation, rateLimited } from "./api/guard.js";
+import { summarizeKits } from "./api/kit-list.js";
 import { config as loadDotenv } from "dotenv";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -197,6 +198,13 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
       response.setHeader("content-type", "application/json");
       response.end(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } }));
     }
+    return;
+  }
+
+  if (request.method === "GET" && request.url === "/api/kits") {
+    response.statusCode = 200;
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({ kits: summarizeKits((await scopedStore!.listForUser?.()) ?? []) }));
     return;
   }
 

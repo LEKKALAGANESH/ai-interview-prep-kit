@@ -7,7 +7,7 @@ import {
 } from "@trao/interview-prep-shared/kit.js";
 import { normalizeBatchInput } from "@trao/interview-prep-shared/input-model.js";
 import { generateKitFromInput } from "@trao/interview-prep-server/pipeline/orchestrator.js";
-import { createKitStore, type KitStore } from "@trao/interview-prep-server/persistence/store.js";
+import { InMemoryKitStore, type KitStore } from "@trao/interview-prep-server/persistence/store.js";
 
 export type EvaluatorOptions = {
   store?: KitStore;
@@ -36,7 +36,8 @@ export async function evaluateCases(
 ): Promise<EvaluationOutput> {
   const cases = EvaluationInputSchema.parse(input);
   const normalized = normalizeBatchInput(cases);
-  const store = options.store ?? createKitStore();
+  // In-memory on purpose: batch runs must not write test kits into the real (JSON or MongoDB) store.
+  const store = options.store ?? new InMemoryKitStore();
   const generate = options.generate ?? generateKitFromInput;
   const kits: EvaluationResult[] = [];
 

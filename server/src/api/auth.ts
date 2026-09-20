@@ -1,7 +1,5 @@
 import { authenticateRequest, clearSessionCookie, hashPassword, sessionCookie, verifyPassword } from "../auth/service.js";
-import { publicUser, UserStore } from "../auth/store.js";
-
-const users = new UserStore();
+import { getUserStore, publicUser } from "../auth/store.js";
 
 type Credentials = { email?: unknown; password?: unknown };
 
@@ -37,6 +35,7 @@ function validateCredentials(input: Credentials): { email: string; password: str
 }
 
 export async function handleAuth(request: Request, action: "register" | "login" | "logout" | "me"): Promise<Response> {
+  const users = getUserStore();
   if (action === "me") {
     const user = await authenticateRequest(request, users);
     return user ? json({ user: publicUser(user) }) : errorResponse("UNAUTHORIZED", "Authentication required", 401);
