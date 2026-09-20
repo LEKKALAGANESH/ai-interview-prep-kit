@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { call, formatGenerationError } from "./api";
+import { call, formatGenerationError, friendlyError } from "./api";
 import { parseCases, type BatchCase } from "./cases";
 
 type Row = { c: BatchCase; status: "queued" | "running" | "done" | "failed"; message: string; kitId?: string };
@@ -35,7 +35,7 @@ export default function BatchUpload({ provider, model, defaultDays, onOpen }: Pr
     if (!file) return;
     setError("");
     let cases: BatchCase[];
-    try { cases = parseCases(await file.text(), defaultDays); } catch (e) { setRows([]); setError(e instanceof Error ? e.message : "Could not read the file."); return; }
+    try { cases = parseCases(await file.text(), defaultDays); } catch (e) { setRows([]); setError(friendlyError(e,"Could not read the file.")); return; }
     if (!cases.length) { setRows([]); setError("The file has no cases."); return; }
     setRows(cases.map((c) => ({ c, status: c.error ? "failed" : "queued", message: c.error || "Waiting" })));
     setBusy(true);
@@ -45,7 +45,7 @@ export default function BatchUpload({ provider, model, defaultDays, onOpen }: Pr
       try {
         const kitId = await runCase(cases[i], provider, model, (label) => update(i, { message: label }));
         update(i, { status: "done", message: "Kit ready", kitId });
-      } catch (e) { update(i, { status: "failed", message: e instanceof Error ? e.message : "Generation failed" }); }
+      } catch (e) { update(i, { status: "failed", message: friendlyError(e,"Generation failed") }); }
     }
     setBusy(false);
     if (input.current) input.current.value = "";
@@ -56,7 +56,7 @@ export default function BatchUpload({ provider, model, defaultDays, onOpen }: Pr
       <p>JSON array or CSV with <code>jd</code>, <code>company_url</code> and optional <code>days</code>. Each role becomes its own kit.</p></div>
     <div className="load-kit">
       <label className="secondary-button file-button">{busy ? "Generating…" : "Choose file"}
-        <input ref={input} type="file" accept=".json,.csv,application/json,text/csv" disabled={busy} onChange={(e) => onFile(e.target.files?.[0])} className="visually-hidden" />
+        <input ref={input} aria-label="Upload a JSON or CSV file of roles" type="file" accept=".json,.csv,application/json,text/csv" disabled={busy} onChange={(e) => onFile(e.target.files?.[0])} className="visually-hidden" />
       </label>
     </div>
     {error && <div role="alert" className="alert batch-full"><strong>Could not use that file.</strong><span>{error}</span></div>}

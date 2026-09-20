@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { friendlyError } from "./api";
 
 type Question={id:string;prompt:string;answer_outline:string;difficulty:number};
 type Props={kitId:string;questions:Question[]};
@@ -9,10 +10,10 @@ function Badge({children}:{children:React.ReactNode}){return <span className="ba
 
 export default function PracticeSection({kitId,questions}:Props){
  const[data,setData]=useState<any>(null),[error,setError]=useState(""),[loading,setLoading]=useState(true),[revealed,setRevealed]=useState(false),[submitting,setSubmitting]=useState(false);
- async function load(){setLoading(true);setError("");try{const r=await fetch(API+"/api/kits/"+encodeURIComponent(kitId)+"/practice",{credentials:"include"});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||"Practice load failed");setData(d)}catch(e){setError(e instanceof Error?e.message:"Practice load failed")}finally{setLoading(false)}}
+ async function load(){setLoading(true);setError("");try{const r=await fetch(API+"/api/kits/"+encodeURIComponent(kitId)+"/practice",{credentials:"include"});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||"Practice load failed");setData(d)}catch(e){setError(friendlyError(e,"Practice load failed"))}finally{setLoading(false)}}
  useEffect(()=>{void load()},[kitId]);
- async function nextSession(){setLoading(true);setError("");try{const r=await fetch(API+"/api/kits/"+encodeURIComponent(kitId)+"/practice",{method:"POST",credentials:"include",headers:{"content-type":"application/json"},body:JSON.stringify({action:"next_session"})});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||"Could not start next session");setData(d);setRevealed(false)}catch(e){setError(e instanceof Error?e.message:"Could not start next session")}finally{setLoading(false)}}
- async function answer(confidence:string){const id=data?.queue?.[Math.min(data.state.current_index,data.queue.length-1)];if(!id)return;setSubmitting(true);setError("");try{const r=await fetch(API+"/api/kits/"+encodeURIComponent(kitId)+"/practice",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question_id:id,confidence})});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||"Practice update failed");setData(d);setRevealed(false)}catch(e){setError(e instanceof Error?e.message:"Practice update failed")}finally{setSubmitting(false)}}
+ async function nextSession(){setLoading(true);setError("");try{const r=await fetch(API+"/api/kits/"+encodeURIComponent(kitId)+"/practice",{method:"POST",credentials:"include",headers:{"content-type":"application/json"},body:JSON.stringify({action:"next_session"})});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||"Could not start next session");setData(d);setRevealed(false)}catch(e){setError(friendlyError(e,"Could not start next session"))}finally{setLoading(false)}}
+ async function answer(confidence:string){const id=data?.queue?.[Math.min(data.state.current_index,data.queue.length-1)];if(!id)return;setSubmitting(true);setError("");try{const r=await fetch(API+"/api/kits/"+encodeURIComponent(kitId)+"/practice",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question_id:id,confidence})});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||"Practice update failed");setData(d);setRevealed(false)}catch(e){setError(friendlyError(e,"Practice update failed"))}finally{setSubmitting(false)}}
  if(loading)return <section className="panel practice-panel" role="status" aria-live="polite"><div className="progress-banner"><span className="spinner"/> Loading your practice session…</div></section>;
  if(error)return <section className="panel practice-panel" role="alert"><div className="alert"><strong>Practice error.</strong><span>{error}</span></div></section>;
  if(!data)return null;

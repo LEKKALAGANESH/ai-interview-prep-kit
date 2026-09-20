@@ -14,6 +14,13 @@ export function formatGenerationError(error: any) {
   if (code === "CONFIGURATION" && (details?.status === 401 || details?.status === 403)) return "The selected AI provider rejected authentication. Check the API key configured on the backend.";
   if (code === "RATE_LIMITED") return "The selected AI provider is rate-limiting requests. Wait a moment or choose another configured provider.";
   if (code === "TRANSIENT") return "The selected AI provider is temporarily unavailable or timed out. Try again or choose another provider.";
-  if (code === "LLM_NOT_CONFIGURED") return "The selected AI provider is not configured on the backend. Add its API key/configuration before using it.";
+  if (code === "LLM_NOT_CONFIGURED") return error?.message || "The selected AI provider is not configured on the backend. Add its API key/configuration before using it.";
   return error?.message || "Kit generation failed. Check the server terminal for the correlated backend error.";
+}
+
+// fetch() rejects with a bare TypeError ("Failed to fetch") when the API is down, blocked by CORS or offline.
+export function friendlyError(err: unknown, fallback: string) {
+  if (err instanceof TypeError) return "Can't reach the server. Check your connection or that the API is running, then try again.";
+  if (err instanceof SyntaxError) return "The server sent an unexpected response. Please try again.";
+  return err instanceof Error ? err.message : fallback;
 }
