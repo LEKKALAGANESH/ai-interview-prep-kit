@@ -73,7 +73,7 @@ export function assembleKit(input: NormalizedKitInput, context: BuildKitContext,
 export async function buildValidatedKit(input: NormalizedKitInput, context: BuildKitOptions): Promise<Kit> {
   const generated = await generateQuestionSetWithCoverage(context.role.requirements, context);
   if (!generated.coverage.can_ship) {
-    const causes = [...new Set(generated.generation_errors.map((error) => error.code))].join(", ");
+    const causes = [...new Set(generated.generation_errors.map((error) => `${error.code}: ${error.message.slice(0, 160)}`))].slice(0, 2).join(" | ");
     throw new KitAssemblyError(
       "COVERAGE_NOT_SHIPPABLE",
       `Question generation did not cover all must-have requirements${causes ? ` (provider errors: ${causes}; try again or lower LLM_CONCURRENCY)` : ""}`,
