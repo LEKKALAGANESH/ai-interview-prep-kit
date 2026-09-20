@@ -15,7 +15,7 @@ function sessionTtlSeconds(): number {
 // Read per call so auth fails closed (throws) instead of signing with an empty secret.
 function sessionSecret(): string {
   const secret = process.env.SESSION_SECRET?.trim();
-  if (!secret) throw new Error("SESSION_SECRET_NOT_CONFIGURED");
+  if (!secret || (process.env.NODE_ENV === "production" && secret.length < 32)) throw new Error("SESSION_SECRET_NOT_CONFIGURED");
   return secret;
 }
 
