@@ -18,13 +18,19 @@ loadDotenv({ path: "server/.env.local" });
 loadDotenv({ path: "server/.env" });
 
 const port = Number(process.env.PORT || 4000);
+// Explicit CORS allowlist (never "*": requests carry credentials). Set CORS_ORIGIN to the deployed frontend URL(s), comma-separated.
+const allowedOrigins = new Set([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  ...(process.env.CORS_ORIGIN ?? "").split(",").map((value) => value.trim()).filter(Boolean),
+]);
 
 async function readBody(request: import("node:http").IncomingMessage): Promise<string> { const chunks: Buffer[]=[]; for await (const chunk of request) chunks.push(Buffer.from(chunk)); const body=Buffer.concat(chunks).toString("utf8"); if(Buffer.byteLength(body)>1_000_000) throw new Error("Request body is too large"); return body; }
 const store = createKitStore();
 
 const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }, async (request, response) => {
   const origin = request.headers.origin;
-  if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {
+  if (origin && allowedOrigins.has(origin)) {
     response.setHeader("access-control-allow-origin", origin);
     response.setHeader("vary", "Origin");
   }

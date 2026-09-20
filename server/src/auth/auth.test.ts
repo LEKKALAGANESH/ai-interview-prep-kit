@@ -47,3 +47,9 @@ test("session survives a new request and rejects a tampered or expired session",
     } finally { Date.now = realNow; }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test("session cookie is SameSite=None; Secure in production and Lax in dev", async () => {
+  const user = { id: "usr_1", email: "a@b.co", password_hash: "x", created_at: "", updated_at: "" };
+  assert.match(sessionCookie(user, true), /; Secure; SameSite=None$/);
+  assert.match(sessionCookie(user, false), /; SameSite=Lax$/);
+});

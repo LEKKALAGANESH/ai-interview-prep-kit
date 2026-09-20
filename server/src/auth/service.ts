@@ -75,15 +75,18 @@ function decodeSession(token: string): { sub: string; email: string; exp: number
   }
 }
 
+// Deployed frontend and API sit on different sites, so production needs SameSite=None (which requires Secure).
+function cookieFlags(secure: boolean): string {
+  return secure ? "; Secure; SameSite=None" : "; SameSite=Lax";
+}
+
 export function sessionCookie(user: AuthUser, secure = process.env.NODE_ENV === "production"): string {
   const token = encodeSession(user);
-  const securePart = secure ? "; Secure" : "";
-  return `trao_session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${sessionTtlSeconds()}${securePart}`;
+  return `trao_session=${token}; HttpOnly; Path=/; Max-Age=${sessionTtlSeconds()}${cookieFlags(secure)}`;
 }
 
 export function clearSessionCookie(secure = process.env.NODE_ENV === "production"): string {
-  const securePart = secure ? "; Secure" : "";
-  return `trao_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${securePart}`;
+  return `trao_session=; HttpOnly; Path=/; Max-Age=0${cookieFlags(secure)}`;
 }
 
 export async function authenticateRequest(request: Request, users = new UserStore()): Promise<AuthUser | null> {
