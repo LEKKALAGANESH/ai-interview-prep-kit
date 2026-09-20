@@ -26,6 +26,13 @@ test("registration, login, current session and logout work", async () => {
     assert.ok(registerCookie?.includes("HttpOnly"));
     assert.ok(registerCookie?.includes("Max-Age=604800"));
 
+    const duplicate = await handleAuth(request("/api/auth/register", {
+      method: "POST",
+      headers: {"content-type":"application/json"},
+      body: JSON.stringify({email:"user@example.com",password:"another password",userId:"attacker-controlled"}),
+    }), "register");
+    assert.equal(duplicate.status, 409);
+
     const me = await handleAuth(request("/api/auth/me", {
       method: "GET",
       headers: {cookie: registerCookie!.split(";")[0]},
