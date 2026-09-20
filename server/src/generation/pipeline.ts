@@ -99,7 +99,8 @@ export type QuestionSetGenerationOptions = InitialQuestionSetOptions & {
   maxPasses?: number;
 };
 
-const QUESTION_CONCURRENCY = 3;
+// Free-tier providers (e.g. Groq) limit tokens per minute; parallel calls trip that and drop requirements. Override with LLM_CONCURRENCY.
+const QUESTION_CONCURRENCY = Math.max(1, Number(process.env.LLM_CONCURRENCY) || 2);
 
 async function generateBestEffortPass(
   requirements: Requirement[],
