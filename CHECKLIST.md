@@ -1,3 +1,40 @@
+# Step 13 — Authentication (User System)
+
+**Goal:** Add a minimal secure account/session layer around the existing AI Interview Prep system without changing the AI generation, research, coverage, scheduling, or validation logic.
+
+| # | Authentication checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 13.1 | Register works | 🟢 | POST /api/auth/register validates credentials, creates a user, hashes the password, and starts a session. |
+| 13.2 | Login works | 🟢 | POST /api/auth/login verifies the stored password hash and starts a session. |
+| 13.3 | Logout works | 🟢 | POST /api/auth/logout clears the authentication cookie. |
+| 13.4 | Session persists correctly | 🟢 | A valid HttpOnly session cookie authenticates subsequent requests and survives page refreshes. |
+| 13.5 | Session expiry handled | 🟢 | Sessions contain an expiry timestamp and expired/invalid sessions are rejected. |
+| 13.6 | Protected routes work | 🟢 | The authenticated application UI redirects signed-out visitors to /login. |
+| 13.7 | Protected APIs work | 🟢 | Application /api/* endpoints require a valid authenticated session; auth endpoints remain public. |
+| 13.8 | Passwords securely hashed | 🟢 | Passwords use one-way scrypt hashing with a per-password random salt and are never stored or returned in plaintext. |
+| 13.9 | User isolation boundary | 🟢 | Kit persistence is scoped by authenticated user ID; one user cannot read another user's kit through the application store. |
+| 13.10 | Auth API tests | 🟢 | Registration, login, logout, current-session, invalid credentials, missing session, password hashing, and expiry behavior are covered. |
+| 13.11 | Session security | 🟢 | Session cookies are HttpOnly, SameSite=Lax, Secure in production, and signed with SESSION_SECRET. |
+| 13.12 | Auth configuration documented | 🟢 | AUTH_STORE_FILE and SESSION_TTL_SECONDS are documented in .env.example. |
+| 13.13 | Existing AI system unchanged | 🟢 | Authentication is added at the application/API boundary; the existing AI pipeline remains independently responsible for research, generation, coverage, scheduling, and validation. |
+| 13.14 | Runtime CI verification | 🟡 | GitHub Actions must observe the new authentication tests and build passing on the current commit. |
+
+### Step 13 implementation notes
+
+- Added server/src/auth/store.ts for user persistence.
+- Added server/src/auth/service.ts for password hashing and signed expiring sessions.
+- Added server/src/auth/middleware.ts for protected API access.
+- Added server/src/api/auth.ts for register/login/logout/current-user operations.
+- Added /login and /register frontend pages.
+- The existing interview-prep page now checks the authenticated session and redirects signed-out visitors to /login.
+- Browser API calls use credentials: include so the HttpOnly session cookie is sent automatically.
+- Existing kit APIs are wrapped with UserScopedKitStore; the existing AI pipeline remains unchanged.
+- Authentication currently uses the same single-node durable-file approach as the existing kit store. MongoDB user/kit persistence is the next separate user-system phase.
+- No email verification, password reset, or role hierarchy was added because those are out of scope for this assessment.
+
+### Step 13 verification rule
+
+Do not mark 13.14 green from source inspection alone. It becomes green only after the current GitHub Actions run demonstrates the authentication tests and build passing.
 # Sprint 3 — Production & Assessment Hardening (P2)
 
 **Goal:** Turn the P0/P1 implementation into a reproducible, observable, assessment-ready production workflow without weakening deterministic application ownership.
