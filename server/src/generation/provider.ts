@@ -223,6 +223,15 @@ export type ConfiguredProviderOptions = {
   model?: string;
 };
 
+// Key each hosted provider needs (Ollama needs none). Used for actionable "not configured" errors.
+export const PROVIDER_ENV_KEY: Record<LlmProviderName, string | null> = {
+  gemini: "GEMINI_API_KEY",
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  groq: "GROQ_API_KEY",
+  ollama: null,
+};
+
 export function createConfiguredLlmProvider(
   fetchImpl: typeof fetch = fetch,
   options: ConfiguredProviderOptions = {},

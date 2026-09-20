@@ -1,5 +1,7 @@
+import { isCrossSiteMutation, rateLimited } from "./api/guard.js";
 import { config as loadDotenv } from "dotenv";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import { handleGenerateKit } from "./api/generate-kit.js";
 import { handleBuilder } from "./api/builder.js";
@@ -7,17 +9,25 @@ import { handlePractice } from "./api/practice.js";
 import { createGenerationJob, getGenerationJob } from "./api/generation-job.js";
 import { handlePins } from "./api/pins.js";
 import { handleProvenance } from "./api/provenance.js";
+import { PROVIDER_ENV_KEY } from "./generation/provider.js";
 import { createKitStore, UserScopedKitStore } from "./persistence/store.js";
 import { handleAuth } from "./api/auth.js";
 import { requireAuth } from "./auth/middleware.js";
 
 // Load server environment files explicitly. Supports both server/.env.local and repo/.env.local.
-loadDotenv({ path: ".env.local" });
-loadDotenv({ path: ".env" });
-loadDotenv({ path: "server/.env.local" });
-loadDotenv({ path: "server/.env" });
+// Paths are relative to this file, not the cwd: `npm run dev:server` runs inside server/, so cwd-relative
+// lookups never found the repo-root .env that the README tells you to create.
+const serverDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+for (const dir of [serverDir, resolve(serverDir, "..")]) {
+  loadDotenv({ path: resolve(dir, ".env.local") });
+  loadDotenv({ path: resolve(dir, ".env") });
+}
 
 const port = Number(process.env.PORT || 4000);
+const configuredProviders = (Object.entries(PROVIDER_ENV_KEY) as Array<[string, string | null]>)
+  .filter(([, key]) => key === null || process.env[key]?.trim())
+  .map(([name]) => name);
+console.log(`LLM providers configured: ${configuredProviders.join(", ") || "none (set GROQ_API_KEY, GEMINI_API_KEY, ... in .env)"}`);
 // Explicit CORS allowlist (never "*": requests carry credentials). Set CORS_ORIGIN to the deployed frontend URL(s), comma-separated.
 const allowedOrigins = new Set([
   "http://localhost:3000",
@@ -25,7 +35,16 @@ const allowedOrigins = new Set([
   ...(process.env.CORS_ORIGIN ?? "").split(",").map((value) => value.trim()).filter(Boolean),
 ]);
 
-async function readBody(request: import("node:http").IncomingMessage): Promise<string> { const chunks: Buffer[]=[]; for await (const chunk of request) chunks.push(Buffer.from(chunk)); const body=Buffer.concat(chunks).toString("utf8"); if(Buffer.byteLength(body)>1_000_000) throw new Error("Request body is too large"); return body; }
+async function readBody(request: import("node:http").IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > 1_000_000) { request.destroy(); throw new Error("Request body is too large"); }
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
 const store = createKitStore();
 
 const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }, async (request, response) => {
@@ -42,8 +61,23 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
     response.end();
     return;
   }
+  if (isCrossSiteMutation(request.method, origin, allowedOrigins)) {
+    response.statusCode = 403;
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({ error: { code: "FORBIDDEN_ORIGIN", message: "Origin not allowed" } }));
+    return;
+  }
+  const clientIp = request.socket.remoteAddress ?? "unknown";
+  const tooMany = (key: string, max: number, windowMs: number) => {
+    if (!rateLimited(key, max, windowMs)) return false;
+    response.statusCode = 429;
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({ error: { code: "RATE_LIMITED", message: "Too many requests. Please wait and try again." } }));
+    return true;
+  };
   const authMatch = request.url?.match(/^\/api\/auth\/(register|login|logout|me)$/);
   if (authMatch) {
+    if ((authMatch[1] === "register" || authMatch[1] === "login") && tooMany(`auth:${clientIp}`, 10, 60_000)) return;
     const webRequest = new Request(`http://localhost:${port}${request.url}`, {
       method: request.method,
       headers: request.headers as Record<string, string>,
@@ -77,6 +111,7 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
       return;
     }
     authenticatedUser = auth;
+    if (request.method === "POST" && /^\/api\/(generation\/jobs|kits)$/.test(request.url ?? "") && tooMany(`gen:${auth.id}`, 20, 3_600_000)) return;
     scopedStore = new UserScopedKitStore(store, auth.id);
   }
 

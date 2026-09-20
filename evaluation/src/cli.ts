@@ -1,4 +1,14 @@
+import { config as loadDotenv } from "dotenv";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { evaluateFile } from "./evaluator.js";
+
+// Same env files as the server, resolved from this file so the command works from any directory.
+const evaluationDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+for (const dir of [evaluationDir, resolve(evaluationDir, "..")]) {
+  loadDotenv({ path: resolve(dir, ".env.local") });
+  loadDotenv({ path: resolve(dir, ".env") });
+}
 
 function usage(): never {
   throw new Error(

@@ -124,6 +124,22 @@ test("returns a structured error when the LLM is not configured", async () => {
   assert.equal(body.error.code, "LLM_NOT_CONFIGURED");
 });
 
+test("not-configured error names the exact env var for the chosen provider", async () => {
+  const saved = process.env.GROQ_API_KEY;
+  delete process.env.GROQ_API_KEY;
+  try {
+    const response = await handleGenerateKit(
+      request({ jd: "React frontend engineer", company_url: "https://other.test/", days: 1, llm_provider: "groq" }),
+      { store, fetchImpl: fetchImpl() },
+    );
+    const body = await response.json();
+    assert.equal(body.error.code, "LLM_NOT_CONFIGURED");
+    assert.match(body.error.message, /GROQ_API_KEY/);
+  } finally {
+    if (saved !== undefined) process.env.GROQ_API_KEY = saved;
+  }
+});
+
 test("returns COMPANY_UNREACHABLE when no usable company page is retrieved", async () => {
   const response = await handleGenerateKit(
     request({ jd: "React frontend engineer", company_url: "https://unavailable.test/", days: 1 }),

@@ -1,3 +1,4 @@
+import { PROVIDER_ENV_KEY, type LlmProviderName } from "../generation/provider.js";
 import { extractRole } from "../extraction/pipeline.js";
 import { createLlmRoleExtractionProvider } from "../generation/llm-extraction.js";
 import { createConfiguredLlmProvider } from "../generation/provider.js";
@@ -78,7 +79,7 @@ export async function generateKitFromInput(
   if (!provider) {
     throw new ApplicationPipelineError(
       "LLM_NOT_CONFIGURED",
-      `${input.llm_provider ?? process.env.LLM_PROVIDER ?? "gemini"} provider is not configured`,
+      notConfiguredMessage(input.llm_provider ?? process.env.LLM_PROVIDER ?? "gemini"),
     );
   }
 
@@ -156,4 +157,11 @@ export async function generateKitFromInput(
     }),
   );
   return result;
+}
+
+function notConfiguredMessage(provider: string): string {
+  const key = PROVIDER_ENV_KEY[provider as LlmProviderName];
+  return key
+    ? `${provider} provider is not configured: set ${key} in .env (repo root or server/) and restart the server.`
+    : `${provider} provider is not configured.`;
 }

@@ -14,6 +14,7 @@
   "dependencies": {
     "@trao/interview-prep-server": "file:../server",
     "@trao/interview-prep-shared": "file:../shared",
+    "dotenv": "^17.2.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
