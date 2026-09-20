@@ -1,3 +1,31 @@
+# Step 20 — Authorization
+
+**Goal:** Enforce the assessment security invariant that every authenticated user can access and mutate only their own kits. Cross-user reads, updates, deletes, and regeneration attempts must resolve as not found rather than crossing the authorization boundary.
+
+| # | Authorization checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 20.1 | User A sees only A's kits | 🟢 | UserScopedKitStore prefixes every kit operation with the authenticated server-side user ID, so A can retrieve A's kit but the same kit ID in B's namespace is invisible to A. |
+| 20.2 | User B sees only B's kits | 🟢 | The same server-side user scoping applies independently to B, so B retrieves only B's kits. |
+| 20.3 | A cannot read B | 🟢 | A lookup uses A's scoped key; a kit stored for B returns null/not found instead of exposing B's kit. |
+| 20.4 | A cannot modify B | 🟢 | A update targets A's scoped key; attempting to update B's kit resolves as an unknown kit and cannot change B's persisted data. |
+| 20.5 | A cannot delete B | 🟢 | Kit deletion is now part of KitStore and is routed through UserScopedKitStore, so A can delete only A's scoped kit. A delete attempt for B returns false/not found and leaves B's kit intact. |
+| 20.6 | A cannot regenerate B | 🟢 | Scoped builder regeneration first retrieves the kit through the authenticated user's UserScopedKitStore; A's request for B's kit therefore returns 404 before regeneration can run. |
+
+### Step 20 implementation notes
+
+- server/src/index.ts authenticates every /api/* request and creates UserScopedKitStore(store, auth.id) from the server-derived session identity.
+- UserScopedKitStore now scopes save, getById, update, delete, request locks, practice state, pins, and research provenance with the authenticated user's namespace.
+- KitStore now exposes delete(id), with implementations for in-memory, durable JSON, and MongoDB persistence.
+- DELETE /api/kits/:id was added to the protected kit route. It returns 404 when the kit does not exist in the authenticated user's scope and never uses a client-supplied user ID.
+- MongoDB deletion is constrained by both user_id and kit_id, and removes the associated practice/pin/provenance sidecars for that same user.
+- server/src/auth/user-scoped-store.test.ts now covers same-ID isolation, cross-user update rejection, cross-user delete rejection, and cross-user regeneration rejection.
+- Regeneration remains inside the authenticated scoped builder path, so the authorization boundary is enforced before LLM regeneration work begins.
+- No client-controlled userId is used as the authorization source.
+
+### Step 20 verification rule
+
+Keep the six authorization items green based on the implemented server-side scoping and dedicated authorization tests. Runtime/CI execution of the new tests should still be included in the broader final verification pass; no new runtime result is being claimed from source inspection alone.
+
 # Step 19 — Regeneration
 
 **Goal:** Ensure scoped question regeneration replaces only the requested question, preserves user-owned content and unrelated kit state, and persists the regenerated result.
