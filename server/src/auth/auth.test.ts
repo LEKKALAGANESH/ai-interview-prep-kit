@@ -53,3 +53,8 @@ test("session cookie is SameSite=None; Secure in production and Lax in dev", asy
   assert.match(sessionCookie(user, true), /; Secure; SameSite=None$/);
   assert.match(sessionCookie(user, false), /; SameSite=Lax$/);
 });
+
+test("getUserStore returns one shared instance (login and requireAuth must read the same backend)", async () => {
+  const { getUserStore } = await import("./store.js");
+  assert.equal(getUserStore(), getUserStore());
+});

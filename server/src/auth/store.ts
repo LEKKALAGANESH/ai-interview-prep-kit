@@ -86,3 +86,10 @@ export class UserStore implements AuthUserStore {
 export function publicUser(user: AuthUser) {
   return { id: user.id, email: user.email, created_at: user.created_at };
 }
+
+// One shared store, created on first use (after .env is loaded). Building it at import time picked the JSON file
+// backend for login while later requests picked MongoDB, so a logged-in user was "not found" on every other route.
+let sharedUserStore: UserStore | undefined;
+export function getUserStore(): UserStore {
+  return (sharedUserStore ??= new UserStore());
+}

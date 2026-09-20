@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual, type ScryptOptions } from "node:crypto";
 import { promisify } from "node:util";
 import type { AuthUser } from "./store.js";
-import { UserStore } from "./store.js";
+import { getUserStore } from "./store.js";
 
 const scrypt = promisify(scryptCallback) as (password: string, salt: Buffer, keylen: number, options: ScryptOptions) => Promise<Buffer>;
 const SCRYPT_MAXMEM = 32 * 1024 * 1024;
@@ -89,7 +89,7 @@ export function clearSessionCookie(secure = process.env.NODE_ENV === "production
   return `trao_session=; HttpOnly; Path=/; Max-Age=0${cookieFlags(secure)}`;
 }
 
-export async function authenticateRequest(request: Request, users = new UserStore()): Promise<AuthUser | null> {
+export async function authenticateRequest(request: Request, users = getUserStore()): Promise<AuthUser | null> {
   const cookieHeader = request.headers.get("cookie") ?? "";
   const match = cookieHeader.split(";").map((item) => item.trim()).find((item) => item.startsWith("trao_session="));
   if (!match) return null;
