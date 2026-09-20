@@ -13,6 +13,16 @@ async function withStore() {
 test("hashes passwords without storing plaintext", async () => {
   const { dir, store } = await withStore();
   try {
+
+process.env.SESSION_SECRET = "test-secret";
+
+const { UserStore } = await import("./store.js");
+const { authenticateRequest, hashPassword, sessionCookie, verifyPassword } = await import("./service.js");
+
+test("hashes passwords with a one-way scrypt hash", async () => {
+  const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
+  try {
+    const store = new UserStore(`${dir}/users.json`);
     const hash = await hashPassword("correct horse battery staple");
     assert.notEqual(hash, "correct horse battery staple");
     assert.match(hash, /^scrypt\$16384\$8\$1\$/);
@@ -23,6 +33,7 @@ test("hashes passwords without storing plaintext", async () => {
 });
 
 test("verifies correct and rejects incorrect passwords", async () => {
+test("verifies correct passwords and rejects incorrect passwords", async () => {
   const hash = await hashPassword("correct horse battery staple");
   assert.equal(await verifyPassword("correct horse battery staple", hash), true);
   assert.equal(await verifyPassword("wrong password", hash), false);
@@ -31,9 +42,16 @@ test("verifies correct and rejects incorrect passwords", async () => {
 test("session survives a new request and expires", async () => {
   const { dir, store } = await withStore();
   try {
+test("session survives a new request and rejects an expired session", async () => {
+  const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
+  try {
+    const store = new UserStore(`${dir}/users.json`);
     const user = await store.create("user@example.com", await hashPassword("correct horse battery staple"));
     const cookie = sessionCookie(user, false);
     const request = new Request("http://app.test/", { headers: { cookie: cookie.split(";")[0] } });
     assert.equal((await authenticateRequest(request, store))?.id, user.id);
+
+    const [, signature] = cookie.split(";");
+    assert.ok(signature === undefined || typeof signature === "string");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

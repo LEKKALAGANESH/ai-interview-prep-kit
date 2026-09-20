@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm test
+      - run: npm run build
+      - run: npm run evaluate -- --help
+      - run: npm run regression --workspace evaluation
+      - run: npm run start --workspace server &
+        env:
+          PORT: 4000
+      - run: sleep 2 && curl --fail http://127.0.0.1:4000/health
+      - run: npx playwright install chromium
+      - run: npm run start --workspace client &
+      - run: sleep 3 && npm run browser-audit --workspace client

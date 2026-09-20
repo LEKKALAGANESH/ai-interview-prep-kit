@@ -1,0 +1,204 @@
+import { config as loadDotenv } from "dotenv";
+import { resolve } from "node:path";
+import { createServer } from "node:http";
+import { handleGenerateKit } from "./api/generate-kit.js";
+import { handleBuilder } from "./api/builder.js";
+import { handlePractice } from "./api/practice.js";
+import { createGenerationJob, getGenerationJob } from "./api/generation-job.js";
+import { handlePins } from "./api/pins.js";
+import { handleProvenance } from "./api/provenance.js";
+import { createKitStore, UserScopedKitStore } from "./persistence/store.js";
+import { handleAuth } from "./api/auth.js";
+import { requireAuth } from "./auth/middleware.js";
+
+// Load server environment files explicitly. Supports both server/.env.local and repo/.env.local.
+loadDotenv({ path: ".env.local" });
+loadDotenv({ path: ".env" });
+loadDotenv({ path: "server/.env.local" });
+loadDotenv({ path: "server/.env" });
+
+const port = Number(process.env.PORT || 4000);
+
+async function readBody(request: import("node:http").IncomingMessage): Promise<string> { const chunks: Buffer[]=[]; for await (const chunk of request) chunks.push(Buffer.from(chunk)); const body=Buffer.concat(chunks).toString("utf8"); if(Buffer.byteLength(body)>1_000_000) throw new Error("Request body is too large"); return body; }
+const store = createKitStore();
+
+const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }, async (request, response) => {
+  const origin = request.headers.origin;
+  if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {
+    response.setHeader("access-control-allow-origin", origin);
+    response.setHeader("vary", "Origin");
+  }
+  response.setHeader("access-control-allow-methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  response.setHeader("access-control-allow-credentials", "true");
+  response.setHeader("access-control-allow-headers", "content-type");
+  if (request.method === "OPTIONS") {
+    response.statusCode = 204;
+    response.end();
+    return;
+  }
+  const authMatch = request.url?.match(/^\/api\/auth\/(register|login|logout|me)$/);
+  if (authMatch) {
+    const webRequest = new Request(`http://localhost:${port}${request.url}`, {
+      method: request.method,
+      headers: request.headers as Record<string, string>,
+      body: request.method === "GET" || request.method === "HEAD" ? undefined : await readBody(request),
+    });
+    try {
+      const result = await handleAuth(webRequest, authMatch[1] as "register" | "login" | "logout" | "me");
+      response.statusCode = result.status;
+      result.headers.forEach((value,key)=>response.setHeader(key,value));
+      response.end(await result.text());
+    } catch {
+      response.statusCode=500;
+      response.setHeader("content-type","application/json");
+      response.end(JSON.stringify({error:{code:"INTERNAL_ERROR",message:"Unexpected authentication error"}}));
+    }
+    return;
+  }
+
+  let authenticatedUser: import("./auth/store.js").AuthUser | null = null;
+  let scopedStore: UserScopedKitStore | null = null;
+  if (request.url?.startsWith("/api/")) {
+    const authRequest = new Request(`http://localhost:${port}${request.url}`, {
+      method: request.method,
+      headers: request.headers as Record<string,string>,
+    });
+    const auth = await requireAuth(authRequest);
+    if (auth instanceof Response) {
+      response.statusCode = auth.status;
+      auth.headers.forEach((value,key)=>response.setHeader(key,value));
+      response.end(await auth.text());
+      return;
+    }
+    authenticatedUser = auth;
+    scopedStore = new UserScopedKitStore(store, auth.id);
+  }
+
+  const generationJobMatch = request.url?.match(/^\/api\/generation\/jobs(?:\/([^/?]+))?$/);
+  if (generationJobMatch) {
+    if (generationJobMatch[1] && request.method === "GET") {
+      const result=getGenerationJob(decodeURIComponent(generationJobMatch[1]));
+      response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
+    }
+    if (!generationJobMatch[1] && request.method === "POST") {
+      const body=await readBody(request);
+      const result=await createGenerationJob(new Request(`http://localhost:${port}${request.url}`,{method:"POST",headers:request.headers as Record<string,string>,body}),{store: scopedStore!});
+      response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
+    }
+  }
+
+  const pinsMatch=request.url?.match(/^\/api\/kits\/([^/?]+)\/pins$/);
+  if(pinsMatch){ const result=await handlePins(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>,body:request.method==="GET"||request.method==="HEAD"?undefined:await readBody(request)}),scopedStore!,decodeURIComponent(pinsMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
+
+  const provenanceMatch=request.url?.match(/^\/api\/kits\/([^/?]+)\/provenance$/);
+  if(provenanceMatch){ const result=await handleProvenance(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>}),scopedStore!,decodeURIComponent(provenanceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
+
+  if (request.url === "/health") {
+    response.statusCode = 200;
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  const practiceMatch = request.url?.match(/^\/api\/kits\/([^/?]+)\/practice$/);
+  if (practiceMatch) {
+    let body = "";
+    for await (const chunk of request) { body += Buffer.from(chunk).toString("utf8"); if (Buffer.byteLength(body) > 1_000_000) { response.statusCode=413; response.setHeader("content-type","application/json"); response.end(JSON.stringify({error:{code:"PAYLOAD_TOO_LARGE",message:"Request body is too large"}})); request.destroy(); return; } }
+    const webRequest = new Request(`http://localhost:${port}${request.url}`, {method:request.method,headers:request.headers as Record<string,string>,body:request.method==="GET"||request.method==="HEAD"?undefined:body});
+    try { const result=await handlePractice(webRequest,scopedStore!,decodeURIComponent(practiceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); } catch { response.statusCode=500; response.setHeader("content-type","application/json"); response.end(JSON.stringify({error:{code:"INTERNAL_ERROR",message:"Unexpected server error"}})); }
+    return;
+  }
+
+  const builderMatch = request.url?.match(/^\/api\/kits\/([^/?]+)$/);
+  if (builderMatch && request.method === "DELETE") {
+    try {
+      const deleted = await scopedStore!.delete(decodeURIComponent(builderMatch[1]));
+      if (!deleted) {
+        response.statusCode = 404;
+        response.setHeader("content-type", "application/json");
+        response.end(JSON.stringify({ error: { code: "NOT_FOUND", message: "Kit not found" } }));
+        return;
+      }
+      response.statusCode = 204;
+      response.end();
+    } catch {
+      response.statusCode = 500;
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } }));
+    }
+    return;
+  }
+  if (builderMatch) {
+    const bodyChunks: Buffer[] = [];
+    for await (const chunk of request) {
+      bodyChunks.push(Buffer.from(chunk));
+      if (Buffer.concat(bodyChunks).length > 1_000_000) {
+        response.statusCode = 413;
+        response.setHeader("content-type", "application/json");
+        response.end(JSON.stringify({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large" } }));
+        request.destroy();
+        return;
+      }
+    }
+    const body = Buffer.concat(bodyChunks).toString("utf8");
+    const webRequest = new Request(`http://localhost:${port}${request.url}`, {
+      method: request.method,
+      headers: request.headers as Record<string, string>,
+      body: request.method === "GET" || request.method === "HEAD" ? undefined : body,
+    });
+    try {
+      const result = await handleBuilder(webRequest, scopedStore!, decodeURIComponent(builderMatch[1]));
+      response.statusCode = result.status;
+      result.headers.forEach((value, key) => response.setHeader(key, value));
+      response.end(await result.text());
+    } catch {
+      response.statusCode = 500;
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } }));
+    }
+    return;
+  }
+
+  if (request.url !== "/api/kits") {
+    response.statusCode = 404;
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({ error: { code: "NOT_FOUND", message: "Route not found" } }));
+    return;
+  }
+
+  const bodyChunks: Buffer[] = [];
+  for await (const chunk of request) {
+    bodyChunks.push(Buffer.from(chunk));
+    if (Buffer.concat(bodyChunks).length > 1_000_000) {
+      response.statusCode = 413;
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large" } }));
+      request.destroy();
+      return;
+    }
+  }
+
+  const body = Buffer.concat(bodyChunks).toString("utf8");
+  const webRequest = new Request(`http://localhost:${port}${request.url}`, {
+    method: request.method,
+    headers: request.headers as Record<string, string>,
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : body,
+  });
+
+  try {
+    const result = await handleGenerateKit(webRequest, { store: scopedStore! });
+    response.statusCode = result.status;
+    result.headers.forEach((value, key) => response.setHeader(key, value));
+    response.end(await result.text());
+  } catch {
+    response.statusCode = 500;
+    response.setHeader("content-type", "application/json");
+    response.end(JSON.stringify({
+      error: { code: "INTERNAL_ERROR", message: "Unexpected server error" },
+    }));
+  }
+});
+
+server.listen(port, () => {
+  console.log(`AI Interview Prep Kit API listening on http://localhost:${port}`);
+});

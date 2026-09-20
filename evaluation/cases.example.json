@@ -1,0 +1,32 @@
+[
+  {
+    "id": "case-1",
+    "jd": "Frontend engineer role requiring React and TypeScript. Nice to have GraphQL.",
+    "company_url": "https://example.com",
+    "days": 1
+  },
+  {
+    "id": "case-2",
+    "jd": "Backend engineer role requiring Node.js, SQL, and API development.",
+    "company_url": "https://example.com",
+    "days": 3
+  },
+  {
+    "id": "case-3",
+    "jd": "Full-stack engineer requiring React, Node.js, and testing. Communication is nice to have.",
+    "company_url": "https://example.com",
+    "days": 5
+  },
+  {
+    "id": "case-4",
+    "jd": "AI engineer requiring Python, LLM APIs, and retrieval augmented generation.",
+    "company_url": "https://example.com",
+    "days": 10
+  },
+  {
+    "id": "case-5",
+    "jd": "Software engineer requiring JavaScript, databases, and system design.",
+    "company_url": "https://example.com",
+    "days": 60
+  }
+]

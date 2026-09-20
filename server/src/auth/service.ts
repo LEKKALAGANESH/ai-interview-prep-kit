@@ -10,6 +10,16 @@ const SESSION_SECRET = process.env.SESSION_SECRET?.trim();
 if (!SESSION_SECRET) {
   // Auth is intentionally fail-closed in production; development may set this in .env.local.
   console.warn("SESSION_SECRET is not configured; authentication will reject session creation.");
+
+function sessionTtlSeconds(): number {
+  const configured = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 7);
+  return Number.isFinite(configured) && configured > 0 ? Math.floor(configured) : 60 * 60 * 24 * 7;
+}
+
+function sessionSecret(): string {
+  const secret = process.env.SESSION_SECRET?.trim();
+  if (!secret) throw new Error("SESSION_SECRET_NOT_CONFIGURED");
+  return secret;
 }
 
 function base64url(value: Buffer | string): string {
@@ -19,6 +29,7 @@ function base64url(value: Buffer | string): string {
 function sign(value: string): string {
   if (!SESSION_SECRET) throw new Error("SESSION_SECRET_NOT_CONFIGURED");
   return createHmac("sha256", SESSION_SECRET).update(value).digest("base64url");
+  return createHmac("sha256", sessionSecret()).update(value).digest("base64url");
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -28,6 +39,7 @@ export async function hashPassword(password: string): Promise<string> {
     r: 8,
     p: 1,
     maxmem: 32 * 1024 * 1024,
+    N: 16384, r: 8, p: 1, maxmem: 32 * 1024 * 1024,
   })) as Buffer;
   return `scrypt$16384$8$1$${salt.toString("base64url")}$${derived.toString("base64url")}`;
 }
@@ -42,6 +54,7 @@ export async function verifyPassword(password: string, encoded: string): Promise
       r: Number(r),
       p: Number(p),
       maxmem: 32 * 1024 * 1024,
+      N: Number(n), r: Number(r), p: Number(p), maxmem: 32 * 1024 * 1024,
     })) as Buffer;
     return actual.length === expected.length && timingSafeEqual(actual, expected);
   } catch {
@@ -57,6 +70,10 @@ function encodeSession(user: AuthUser): string {
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
   });
   const body = base64url(payload);
+  const now = Math.floor(Date.now() / 1000);
+  const body = base64url(JSON.stringify({
+    sub: user.id, email: user.email, iat: now, exp: now + sessionTtlSeconds(),
+  }));
   return `${body}.${sign(body)}`;
 }
 
@@ -71,6 +88,12 @@ function decodeSession(token: string): { sub: string; email: string; exp: number
     const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as {
       sub?: unknown; email?: unknown; exp?: unknown;
     };
+  if (!body || !signature) return null;
+  try {
+    const expected = Buffer.from(sign(body));
+    const actual = Buffer.from(signature);
+    if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
+    const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as { sub?: unknown; email?: unknown; exp?: unknown };
     if (typeof parsed.sub !== "string" || typeof parsed.email !== "string" || typeof parsed.exp !== "number") return null;
     if (parsed.exp <= Math.floor(Date.now() / 1000)) return null;
     return { sub: parsed.sub, email: parsed.email, exp: parsed.exp };
@@ -83,6 +106,10 @@ export function sessionCookie(user: AuthUser, secure = process.env.NODE_ENV === 
   const token = encodeSession(user);
   const securePart = secure ? "; Secure" : "";
   return `trao_session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}${securePart}`;
+  const ttl = sessionTtlSeconds();
+  const token = encodeSession(user);
+  const securePart = secure ? "; Secure" : "";
+  return `trao_session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${ttl}${securePart}`;
 }
 
 export function clearSessionCookie(secure = process.env.NODE_ENV === "production"): string {
@@ -97,6 +124,7 @@ export async function authenticateRequest(request: Request, users = new UserStor
 
   const token = match.slice("trao_session=".length);
   const session = decodeSession(token);
+  const session = decodeSession(match.slice("trao_session=".length));
   if (!session) return null;
 
   const user = await users.getById(session.sub);

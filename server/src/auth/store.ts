@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
+import { MongoUserStore } from "./mongodb-user-store.js";
 
 export type AuthUser = {
   id: string;
@@ -14,6 +15,20 @@ type UserFile = Record<string, AuthUser>;
 
 export class UserStore {
   constructor(private readonly filePath = process.env.AUTH_STORE_FILE?.trim() || ".data/users.json") {}
+export interface AuthUserStore {
+  getByEmail(email: string): Promise<AuthUser | null>;
+  getById(id: string): Promise<AuthUser | null>;
+  create(email: string, passwordHash: string): Promise<AuthUser>;
+}
+
+type UserFile = Record<string, AuthUser>;
+
+export class UserStore implements AuthUserStore {
+  private readonly mongo: MongoUserStore | null;
+
+  constructor(private readonly filePath = process.env.AUTH_STORE_FILE?.trim() || ".data/users.json") {
+    this.mongo = process.env.MONGODB_URI?.trim() ? new MongoUserStore() : null;
+  }
 
   private async readAll(): Promise<UserFile> {
     try {
@@ -26,6 +41,10 @@ export class UserStore {
     } catch (error) {
       if (error && typeof error === "object" && "code" in error &&
           (error as { code?: string }).code === "ENOENT") return {};
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("User store file must contain an object");
+      return parsed as UserFile;
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") return {};
       throw error;
     }
   }
@@ -38,12 +57,14 @@ export class UserStore {
   }
 
   async getByEmail(email: string): Promise<AuthUser | null> {
+    if (this.mongo) return this.mongo.getByEmail(email);
     const users = await this.readAll();
     const normalized = email.trim().toLowerCase();
     return Object.values(users).find((user) => user.email === normalized) ?? null;
   }
 
   async getById(id: string): Promise<AuthUser | null> {
+    if (this.mongo) return this.mongo.getById(id);
     const users = await this.readAll();
     return users[id] ?? null;
   }
@@ -54,6 +75,10 @@ export class UserStore {
     if (Object.values(users).some((user) => user.email === normalized)) {
       throw new Error("EMAIL_ALREADY_REGISTERED");
     }
+    if (this.mongo) return this.mongo.create(email, passwordHash);
+    const users = await this.readAll();
+    const normalized = email.trim().toLowerCase();
+    if (Object.values(users).some((user) => user.email === normalized)) throw new Error("EMAIL_ALREADY_REGISTERED");
 
     const now = new Date().toISOString();
     const user: AuthUser = {
