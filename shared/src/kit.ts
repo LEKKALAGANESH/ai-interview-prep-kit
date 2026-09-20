@@ -31,6 +31,9 @@ export const RoleSchema = z.object({
   requirements: z.array(RequirementSchema),
 });
 
+// Optional so Appendix A kits stay valid; absent means generated / not pinned.
+export const OriginSchema = z.enum(["generated", "edited", "manual"]);
+
 export const QuestionSchema = z.object({
   id: z.string().min(1),
   requirement_ids: z.array(z.string()).min(1),
@@ -38,6 +41,8 @@ export const QuestionSchema = z.object({
   prompt: z.string().min(1),
   answer_outline: z.string().min(1),
   difficulty: z.number().int().min(1).max(3),
+  origin: OriginSchema.optional(),
+  pinned: z.boolean().optional(),
 });
 
 export const FlashcardSchema = z.object({
@@ -45,6 +50,8 @@ export const FlashcardSchema = z.object({
   front: z.string().min(1),
   back: z.string().min(1),
   requirement_ids: z.array(z.string()),
+  origin: OriginSchema.optional(),
+  pinned: z.boolean().optional(),
 });
 
 export const ScheduleDaySchema = z.object({
@@ -180,6 +187,7 @@ export const KitSchema = z.object({
 
 export type Requirement = z.infer<typeof RequirementSchema>;
 export type Role = z.infer<typeof RoleSchema>;
+export type Origin = z.infer<typeof OriginSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 export type Flashcard = z.infer<typeof FlashcardSchema>;
 export type CompanyBrief = z.infer<typeof CompanyBriefSchema>;

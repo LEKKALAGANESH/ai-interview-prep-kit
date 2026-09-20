@@ -77,12 +77,12 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
   const generationJobMatch = request.url?.match(/^\/api\/generation\/jobs(?:\/([^/?]+))?$/);
   if (generationJobMatch) {
     if (generationJobMatch[1] && request.method === "GET") {
-      const result=getGenerationJob(decodeURIComponent(generationJobMatch[1]));
+      const result=getGenerationJob(decodeURIComponent(generationJobMatch[1]), authenticatedUser!.id);
       response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
     }
     if (!generationJobMatch[1] && request.method === "POST") {
       const body=await readBody(request);
-      const result=await createGenerationJob(new Request(`http://localhost:${port}${request.url}`,{method:"POST",headers:request.headers as Record<string,string>,body}),{store: scopedStore!});
+      const result=await createGenerationJob(new Request(`http://localhost:${port}${request.url}`,{method:"POST",headers:request.headers as Record<string,string>,body}),{store: scopedStore!}, authenticatedUser!.id);
       response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
     }
   }

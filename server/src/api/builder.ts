@@ -1,12 +1,33 @@
 import { KitSchema } from "@trao/interview-prep-shared/kit.js";
-import { applyBuilderEdit, type BuilderEdit } from "@trao/interview-prep-shared/builder.js";
+import { applyBuilderEdit, regenerateCategory, type BuilderEdit } from "@trao/interview-prep-shared/builder.js";
+import type { Kit, Question } from "@trao/interview-prep-shared/kit.js";
 import type { KitStore, ResearchProvenance } from "../persistence/store.js";
 import { createConfiguredLlmProvider, type LlmProviderName } from "../generation/provider.js";
-import { generateQuestionsForRequirement } from "../generation/generator.js";
+import { generateQuestionsForRequirement, type QuestionCategory } from "../generation/generator.js";
 import { regenerateScopedQuestions } from "@trao/interview-prep-shared/builder.js";
 
 function json(body: unknown, status=200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
+}
+
+const CATEGORIES: readonly QuestionCategory[] = ["technical", "behavioural", "system-design", "company-fit"];
+
+function providerFrom(body: { provider?: unknown; model?: unknown }) {
+  return createConfiguredLlmProvider(undefined, { provider: typeof body.provider === "string" ? body.provider as LlmProviderName : undefined, model: typeof body.model === "string" ? body.model : undefined });
+}
+
+// Rebuilt from persisted research evidence only; never invents facts when nothing was retrieved.
+function briefFromProvenance(provenance: ResearchProvenance | null): Kit["company_brief"] {
+  const claims = (provenance?.claims ?? []).filter((claim) => claim.source_type === "company-primary");
+  if (!claims.length) {
+    const note = "No usable company information was retrieved, so this brief is intentionally thin.";
+    return { summary: note, what_they_do: note, sources: [] };
+  }
+  return {
+    summary: claims[0].evidence.slice(0, 500),
+    what_they_do: claims.map((claim) => claim.evidence).join(" ").slice(0, 1000),
+    sources: [...new Set(claims.map((claim) => claim.source_url))],
+  };
 }
 
 export async function handleBuilder(request: Request, store: KitStore, kitId: string): Promise<Response> {
@@ -27,8 +48,7 @@ export async function handleBuilder(request: Request, store: KitStore, kitId: st
       if (!existing) return json({error:{code:"NOT_FOUND",message:"Question not found"}},404);
       const requirement = current.role.requirements.find((item) => existing.requirement_ids.includes(item.id));
       if (!requirement) return json({error:{code:"BUILDER_EDIT_INVALID",message:"Question has no valid requirement"}},422);
-      const body = raw as {provider?:unknown;model?:unknown};
-      const provider = createConfiguredLlmProvider(undefined, { provider: typeof body.provider === "string" ? body.provider as LlmProviderName : undefined, model: typeof body.model === "string" ? body.model : undefined });
+      const provider = providerFrom(raw as {provider?:unknown;model?:unknown});
       if (!provider) return json({error:{code:"LLM_NOT_CONFIGURED",message:"The selected regeneration provider is not configured"}},503);
       const provenance = await store.getResearchProvenance(kitId);
       const research = provenanceToResearch(current.source.company_url, provenance);
@@ -40,9 +60,30 @@ export async function handleBuilder(request: Request, store: KitStore, kitId: st
         companyBrief: current.company_brief,
         research,
       }, {provider});
-      const replacement = {...generated[0], id: existing.id, requirement_ids:[...existing.requirement_ids]};
+      const replacement = {...generated[0], id: existing.id, requirement_ids:[...existing.requirement_ids], ...(existing.pinned ? {pinned:true} : {})};
       const updated = regenerateScopedQuestions(current,[questionId],[replacement]);
       const saved=await store.withRequestLock(kitId,()=>store.update(kitId,KitSchema.parse(updated)));
+      return json({id:kitId,kit:saved});
+    }
+    const type=(raw as {type?:unknown} | null)?.type;
+    if (type === "regenerate_category") {
+      const body = raw as {category?:unknown;provider?:unknown;model?:unknown};
+      const category = CATEGORIES.find((item) => item === body.category);
+      if (!category) return json({error:{code:"VALIDATION_ERROR",message:"category must be one of "+CATEGORIES.join(", ")}},400);
+      const provider = providerFrom(body);
+      if (!provider) return json({error:{code:"LLM_NOT_CONFIGURED",message:"The selected regeneration provider is not configured"}},503);
+      const research = provenanceToResearch(current.source.company_url, await store.getResearchProvenance(kitId));
+      const generated: Question[] = [];
+      const replaceable = current.questions.filter((q) => q.category === category && !q.pinned && (q.origin ?? "generated") === "generated");
+      for (const requirement of current.role.requirements.filter((r) => replaceable.some((q) => q.requirement_ids.includes(r.id)))) {
+        generated.push(...await generateQuestionsForRequirement({ requirement, category, companyBrief: current.company_brief, research }, {provider}));
+      }
+      const saved = await store.withRequestLock(kitId,()=>store.update(kitId,KitSchema.parse(regenerateCategory(current,category,generated))));
+      return json({id:kitId,kit:saved});
+    }
+    if (type === "regenerate_brief") {
+      const brief = briefFromProvenance(await store.getResearchProvenance(kitId));
+      const saved = await store.withRequestLock(kitId,()=>store.update(kitId,KitSchema.parse(applyBuilderEdit(current,{type:"edit_company_brief",...brief}))));
       return json({id:kitId,kit:saved});
     }
     const edit=raw as BuilderEdit;
