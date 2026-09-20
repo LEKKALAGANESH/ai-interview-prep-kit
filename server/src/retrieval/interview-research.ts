@@ -24,7 +24,7 @@ export async function researchPublicInterviews(
       attempted: false,
       found: false,
       results: [],
-      note: "No public interview search provider is configured.",
+      note: "Search not attempted: BRAVE_SEARCH_API_KEY not set.",
     };
   }
 

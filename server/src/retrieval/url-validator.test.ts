@@ -51,3 +51,30 @@ test("allows localhost only when explicitly enabled", () => {
   assert.throws(() => validateExternalUrl("http://localhost:4000"));
   assert.equal(validateExternalUrl("http://localhost:4000", { allowLocalhost: true }).hostname, "localhost");
 });
+
+test("rejects private, CGNAT, IPv4-mapped IPv6, ULA and numeric-form addresses", () => {
+  for (const host of [
+    "0.0.0.0", "100.64.0.1", "[::ffff:127.0.0.1]", "[::ffff:7f00:1]", "[fc00::1]", "[fd12::1]", "[fe80::1]",
+    "2130706433", "0x7f000001", "017700000001", "127.1",
+  ]) {
+    assert.throws(() => validateExternalUrl(`http://${host}/`), /private|loopback/i, host);
+  }
+  assert.equal(validateExternalUrl("http://[2606:4700::1111]/").hostname, "[2606:4700::1111]");
+});
+
+test("localhost opt-in is ignored in production", () => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  try {
+    assert.throws(() => validateExternalUrl("http://localhost:3000", { allowLocalhost: true }));
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous;
+  }
+});
+
+test("rejects hostnames that resolve to private addresses", async () => {
+  const { assertPublicHost } = await import("./url-validator.js");
+  await assert.rejects(assertPublicHost(new URL("http://evil.test/"), { resolver: async () => ["93.184.216.34", "10.0.0.5"] }), /private/i);
+  await assertPublicHost(new URL("http://ok.test/"), { resolver: async () => ["93.184.216.34"] });
+  await assertPublicHost(new URL("http://gone.test/"), { resolver: async () => { throw new Error("ENOTFOUND"); } });
+});

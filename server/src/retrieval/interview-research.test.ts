@@ -36,3 +36,10 @@ test("reports provider failures without breaking company retrieval", async () =>
   assert.equal(result.found, false);
   assert.match(result.note, /failed/i);
 });
+
+test("reports search as not attempted, naming the missing key", async () => {
+  const { researchPublicInterviews } = await import("./interview-research.js");
+  const result = await researchPublicInterviews("https://example.com");
+  assert.equal(result.attempted, false);
+  assert.match(result.note, /BRAVE_SEARCH_API_KEY/);
+});

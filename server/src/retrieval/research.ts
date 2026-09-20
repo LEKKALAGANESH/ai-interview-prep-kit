@@ -1,11 +1,11 @@
 import { cleanHtml } from "./clean-html.js";
 import { fetchPage, RetrievalError } from "./http-client.js";
 import { rankLinks } from "./link-ranking.js";
-import { checkRobots } from "./robots.js";
+import { loadRobots, type LoadedRobots } from "./robots.js";
 import { createConfiguredInterviewResearchProvider } from "./brave-search.js";
 import { researchPublicInterviews, type InterviewResearchProvider } from "./interview-research.js";
 import { withRetry } from "./retry.js";
-import { validateExternalUrl } from "./url-validator.js";
+import { validateExternalUrl, type HostResolver } from "./url-validator.js";
 import { buildRankedEvidencePacket, researchPagesToClaims, type EvidenceClaim } from "./evidence.js";
 
 export type ResearchPage = {
@@ -56,7 +56,14 @@ export type ResearchOptions = {
   allowLocalhost?: boolean;
   fetchImpl?: typeof fetch;
   interviewResearchProvider?: InterviewResearchProvider;
+  /** Pause between page fetches; raised to the site's Crawl-delay (capped). */
+  requestDelayMs?: number;
+  resolver?: HostResolver;
 };
+
+const DEFAULT_REQUEST_DELAY_MS = 500;
+const MAX_CRAWL_DELAY_MS = 10_000;
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export async function researchCompany(
   companyUrl: string,
@@ -68,9 +75,18 @@ export async function researchCompany(
     allowLocalhost: options.allowLocalhost,
   });
 
-  const robots = await checkRobots(root.href, fetchImpl, {
-    allowLocalhost: options.allowLocalhost,
-  });
+  const robotsCache = new Map<string, Promise<LoadedRobots>>();
+  const robotsFor = (url: URL | string): Promise<LoadedRobots> => {
+    const href = typeof url === "string" ? url : url.href;
+    const origin = new URL(href).origin;
+    let loaded = robotsCache.get(origin);
+    if (!loaded) {
+      loaded = loadRobots(href, fetchImpl, { allowLocalhost: options.allowLocalhost, resolver: options.resolver });
+      robotsCache.set(origin, loaded);
+    }
+    return loaded;
+  };
+  const robots = (await robotsFor(root)).check(root);
 
   const result: ResearchResult = {
     company_url: root.href,
@@ -84,7 +100,7 @@ export async function researchCompany(
       attempted: false,
       found: false,
       results: [],
-      note: "Public interview discussion research is not yet connected to an external search provider.",
+      note: "Public interview discussion research has not run yet.",
     },
   };
 
@@ -110,11 +126,21 @@ export async function researchCompany(
     visited.add(current);
 
     try {
+      if (result.pages.length + result.skipped.length > 0) {
+        const { crawlDelaySec } = await robotsFor(current);
+        await sleep(Math.max(options.requestDelayMs ?? DEFAULT_REQUEST_DELAY_MS, Math.min(crawlDelaySec * 1000, MAX_CRAWL_DELAY_MS)));
+      }
       const page = await withRetry(
         () =>
           fetchPage(current, {
             fetchImpl,
             allowLocalhost: options.allowLocalhost,
+            resolver: options.resolver,
+            // Runs on every hop, so redirects to another origin are re-checked against that origin's robots.txt.
+            guard: async (url) => {
+              const policy = (await robotsFor(url)).check(url);
+              if (!policy.allowed) throw new Error(`${policy.reason}: ${url.href}`);
+            },
           }),
         { attempts: 3 },
       );

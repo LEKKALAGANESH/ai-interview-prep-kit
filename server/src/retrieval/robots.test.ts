@@ -45,3 +45,36 @@ test("rejects localhost redirects for public research", async () => {
   assert.equal(result.allowed, false);
   assert.match(result.reason, /unsafe/i);
 });
+
+const robots = (body: string) => async () => new Response(body, { status: 200 });
+
+test("Allow overrides a shorter Disallow (longest match wins)", async () => {
+  const body = "User-agent: *\nDisallow: /careers\nAllow: /careers/open";
+  assert.equal((await checkRobots("https://example.com/careers/open/1", robots(body))).allowed, true);
+  assert.equal((await checkRobots("https://example.com/careers/private", robots(body))).allowed, false);
+});
+
+test("supports * and $ wildcards", async () => {
+  const body = "User-agent: *\nDisallow: /*.pdf$\nDisallow: /a/*/secret";
+  assert.equal((await checkRobots("https://example.com/x/y.pdf", robots(body))).allowed, false);
+  assert.equal((await checkRobots("https://example.com/x/y.pdf?x=1", robots(body))).allowed, true);
+  assert.equal((await checkRobots("https://example.com/a/b/secret", robots(body))).allowed, false);
+});
+
+test("a multi-line User-agent group applies to every listed agent", async () => {
+  const body = "User-agent: googlebot\nUser-agent: trao-ai-interview-prep-kit\nDisallow: /jobs\n\nUser-agent: *\nDisallow:";
+  assert.equal((await checkRobots("https://example.com/jobs", robots(body))).allowed, false);
+});
+
+test("the specific agent group beats the * group", async () => {
+  const body = "User-agent: *\nDisallow: /\n\nUser-agent: trao-ai-interview-prep-kit\nAllow: /";
+  assert.equal((await checkRobots("https://example.com/careers", robots(body))).allowed, true);
+});
+
+test("loadRobots exposes Crawl-delay and checks each URL separately", async () => {
+  const { loadRobots } = await import("./robots.js");
+  const loaded = await loadRobots("https://example.com", robots("User-agent: *\nCrawl-delay: 3\nDisallow: /private"));
+  assert.equal(loaded.crawlDelaySec, 3);
+  assert.equal(loaded.check("https://example.com/careers").allowed, true);
+  assert.equal(loaded.check("https://example.com/private/x").allowed, false);
+});

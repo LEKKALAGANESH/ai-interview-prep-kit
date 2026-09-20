@@ -1,4 +1,4 @@
-import { validateExternalUrl } from "./url-validator.js";
+import { assertPublicHost, validateExternalUrl, type HostResolver } from "./url-validator.js";
 
 export type FetchPageOptions = {
   timeoutMs?: number;
@@ -6,6 +6,9 @@ export type FetchPageOptions = {
   allowLocalhost?: boolean;
   fetchImpl?: typeof fetch;
   maxRedirects?: number;
+  resolver?: HostResolver;
+  /** Runs before every hop (including redirect targets); throw to abort, e.g. on robots.txt. */
+  guard?: (url: URL) => Promise<void>;
 };
 
 export type FetchedPage = {
@@ -23,6 +26,7 @@ export class RetrievalError extends Error {
       | "HTTP_ERROR"
       | "CONTENT_TYPE_UNSUPPORTED"
       | "CONTENT_TOO_LARGE"
+      | "BLOCKED"
       | "NETWORK_ERROR"
       | "REDIRECT_LIMIT",
     message: string,
@@ -37,6 +41,42 @@ const DEFAULT_MAX_BYTES = 1_000_000;
 const DEFAULT_MAX_REDIRECTS = 5;
 const ALLOWED_CONTENT_TYPES = ["text/html", "application/xhtml+xml"];
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+async function readBodyCapped(response: Response, maxBytes: number): Promise<string> {
+  const tooLarge = () => new RetrievalError("CONTENT_TOO_LARGE", `Response exceeds the ${maxBytes}-byte limit`);
+  if (!response.body) {
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > maxBytes) throw tooLarge();
+    return text;
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return text + decoder.decode();
+    received += value.byteLength;
+    if (received > maxBytes) {
+      await reader.cancel();
+      throw tooLarge();
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+}
+
+async function checkHop(url: URL, options: FetchPageOptions): Promise<void> {
+  try {
+    await assertPublicHost(url, options);
+  } catch (error) {
+    throw new RetrievalError("INVALID_URL", error instanceof Error ? error.message : "Unsafe destination");
+  }
+  try {
+    await options.guard?.(url);
+  } catch (error) {
+    throw new RetrievalError("BLOCKED", error instanceof Error ? error.message : "Blocked");
+  }
+}
 
 export async function fetchPage(
   value: string,
@@ -61,6 +101,7 @@ export async function fetchPage(
   const fetchImpl = options.fetchImpl ?? fetch;
 
   for (let redirectCount = 0; ; redirectCount += 1) {
+    await checkHop(url, options);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -151,14 +192,7 @@ export async function fetchPage(
       );
     }
 
-    const body = await response.text();
-
-    if (new TextEncoder().encode(body).byteLength > maxBytes) {
-      throw new RetrievalError(
-        "CONTENT_TOO_LARGE",
-        `Response exceeds the ${maxBytes}-byte limit`,
-      );
-    }
+    const body = await readBodyCapped(response, maxBytes);
 
     return {
       url: response.url || url.href,
