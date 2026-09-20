@@ -1,3 +1,33 @@
+# Step 21 — Testing
+
+**Goal:** Verify that authentication, authorization, persistence, kit CRUD, regression coverage, the existing AI pipeline, and the mandatory batch evaluator remain covered by automated tests without claiming runtime results that have not been observed.
+
+| # | Testing checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 21.1 | Auth unit tests | 🟢 | server/src/auth/auth.test.ts covers password hashing, password verification, session authentication, and session behavior. |
+| 21.2 | Auth integration tests | 🟢 | server/src/auth/auth.api.test.ts covers registration, duplicate registration, login, current-session lookup, logout, invalid credentials, and protected middleware rejection. |
+| 21.3 | Authorization tests | 🟢 | server/src/auth/user-scoped-store.test.ts covers read isolation, cross-user update rejection, cross-user delete rejection, and cross-user regeneration rejection. |
+| 21.4 | MongoDB tests | 🟡 | server/src/persistence/mongodb.test.ts covers Mongo user/kit CRUD, indexes, user isolation, connection reuse, deletion, and duplicate-email behavior, but the suite is skipped unless MONGODB_URI is configured. |
+| 21.5 | Kit CRUD tests | 🟢 | Persistence tests cover save/retrieve, unknown IDs, deterministic IDs, durable persistence, and deletion behavior is now implemented across stores. |
+| 21.6 | Regression tests | 🟡 | The existing server test suite still covers retrieval, extraction, generation, pipeline, persistence, API, and authentication paths, but the latest authorization changes have not yet been observed in a fresh full-suite runtime execution. |
+| 21.7 | Existing AI tests still pass | 🟡 | Existing AI/retrieval/extraction/generation/pipeline tests remain in the server test command and no AI pipeline logic was intentionally removed, but current-head runtime execution has not been observed. |
+| 21.8 | Batch evaluator still works | 🟡 | evaluation/src/evaluator.test.ts covers successful batches, requested day counts, per-case failure continuation, and duplicate IDs; current-head evaluator runtime execution has not yet been observed. |
+
+### Step 21 implementation notes
+
+- server/package.json includes authentication, persistence, API, pipeline, generation, extraction, and retrieval test globs in the server test command.
+- Authentication tests are separated into lower-level auth tests and API/middleware integration tests.
+- Authorization tests now directly exercise the newly required A/B isolation rules, including delete and regeneration.
+- MongoDB tests are intentionally conditional on MONGODB_URI; this prevents a missing live database from being reported as a passing MongoDB runtime test.
+- Kit persistence tests cover durable store behavior and isolation-related persistence contracts.
+- The root npm test script continues to delegate to all workspace test scripts.
+- The evaluator retains its automated tests and continues to use the same application generation pipeline through evaluateCases.
+- No runtime test result is being invented for this step. 🟡 items become green only after the relevant current-head CI/runtime execution is observed.
+
+### Step 21 verification rule
+
+Keep test coverage items green when the required automated tests exist in the repository. Keep runtime-dependent items yellow until current-head execution demonstrates that the tests pass, including a configured MongoDB run for 21.4 and evaluator execution for 21.8.
+
 # Step 20 — Authorization
 
 **Goal:** Enforce the assessment security invariant that every authenticated user can access and mutate only their own kits. Cross-user reads, updates, deletes, and regeneration attempts must resolve as not found rather than crossing the authorization boundary.
