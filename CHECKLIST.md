@@ -1,3 +1,37 @@
+# Step 16 — MongoDB Persistence
+
+**Goal:** Replace the file-backed persistence path with MongoDB when MONGODB_URI is configured, while keeping the existing file store as the local fallback.
+
+| # | MongoDB checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 16.1 | MongoDB connection works | 🟡 | A reusable MongoDB MongoClient is configured from MONGODB_URI, but a live MongoDB connection has not yet been observed in CI/runtime. |
+| 16.2 | User stored | 🟢 | MongoUserStore persists authenticated users in the users collection with server-generated IDs and password hashes. |
+| 16.3 | Kit stored | 🟢 | MongoKitStore persists kits in the kits collection. |
+| 16.4 | Kit associated with user | 🟢 | Kit documents store both user_id and kit_id; the existing UserScopedKitStore supplies the authenticated user scope. |
+| 16.5 | Kit retrieved | 🟢 | MongoDB lookup retrieves a kit by both user identity and kit ID. |
+| 16.6 | Kit updated | 🟢 | Existing kits are updated with MongoDB updateOne; unknown kits are rejected. |
+| 16.7 | Kit deleted | 🟢 | MongoKitStore.delete() removes the kit and its related practice, pin, and provenance sidecars. |
+| 16.8 | Indexes created | 🟢 | Unique user/email and user/kit indexes are created for users, kits, practice, pins, and provenance. |
+| 16.9 | Connection reused safely | 🟢 | MongoDB uses one cached connection promise with a bounded connection pool; failed initial connections reset the cached promise so later attempts can retry. |
+
+### Step 16 implementation notes
+
+- Added server/src/persistence/mongodb.ts with a reusable MongoClient connection.
+- Added server/src/persistence/mongodb-store.ts for MongoDB-backed kit/practice/pin/provenance persistence.
+- Added server/src/auth/mongodb-user-store.ts for MongoDB-backed users.
+- UserStore automatically uses MongoDB when MONGODB_URI is configured; otherwise it keeps the existing JSON user store fallback.
+- createKitStore() automatically uses MongoKitStore when MONGODB_URI is configured; otherwise it keeps the existing JSON kit store fallback.
+- MongoDB kit documents preserve the authenticated user boundary through user_id + kit_id.
+- Added unique indexes for user email and per-user kit/sidecar records.
+- Added server/src/persistence/mongodb.test.ts. The suite is skipped when MONGODB_URI is absent, so no live MongoDB result is being claimed without a configured database.
+- Added MongoDB configuration to .env.example.
+- Added the official mongodb Node.js driver to server/package.json.
+
+### Step 16 verification rule
+
+Do not mark 16.1 green from source inspection alone. A live MongoDB-backed CI/runtime execution must confirm connection, user CRUD, kit CRUD, indexes, user association, and connection reuse.
+
+
 # Step 14 — User Identity & Authorization Boundary
 
 **Goal:** Ensure every authenticated account has a server-created identity, email uniqueness is enforced, and application authorization derives identity from the authenticated session rather than from client-supplied user identifiers.
