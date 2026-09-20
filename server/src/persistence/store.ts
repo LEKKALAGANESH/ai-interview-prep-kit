@@ -3,9 +3,6 @@ import { dirname } from "node:path";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
 import type { PracticeState } from "@trao/interview-prep-shared/practice.js";
-
-export interface KitStore {
-  update(id: string, kit: Kit): Promise<Kit>;
 import { MongoKitStore } from "./mongodb-store.js";
 
 export type PinnedQuestionState = { question_ids: string[]; updated_at: string };
@@ -214,11 +211,6 @@ export class JsonFileKitStore implements KitStore {
     });
   }
 
-  async getPractice(id: string): Promise<PracticeState> { const data = await this.readPractice(); return structuredClone(data[id] ?? { current_index: 0, results: [], completed: false }); }
-  async savePractice(id: string, state: PracticeState): Promise<PracticeState> { const data = await this.readPractice(); data[id] = structuredClone(state); await this.writePractice(data); return structuredClone(state); }
-}
-
-export function createKitStore(): KitStore {
   async delete(id: string): Promise<boolean> {
     return this.withLock(async () => {
       const kits = await this.readAll();
@@ -248,38 +240,6 @@ export function createKitStore(): KitStore {
 
 
 export class UserScopedKitStore implements KitStore {
-  constructor(
-    private readonly base: KitStore,
-    private readonly userId: string,
-  ) {}
-
-  private key(id: string): string {
-    return `user:${this.userId}:${id}`;
-  }
-
-  async save(id: string, kit: Kit): Promise<Kit> {
-    return this.base.save(this.key(id), kit);
-  }
-
-  async getById(id: string): Promise<Kit | null> {
-    return this.base.getById(this.key(id));
-  }
-
-  async update(id: string, kit: Kit): Promise<Kit> {
-    return this.base.update(this.key(id), kit);
-  }
-
-  async withRequestLock<T>(id: string, operation: () => Promise<T>): Promise<T> {
-    return this.base.withRequestLock(this.key(id), operation);
-  }
-
-  async getPractice(id: string): Promise<PracticeState> {
-    return this.base.getPractice(this.key(id));
-  }
-
-  async savePractice(id: string, state: PracticeState): Promise<PracticeState> {
-    return this.base.savePractice(this.key(id), state);
-  }
   constructor(private readonly base: KitStore, private readonly userId: string) {}
 
   private key(id: string): string { return `user:${this.userId}:${id}`; }

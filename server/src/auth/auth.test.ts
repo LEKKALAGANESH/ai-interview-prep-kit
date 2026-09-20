@@ -2,27 +2,20 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { UserStore } from "./store.js";
-import { hashPassword, verifyPassword, sessionCookie, authenticateRequest } from "./service.js";
-
-async function withStore() {
-  const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
-  return { dir, store: new UserStore(`${dir}/users.json`) };
-}
-
-test("hashes passwords without storing plaintext", async () => {
-  const { dir, store } = await withStore();
-  try {
 
 process.env.SESSION_SECRET = "test-secret";
 
 const { UserStore } = await import("./store.js");
 const { authenticateRequest, hashPassword, sessionCookie, verifyPassword } = await import("./service.js");
 
-test("hashes passwords with a one-way scrypt hash", async () => {
+async function withStore() {
   const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
+  return { dir, store: new UserStore(`${dir}/users.json`) };
+}
+
+test("hashes passwords with a one-way scrypt hash", async () => {
+  const { dir, store } = await withStore();
   try {
-    const store = new UserStore(`${dir}/users.json`);
     const hash = await hashPassword("correct horse battery staple");
     assert.notEqual(hash, "correct horse battery staple");
     assert.match(hash, /^scrypt\$16384\$8\$1\$/);
@@ -32,26 +25,25 @@ test("hashes passwords with a one-way scrypt hash", async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test("verifies correct and rejects incorrect passwords", async () => {
 test("verifies correct passwords and rejects incorrect passwords", async () => {
   const hash = await hashPassword("correct horse battery staple");
   assert.equal(await verifyPassword("correct horse battery staple", hash), true);
   assert.equal(await verifyPassword("wrong password", hash), false);
 });
 
-test("session survives a new request and expires", async () => {
+test("session survives a new request and rejects a tampered or expired session", async () => {
   const { dir, store } = await withStore();
   try {
-test("session survives a new request and rejects an expired session", async () => {
-  const dir = await mkdtemp(`${tmpdir()}/trao-auth-`);
-  try {
-    const store = new UserStore(`${dir}/users.json`);
     const user = await store.create("user@example.com", await hashPassword("correct horse battery staple"));
-    const cookie = sessionCookie(user, false);
-    const request = new Request("http://app.test/", { headers: { cookie: cookie.split(";")[0] } });
-    assert.equal((await authenticateRequest(request, store))?.id, user.id);
+    const cookie = sessionCookie(user, false).split(";")[0];
+    const request = (value: string) => new Request("http://app.test/", { headers: { cookie: value } });
+    assert.equal((await authenticateRequest(request(cookie), store))?.id, user.id);
+    assert.equal(await authenticateRequest(request(`${cookie}x`), store), null);
 
-    const [, signature] = cookie.split(";");
-    assert.ok(signature === undefined || typeof signature === "string");
+    const realNow = Date.now;
+    Date.now = () => realNow() + 8 * 24 * 60 * 60 * 1000;
+    try {
+      assert.equal(await authenticateRequest(request(cookie), store), null);
+    } finally { Date.now = realNow; }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
