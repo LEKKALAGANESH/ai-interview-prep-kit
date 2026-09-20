@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 import type { NormalizedKitInput } from "@trao/interview-prep-shared/input-model.js";
 import type { Kit } from "@trao/interview-prep-shared/kit.js";
 import type { PracticeState } from "@trao/interview-prep-shared/practice.js";
+import { MongoKitStore } from "./mongodb-store.js";
 
 export type PinnedQuestionState = { question_ids: string[]; updated_at: string };
 export type ResearchProvenance = { researched_at: string; claims: Array<{ claim: string; source_url: string; source_type: "company-primary" | "public-interview" | "other"; evidence: string; confidence_basis: string; freshness_at?: string }> };
@@ -210,6 +211,7 @@ export class JsonFileKitStore implements KitStore {
 }
 
 export function createKitStore(): KitStore {
+  if (process.env.MONGODB_URI?.trim()) return new MongoKitStore();
   const path = process.env.KIT_STORE_FILE?.trim() || ".data/kits.json";
   return new JsonFileKitStore(path);
 }
