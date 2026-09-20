@@ -1,3 +1,31 @@
+# Step 19 — Regeneration
+
+**Goal:** Ensure scoped question regeneration replaces only the requested question, preserves user-owned content and unrelated kit state, and persists the regenerated result.
+
+| # | Regeneration checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 19.1 | Existing regeneration still works | 🟢 | The builder PATCH flow supports `regenerate_question`, regenerates the selected question using its existing requirement/category/difficulty context, and keeps its stable question ID. |
+| 19.2 | User edits preserved | 🟢 | Regeneration starts from the current persisted kit and replaces only the selected question, leaving other manually edited questions and kit fields unchanged. |
+| 19.3 | User-added questions preserved | 🟢 | User-added questions remain in the current kit because scoped regeneration replaces only the requested question ID. |
+| 19.4 | Pinned content preserved | 🟢 | Pin state is stored separately from the kit and regeneration does not modify the pinned-question sidecar. |
+| 19.5 | Unrelated categories preserved | 🟢 | Regeneration keeps the selected question's existing category and only replaces the targeted question; unrelated questions/categories are not regenerated. |
+| 19.6 | Regenerated result persisted | 🟢 | The regenerated kit is validated with `KitSchema` and persisted through `store.update()` under the existing request lock before being returned. |
+
+### Step 19 implementation notes
+
+- `server/src/api/builder.ts` handles the `regenerate_question` operation separately from normal builder edits.
+- The existing question's requirement, category, difficulty, and requirement IDs are carried into the regeneration request/replacement.
+- `shared/src/builder.ts` uses `regenerateScopedQuestions()` to replace only the selected question by its stable ID.
+- The corresponding generated flashcard is updated only when it already exists for the regenerated question; unrelated flashcards remain untouched.
+- Because user-added and manually edited questions are outside the regeneration scope, they remain in the kit.
+- Pin state is persisted separately, so replacing a question does not rewrite or clear pinned-question state.
+- The regenerated result is validated and saved through the same authenticated, user-scoped KitStore path.
+- No runtime execution is being claimed here; these green statuses are based on the current implementation and persistence flow.
+
+### Step 19 verification rule
+
+Keep the six regeneration items green based on the implemented scoped-regeneration contract. Runtime/browser verification should still be included in the broader final verification pass.
+
 # Step 18 — Editing
 
 **Goal:** Verify that existing builder editing remains functional and that question/schedule edits are persisted without losing the canonical kit structure.
