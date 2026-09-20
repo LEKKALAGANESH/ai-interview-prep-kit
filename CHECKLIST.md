@@ -133,7 +133,7 @@ Keep the six regeneration items green based on the implemented scoped-regenerati
 - Company brief now supports dedicated summary, `what_they_do`, and source editing through `edit_company_brief`; source URLs are revalidated by `KitSchema` before persistence.
 - The frontend exposes Save/Discard controls for flashcards and Save/Cancel controls for the company brief, using the same authenticated PATCH persistence path as question editing.
 - Shared builder tests cover successful flashcard/company-brief edits, preservation of unrelated kit state, stable flashcard IDs, and invalid edit rejection.
-- No runtime execution is being claimed here; the green items are supported by the current source implementation, while the two missing edit operations remain yellow.
+- No runtime execution is being claimed from this source-only pass; the dedicated edit operations, validation, persistence path, frontend controls, and regression tests are now present.
 
 ### Step 18 verification rule
 
