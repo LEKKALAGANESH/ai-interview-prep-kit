@@ -18,6 +18,7 @@ Built for the Trao Full-Stack Engineering Assessment.
 - [Project structure](#project-structure)
 - [Architecture](#architecture)
 - [Getting started](#getting-started)
+- [Deployment](#deployment)
 - [API](#api)
 - [Testing and evaluation](#testing-and-evaluation)
 - [Documentation](#documentation)
@@ -116,6 +117,24 @@ Cards are derived from the validated question set, so they keep requirement line
 - **Idempotent generation**: the request ID is derived from the normalised URL, JD and day count. Identical requests are coalesced, and the durable JSON store uses atomic writes with cross-process locks.
 - **Secure fetching**: URL and SSRF validation, content-type and size limits, timeouts, redirect validation, robots.txt handling, and bounded retry with backoff.
 
+### Generated, edited and pinned state
+
+Every question and flashcard carries `origin` (`generated`, `edited` or `manual`) and `pinned`. Editing a generated item flips it to `edited`; adding one by hand marks it `manual`. Regenerating the company brief, one question category or the schedule only replaces `generated`, unpinned items in that one section, so edited, manual and pinned items and every other section survive. Coverage is re-checked after a category regeneration.
+
+### Schedule, coverage and practice (plain code, not the model)
+
+- **Coverage**: a requirement is uncovered when no question references its id. Gaps trigger a bounded second pass that generates only the missing questions, then the check runs again. Two passes because a third rarely finds anything new and each pass costs tokens; the kit is refused if a must-have is still uncovered.
+- **Schedule**: questions are sorted by must-before-nice, then difficulty, then split into exactly the requested number of days, so hard and must-have material lands first. Minutes are integers derived from difficulty (10/15/20). Every must-have requirement appears in the schedule.
+- **Practice**: cards are ordered low confidence, never practised, medium, then high.
+
+### Sources and models
+
+Company pages are crawled from the URL you give (robots.txt respected, per-URL, with `Crawl-delay` and a pause between fetches). Public interview discussion comes from Brave Search when `BRAVE_SEARCH_API_KEY` is set; without it that step is reported as "not attempted". Default LLM: Gemini `gemini-3.6-flash` (free tier); other providers are selectable.
+
+### Known limits
+
+The company brief is extractive (first readable company page), not LLM-written. DNS is resolved before fetching, leaving a small rebinding window. Free-tier deployments sleep when idle and JSON-file storage is ephemeral there; set `MONGODB_URI` for durable storage.
+
 ## Getting started
 
 Requires Node.js 20 or newer.
@@ -138,8 +157,17 @@ npm run dev               # frontend on http://localhost:3000
 | `BRAVE_SEARCH_API_KEY` | Enables public interview research |
 | `KIT_STORE_FILE` | Kit store path (default `.data/kits.json`) |
 | `PORT` | API port |
+| `SESSION_SECRET` | Required. Signs session cookies; use a long random value |
+| `CORS_ORIGIN` | Comma-separated frontend origin(s) allowed to call the API (localhost:3000 is always allowed) |
+| `MONGODB_URI` | When set, MongoDB replaces the JSON files for users and kits |
+| `NEXT_PUBLIC_API_URL` | Frontend build-time API base URL |
 
 Default models (checked 2026-09-19): Gemini `gemini-3.6-flash`, OpenAI `gpt-5.5`, Anthropic `claude-sonnet-5`, Groq `openai/gpt-oss-120b`, Ollama `llama3.1:8b`.
+
+## Deployment
+
+- **Backend** (Render, free): `render.yaml` at the repo root. Set `CORS_ORIGIN` to the frontend URL, `GEMINI_API_KEY`, optionally `BRAVE_SEARCH_API_KEY` and `MONGODB_URI`. `SESSION_SECRET` is generated. In production the session cookie is `SameSite=None; Secure` because the frontend and API are on different sites.
+- **Frontend** (Vercel, free): import the repo with root directory `client`, set `NEXT_PUBLIC_API_URL` to the backend URL.
 
 ## API
 
