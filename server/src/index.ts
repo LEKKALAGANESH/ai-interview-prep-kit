@@ -110,6 +110,24 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
   }
 
   const builderMatch = request.url?.match(/^\/api\/kits\/([^/?]+)$/);
+  if (builderMatch && request.method === "DELETE") {
+    try {
+      const deleted = await scopedStore!.delete(decodeURIComponent(builderMatch[1]));
+      if (!deleted) {
+        response.statusCode = 404;
+        response.setHeader("content-type", "application/json");
+        response.end(JSON.stringify({ error: { code: "NOT_FOUND", message: "Kit not found" } }));
+        return;
+      }
+      response.statusCode = 204;
+      response.end();
+    } catch {
+      response.statusCode = 500;
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } }));
+    }
+    return;
+  }
   if (builderMatch) {
     const bodyChunks: Buffer[] = [];
     for await (const chunk of request) {
