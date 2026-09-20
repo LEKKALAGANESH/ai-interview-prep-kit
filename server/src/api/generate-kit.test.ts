@@ -124,7 +124,23 @@ test("returns a structured error when the LLM is not configured", async () => {
   assert.equal(body.error.code, "LLM_NOT_CONFIGURED");
 });
 
-test("returns a structured research failure when no usable company page is retrieved", async () => {
+test("not-configured error names the exact env var for the chosen provider", async () => {
+  const saved = process.env.GROQ_API_KEY;
+  delete process.env.GROQ_API_KEY;
+  try {
+    const response = await handleGenerateKit(
+      request({ jd: "React frontend engineer", company_url: "https://other.test/", days: 1, llm_provider: "groq" }),
+      { store, fetchImpl: fetchImpl() },
+    );
+    const body = await response.json();
+    assert.equal(body.error.code, "LLM_NOT_CONFIGURED");
+    assert.match(body.error.message, /GROQ_API_KEY/);
+  } finally {
+    if (saved !== undefined) process.env.GROQ_API_KEY = saved;
+  }
+});
+
+test("returns COMPANY_UNREACHABLE when no usable company page is retrieved", async () => {
   const response = await handleGenerateKit(
     request({ jd: "React frontend engineer", company_url: "https://unavailable.test/", days: 1 }),
     {
@@ -138,5 +154,27 @@ test("returns a structured research failure when no usable company page is retri
   );
   assert.equal(response.status, 502);
   const body = await response.json();
-  assert.equal(body.error.code, "RESEARCH_FAILED");
+  assert.equal(body.error.code, "COMPANY_UNREACHABLE");
+});
+
+test("says so honestly when the company site only serves a JavaScript shell", async () => {
+  const response = await handleGenerateKit(
+    request({ jd: "React frontend engineer", company_url: "https://spa.test/", days: 1 }),
+    {
+      store: new InMemoryKitStore(),
+      llmProvider: provider(),
+      fetchImpl: async (url) =>
+        String(url).endsWith("/robots.txt")
+          ? new Response("", { status: 404 })
+          : new Response("<html><body>Skip to content Loading...</body></html>", {
+              status: 200,
+              headers: { "content-type": "text/html; charset=utf-8" },
+            }),
+    },
+  );
+  assert.equal(response.status, 201);
+  const { kit } = await response.json();
+  assert.match(kit.company_brief.summary, /Little readable content/);
+  assert.doesNotMatch(kit.company_brief.summary, /Loading/);
+  assert.deepEqual(kit.company_brief.sources, []);
 });

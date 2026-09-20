@@ -5,7 +5,7 @@ import type { AuthUser } from "./store.js";
 type UserDocument = AuthUser & { _id: string };
 
 export class MongoUserStore {
-  private indexesPromise: Promise<void> | null = null;
+  private indexesPromise: Promise<unknown> | null = null;
 
   private async collection() {
     const collection = await getMongoCollection<UserDocument>("users");

@@ -78,14 +78,14 @@ test("does not duplicate or lose question IDs across the schedule", () => {
     { ...questions[0], id: "q3", difficulty: 1 },
   ]);
   const ids = schedule.flatMap((day) => day.question_ids);
-  assert.deepEqual(ids, ["q1", "q3", "q2"]);
+  assert.deepEqual(ids, ["q1", "q2", "q3"]);
   assert.equal(new Set(ids).size, questions.length + 1);
 });
 
 test("supports more days than questions without duplicating assignments", () => {
   const schedule = buildSchedule(4, requirements, questions);
   assert.deepEqual(schedule.map((day) => day.question_ids), [["q1"], ["q2"], [], []]);
-  assert.deepEqual(schedule.map((day) => day.minutes), [10, 10, 0, 0]);
+  assert.deepEqual(schedule.map((day) => day.minutes), [15, 20, 0, 0]);
   assert.ok(schedule.every((day) => Number.isInteger(day.minutes) && day.minutes >= 0));
 });
 
@@ -111,4 +111,28 @@ test("rejects non-integer and out-of-range day counts", () => {
   assert.throws(() => buildSchedule(0, requirements, questions), /1 and 60/);
   assert.throws(() => buildSchedule(60.1, requirements, questions), /1 and 60/);
   assert.throws(() => buildSchedule(61, requirements, questions), /1 and 60/);
+});
+
+test("derives integer minutes from question difficulty", () => {
+  const schedule = buildSchedule(1, requirements, [
+    { ...questions[0], id: "a", difficulty: 1 },
+    { ...questions[0], id: "b", difficulty: 2 },
+    { ...questions[0], id: "c", difficulty: 3 },
+  ]);
+  assert.equal(schedule[0].minutes, 10 + 15 + 20);
+});
+
+test("leaves no empty day when questions >= days and puts must-haves first", () => {
+  const many: Question[] = Array.from({ length: 7 }, (_, index) => ({
+    ...questions[index % 2],
+    id: `x${index}`,
+    difficulty: ((index % 3) + 1) as 1 | 2 | 3,
+  }));
+  const schedule = buildSchedule(3, requirements, many);
+  assert.ok(schedule.every((day) => day.question_ids.length > 0));
+  const flat = schedule.flatMap((day) => day.question_ids);
+  const lastMust = Math.max(...many.filter((q) => q.requirement_ids[0] === "r1").map((q) => flat.indexOf(q.id)));
+  const firstNice = Math.min(...many.filter((q) => q.requirement_ids[0] === "r2").map((q) => flat.indexOf(q.id)));
+  assert.ok(lastMust < firstNice);
+  assert.equal(new Set(flat).size, many.length);
 });

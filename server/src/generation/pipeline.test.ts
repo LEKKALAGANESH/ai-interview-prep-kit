@@ -271,3 +271,26 @@ test("Step 7 final questions feed Step 8 without changing question coverage", as
   assert.deepEqual(schedule.map((day) => day.day), [1, 2, 3]);
   assert.ok(schedule.every((day) => Number.isInteger(day.minutes) && day.minutes >= 0));
 });
+
+test("runs requirement generation concurrently but keeps output order deterministic", async () => {
+  let active = 0;
+  let peak = 0;
+  const provider: LlmProvider = {
+    async generate(request) {
+      active += 1;
+      peak = Math.max(peak, active);
+      const id = request.userPrompt.match(/r\d+/)?.[0] ?? "";
+      await new Promise((resolve) => setTimeout(resolve, id === "r1" ? 30 : 1));
+      active -= 1;
+      return { questions: [{ prompt: `Q ${id}`, answer_outline: "Outline", difficulty: 2 }] };
+    },
+  };
+  const requirements = ["r1", "r2", "r3", "r4", "r5"].map((id) => ({
+    id, text: `Requirement ${id}`, kind: "technical" as const, priority: "must" as const,
+  }));
+
+  const { questions } = await generateQuestionSetWithCoverage(requirements, { provider });
+
+  assert.deepEqual(questions.map((q) => q.requirement_ids[0]), ["r1", "r2", "r3", "r4", "r5"]);
+  assert.ok(peak > 1 && peak <= 3, `peak concurrency ${peak}`);
+});

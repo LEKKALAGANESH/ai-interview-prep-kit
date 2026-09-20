@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import type { Question, Requirement } from "./kit.js";
 import {
   checkCoverage,
   findUncoveredRequirements,
@@ -67,4 +68,13 @@ test("legacy helpers use the deterministic coverage engine", () => {
 
 test("passes is an integer in the coverage result", () => {
   assert.equal(checkCoverage(requirements, [q("q1", ["r1"])], 2.9).passes, 2);
+});
+
+test("findUncoveredRequirements returns only requirements without a question", () => {
+  const reqs: Requirement[] = [
+    { id: "r1", text: "a", kind: "technical", priority: "must" },
+    { id: "r2", text: "b", kind: "technical", priority: "nice" },
+  ];
+  const qs: Question[] = [{ id: "q1", requirement_ids: ["r1"], category: "technical", prompt: "p", answer_outline: "o", difficulty: 1 }];
+  assert.deepEqual(findUncoveredRequirements(reqs, qs).map((r) => r.id), ["r2"]);
 });

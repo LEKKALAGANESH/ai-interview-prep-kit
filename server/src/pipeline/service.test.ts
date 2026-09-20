@@ -154,6 +154,7 @@ test("propagates persistence failures and never reports a successful save", asyn
       return operation();
     },
     async update() { throw new Error("not expected"); },
+    async delete() { return false; },
     async save() {
       throw new Error("database unavailable");
     },

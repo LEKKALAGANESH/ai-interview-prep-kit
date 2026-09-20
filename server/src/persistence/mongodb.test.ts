@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { getMongoClient, getMongoCollection } from "./mongodb.js";
+import type { Kit } from "@trao/interview-prep-shared/kit.js";
 import { MongoKitStore } from "./mongodb-store.js";
 import { MongoUserStore } from "../auth/mongodb-user-store.js";
 
@@ -25,7 +26,7 @@ test("MongoDB persistence contract", { skip: !enabled }, async (t) => {
     flashcards: [],
     schedule: { days: 1, minutes: 0, items: [] },
     coverage: { covered_requirement_ids: [], uncovered_requirement_ids: [] },
-  } as never;
+  } as unknown as Kit;
 
   const store = new MongoKitStore();
   await store.save(scopedId, kit);

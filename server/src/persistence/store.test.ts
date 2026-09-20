@@ -145,7 +145,9 @@ test("durable request lock coalesces concurrent same-id operations", async () =>
       return "b";
     })]);
     assert.deepEqual([a, b], ["a", "b"]);
-    assert.deepEqual(events, ["a:start", "a:end", "b:start", "b:end"]);
+    // Who acquires the lock first is a race; the guarantee is that the two operations never interleave.
+    const serialOrders = [["a:start", "a:end", "b:start", "b:end"], ["b:start", "b:end", "a:start", "a:end"]];
+    assert.ok(serialOrders.some((order) => JSON.stringify(order) === JSON.stringify(events)), `interleaved: ${events.join(",")}`);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

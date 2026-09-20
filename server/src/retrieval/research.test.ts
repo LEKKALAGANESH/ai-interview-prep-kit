@@ -21,6 +21,7 @@ test("crawls ranked same-origin pages and records page failures", async () => {
   };
 
   const result = await researchCompany("http://localhost:3000", {
+    requestDelayMs: 0,
     allowLocalhost: true,
     fetchImpl,
     maxPages: 3,
@@ -39,6 +40,7 @@ test("crawls ranked same-origin pages and records page failures", async () => {
 test("stops company crawling when robots.txt disallows the root", async () => {
   let pageCalls = 0;
   const result = await researchCompany("http://localhost:3000", {
+    requestDelayMs: 0,
     allowLocalhost: true,
     fetchImpl: async (input) => {
       const url = String(input);
@@ -78,6 +80,7 @@ test("builds source-labeled evidence packets without treating public discussion 
 
 test("records freshness timestamps for retrieved pages", async () => {
   const result = await researchCompany("https://example.com/", {
+    requestDelayMs: 0,
     fetchImpl: async (input) => {
       if (String(input).endsWith("/robots.txt")) return new Response("", { status: 404 });
       return new Response("<html><title>Example</title><body>Evidence</body></html>", {

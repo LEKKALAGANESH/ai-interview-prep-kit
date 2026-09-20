@@ -104,3 +104,44 @@ test("enforces a maximum redirect count", async () => {
       error.code === "REDIRECT_LIMIT",
   );
 });
+
+test("aborts a streamed body that exceeds maxBytes without a content-length", async () => {
+  const chunk = new TextEncoder().encode("x".repeat(400));
+  let pulls = 0;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) { pulls += 1; controller.enqueue(chunk); },
+  });
+  await assert.rejects(
+    fetchPage("https://example.com", {
+      maxBytes: 1000,
+      fetchImpl: mockFetch(new Response(body, { status: 200, headers: { "content-type": "text/html" } })),
+    }),
+    (error: unknown) => error instanceof RetrievalError && error.code === "CONTENT_TOO_LARGE",
+  );
+  assert.ok(pulls < 10, "stream must stop being read once the limit is hit");
+});
+
+test("rejects a hostname that resolves to a private address before fetching", async () => {
+  let fetched = false;
+  await assert.rejects(
+    fetchPage("https://internal.example.com", {
+      resolver: async () => ["10.1.2.3"],
+      fetchImpl: async () => { fetched = true; return new Response("", { status: 200 }); },
+    }),
+    (error: unknown) => error instanceof RetrievalError && error.code === "INVALID_URL",
+  );
+  assert.equal(fetched, false);
+});
+
+test("guard runs on redirect targets and can block them", async () => {
+  const seen: string[] = [];
+  await assert.rejects(
+    fetchPage("https://a.example.com", {
+      resolver: async () => ["93.184.216.34"],
+      guard: async (url) => { seen.push(url.host); if (url.host === "b.example.com") throw new Error("nope"); },
+      fetchImpl: async () => new Response(null, { status: 302, headers: { location: "https://b.example.com/x" } }),
+    }),
+    (error: unknown) => error instanceof RetrievalError && error.code === "BLOCKED",
+  );
+  assert.deepEqual(seen, ["a.example.com", "b.example.com"]);
+});

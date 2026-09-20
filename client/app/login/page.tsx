@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { friendlyError } from "../api";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -25,7 +26,7 @@ export default function LoginPage() {
       if (!response.ok) throw new Error(data.error?.message || "Login failed");
       router.replace("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(friendlyError(err, "Login failed"));
     } finally { setLoading(false); }
   }
 

@@ -7,3 +7,7 @@ dist/
 coverage/
 .DS_Store
 *.log
+
+server/.data/
+.claude/worktrees/
+*.tsbuildinfo

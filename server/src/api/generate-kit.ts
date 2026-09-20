@@ -77,7 +77,7 @@ export async function handleGenerateKit(
     const status =
       code === "COVERAGE_NOT_SHIPPABLE" ? 422 :
       code === "LLM_NOT_CONFIGURED" ? 503 :
-      code === "RESEARCH_FAILED" ? 502 :
+      code === "RESEARCH_FAILED" || code === "COMPANY_UNREACHABLE" ? 502 :
       code === "EXTRACTION_FAILED" ? 422 : 500;
 
     return jsonResponse({

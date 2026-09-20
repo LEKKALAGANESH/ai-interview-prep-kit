@@ -1,6 +1,9 @@
 import type { Question, Requirement, ScheduleDay } from "./kit.js";
 
-const MINUTES_PER_QUESTION = 10;
+// Integer minutes by difficulty 1-3: 10/15/20.
+export function questionMinutes(question: Pick<Question, "difficulty">): number {
+  return 5 + 5 * question.difficulty;
+}
 
 function questionPriority(
   question: Question,
@@ -57,16 +60,21 @@ export function buildSchedule(
     );
   });
 
-  const buckets: Question[][] = Array.from({ length: days }, () => []);
-
-  ordered.forEach((question, index) => {
-    buckets[index % days].push(question);
+  // Contiguous chunks keep the hardest, must-have material on the earliest days.
+  const base = Math.floor(ordered.length / days);
+  const extra = ordered.length % days;
+  let start = 0;
+  const buckets = Array.from({ length: days }, (_, index) => {
+    const size = base + (index < extra ? 1 : 0);
+    const bucket = ordered.slice(start, start + size);
+    start += size;
+    return bucket;
   });
 
   return buckets.map((bucket, index) => ({
     day: index + 1,
     focus: questionFocus(bucket, requirementsById),
     question_ids: bucket.map((question) => question.id),
-    minutes: bucket.length * MINUTES_PER_QUESTION,
+    minutes: bucket.reduce((total, question) => total + questionMinutes(question), 0),
   }));
 }

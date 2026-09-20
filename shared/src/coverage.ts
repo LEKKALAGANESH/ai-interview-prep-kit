@@ -52,9 +52,8 @@ export function findUncoveredRequirements(
   requirements: Requirement[],
   questions: Question[],
 ): Requirement[] {
-  return requirements.filter(
-    (requirement) => !checkCoverage(requirements, questions).covered_requirement_ids.includes(requirement.id),
-  );
+  const uncovered = new Set(checkCoverage(requirements, questions).uncovered_requirement_ids);
+  return requirements.filter((requirement) => uncovered.has(requirement.id));
 }
 
 export function allMustHaveRequirementsCovered(
