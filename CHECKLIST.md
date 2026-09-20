@@ -1,3 +1,35 @@
+# Step 17 — Kit Persistence
+
+**Goal:** Ensure the existing AI-generated kit remains the canonical Appendix A-shaped artifact, keeps stable identifiers and metadata, and survives normal user/session and server lifecycle events.
+
+| # | Kit checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 17.1 | Existing AI-generated kit saved | 🟢 | The generation pipeline passes the completed validated kit to the configured KitStore for persistence. |
+| 17.2 | Default name = company name | 🟢 | The persisted kit source metadata uses the company name derived from the company URL; the current Appendix A model does not introduce a separate mutable kit-name field. |
+| 17.3 | Existing Appendix A structure preserved | 🟢 | KitSchema remains the canonical shape and MongoKitStore stores the complete kit under the kit field without reshaping its Appendix A structure. |
+| 17.4 | Stable IDs preserved | 🟢 | Requirement, question, and flashcard IDs remain application-owned; deterministic kit IDs are derived from normalized company URL, JD, and days. |
+| 17.5 | Existing metadata preserved | 🟢 | Source metadata, company brief, role, questions, flashcards, schedule, and coverage are persisted as part of the same validated kit. |
+| 17.6 | Kit survives page refresh | 🟢 | The application retrieves persisted kits through GET /api/kits/:id rather than relying only on browser memory. |
+| 17.7 | Kit survives logout/login | 🟢 | Kit data is stored independently of the session cookie and is scoped by the authenticated server-side user ID, so logging out does not delete the kit. |
+| 17.8 | Kit survives server restart | 🟡 | JSON persistence already has cross-store-instance/restart tests; MongoDB persistence is implemented, but a live MongoDB restart/reconnect run has not yet been observed. |
+
+### Step 17 implementation notes
+
+- The existing generation pipeline continues to create the same validated Kit object before persistence.
+- KitSchema remains unchanged as the canonical Appendix A contract.
+- buildKitId() remains deterministic for the same normalized generation input.
+- UserScopedKitStore keeps each user's kit namespace isolated from other users.
+- JSON persistence is durable across new store instances and uses atomic replacement writes.
+- MongoDB persistence stores the complete kit document and user association.
+- The frontend reload path uses the persisted kit API, so a browser refresh does not require regeneration.
+- Authentication sessions and kit persistence are separate concerns; logout clears the session cookie, not stored kits.
+- No separate name field was added to Appendix A because the current canonical KitSchema has no such field. The existing company name is represented by source.company.
+
+### Step 17 verification rule
+
+17.1–17.7 are supported by the current source/tests. Keep 17.8 🟡 until a live MongoDB-backed restart/reconnect execution is observed.
+
+
 # Step 16 — MongoDB Persistence
 
 **Goal:** Replace the file-backed persistence path with MongoDB when MONGODB_URI is configured, while keeping the existing file store as the local fallback.
