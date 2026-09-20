@@ -3,6 +3,8 @@ import { checkCoverage } from "./coverage.js";
 
 export type BuilderEdit =
   | { type: "edit_question"; question_id: string; prompt?: string; answer_outline?: string }
+  | { type: "edit_flashcard"; flashcard_id: string; front?: string; back?: string; requirement_ids?: string[] }
+  | { type: "edit_company_brief"; summary?: string; what_they_do?: string; sources?: string[] }
   | { type: "reorder_question"; question_id: string; from_day: number; to_day: number; to_index: number }
   | { type: "add_question"; question: Question; day: number; index?: number }
   | { type: "delete_question"; question_id: string };
@@ -30,6 +32,16 @@ export function applyBuilderEdit(kit: Kit, edit: BuilderEdit): Kit {
     if (!question) throw new Error(`Unknown question: ${edit.question_id}`);
     if (edit.prompt !== undefined) question.prompt = edit.prompt.trim();
     if (edit.answer_outline !== undefined) question.answer_outline = edit.answer_outline.trim();
+  } else if (edit.type === "edit_flashcard") {
+    const flashcard = next.flashcards.find((item) => item.id === edit.flashcard_id);
+    if (!flashcard) throw new Error(`Unknown flashcard: ${edit.flashcard_id}`);
+    if (edit.front !== undefined) flashcard.front = edit.front.trim();
+    if (edit.back !== undefined) flashcard.back = edit.back.trim();
+    if (edit.requirement_ids !== undefined) flashcard.requirement_ids = [...edit.requirement_ids];
+  } else if (edit.type === "edit_company_brief") {
+    if (edit.summary !== undefined) next.company_brief.summary = edit.summary.trim();
+    if (edit.what_they_do !== undefined) next.company_brief.what_they_do = edit.what_they_do.trim();
+    if (edit.sources !== undefined) next.company_brief.sources = edit.sources.map((source) => source.trim());
   } else if (edit.type === "add_question") {
     if (next.questions.some((item) => item.id === edit.question.id)) throw new Error(`Duplicate question: ${edit.question.id}`);
     if (!next.role.requirements.some((r) => edit.question.requirement_ids.includes(r.id))) throw new Error("Question must reference an existing requirement");
