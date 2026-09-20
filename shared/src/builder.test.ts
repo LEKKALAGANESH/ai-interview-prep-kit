@@ -54,3 +54,33 @@ test("recalculates coverage after deleting the only covered question",()=> {
   const result=applyBuilderEdit(kit(),{type:"delete_question",question_id:"q1"});
   assert.deepEqual(result.coverage.uncovered_requirement_ids,["r1"]);
 });
+
+
+test("edits flashcard content and preserves its stable ID",()=> {
+  const base=kit();
+  base.flashcards=[{id:"fc_q1",front:"Q1",back:"A1",requirement_ids:["r1"]}];
+  const result=applyBuilderEdit(base,{type:"edit_flashcard",flashcard_id:"fc_q1",front:"Edited front",back:"Edited back"});
+  assert.deepEqual(result.flashcards[0],{id:"fc_q1",front:"Edited front",back:"Edited back",requirement_ids:["r1"]});
+  assert.equal(result.questions[0].prompt,"Q1");
+});
+
+test("edits company brief fields without changing questions or flashcards",()=> {
+  const base=kit();
+  base.flashcards=[{id:"fc_q1",front:"Q1",back:"A1",requirement_ids:["r1"]}];
+  const result=applyBuilderEdit(base,{
+    type:"edit_company_brief",
+    summary:"Updated summary",
+    what_they_do:"Updated description",
+    sources:["https://example.com/about"]
+  });
+  assert.deepEqual(result.company_brief,{summary:"Updated summary",what_they_do:"Updated description",sources:["https://example.com/about"]});
+  assert.deepEqual(result.questions,base.questions);
+  assert.deepEqual(result.flashcards,base.flashcards);
+});
+
+test("invalid flashcard and company brief edits are rejected",()=> {
+  const base=kit();
+  base.flashcards=[{id:"fc_q1",front:"Q1",back:"A1",requirement_ids:["r1"]}];
+  assert.throws(()=>applyBuilderEdit(base,{type:"edit_flashcard",flashcard_id:"fc_q1",front:""}));
+  assert.throws(()=>applyBuilderEdit(base,{type:"edit_company_brief",sources:["not-a-url"]}));
+});
