@@ -1,3 +1,30 @@
+# Step 18 — Editing
+
+**Goal:** Verify that existing builder editing remains functional and that question/schedule edits are persisted without losing the canonical kit structure.
+
+| # | Editing checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 18.1 | Existing editing still works | 🟢 | Existing questions can be edited through the builder PATCH flow and the resulting kit is validated before persistence. |
+| 18.2 | Changes saved | 🟢 | Builder changes call KitStore.update() and return the persisted kit after a successful PATCH. |
+| 18.3 | Add question saved | 🟢 | A new question is added to the kit and its selected schedule day, then the complete kit is persisted. |
+| 18.4 | Delete question saved | 🟢 | A deleted question is removed from both the question list and all schedule day references, then persisted. |
+| 18.5 | Reorder saved | 🟢 | Question ordering/movement is applied to schedule day question IDs and the updated kit is persisted. |
+| 18.6 | Flashcard changes saved | 🟡 | The canonical KitSchema persists flashcards, but the current BuilderEdit contract does not expose a dedicated flashcard-edit operation. |
+| 18.7 | Company brief changes saved | 🟡 | The canonical KitSchema persists company brief data, but the current BuilderEdit contract does not expose a dedicated company-brief edit operation. |
+
+### Step 18 implementation notes
+
+- Existing question editing is implemented in `shared/src/builder.ts` through `edit_question`.
+- Add, delete, and reorder operations are also implemented as typed `BuilderEdit` variants.
+- `server/src/api/builder.ts` applies the edit, validates the complete result with `KitSchema.parse()`, and persists it through `store.update()` under the existing request lock.
+- Schedule minutes and coverage are recalculated after builder edits, keeping derived state consistent.
+- Flashcards and company brief are part of the persisted `KitSchema`, but there is currently no dedicated BuilderEdit operation for changing either one.
+- No runtime execution is being claimed here; the green items are supported by the current source implementation, while the two missing edit operations remain yellow.
+
+### Step 18 verification rule
+
+Keep 18.1–18.5 green based on the implemented builder/persistence path. Keep 18.6–18.7 yellow until dedicated flashcard and company-brief editing operations are implemented and verified.
+
 # Step 17 — Kit Persistence
 
 **Goal:** Ensure the existing AI-generated kit remains the canonical Appendix A-shaped artifact, keeps stable identifiers and metadata, and survives normal user/session and server lifecycle events.
