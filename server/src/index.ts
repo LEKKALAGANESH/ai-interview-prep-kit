@@ -7,8 +7,9 @@ import { handlePractice } from "./api/practice.js";
 import { createGenerationJob, getGenerationJob } from "./api/generation-job.js";
 import { handlePins } from "./api/pins.js";
 import { handleProvenance } from "./api/provenance.js";
-import { handleSession } from "./api/session.js";
-import { createKitStore } from "./persistence/store.js";
+import { createKitStore, UserScopedKitStore } from "./persistence/store.js";
+import { handleAuth } from "./api/auth.js";
+import { requireAuth } from "./auth/middleware.js";
 
 // Load server environment files explicitly. Supports both server/.env.local and repo/.env.local.
 loadDotenv({ path: ".env.local" });
@@ -35,9 +36,42 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
     response.end();
     return;
   }
-  if (request.url === "/api/session") {
-    const result = await handleSession(new Request(`http://localhost:${port}${request.url}`, { method: request.method, headers: request.headers as Record<string,string>, body: request.method === "GET" || request.method === "HEAD" ? undefined : await readBody(request) }));
-    response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
+  const authMatch = request.url?.match(/^\/api\/auth\/(register|login|logout|me)$/);
+  if (authMatch) {
+    const webRequest = new Request(`http://localhost:${port}${request.url}`, {
+      method: request.method,
+      headers: request.headers as Record<string, string>,
+      body: request.method === "GET" || request.method === "HEAD" ? undefined : await readBody(request),
+    });
+    try {
+      const result = await handleAuth(webRequest, authMatch[1] as "register" | "login" | "logout" | "me");
+      response.statusCode = result.status;
+      result.headers.forEach((value,key)=>response.setHeader(key,value));
+      response.end(await result.text());
+    } catch {
+      response.statusCode=500;
+      response.setHeader("content-type","application/json");
+      response.end(JSON.stringify({error:{code:"INTERNAL_ERROR",message:"Unexpected authentication error"}}));
+    }
+    return;
+  }
+
+  let authenticatedUser: import("./auth/store.js").AuthUser | null = null;
+  let scopedStore: UserScopedKitStore | null = null;
+  if (request.url?.startsWith("/api/")) {
+    const authRequest = new Request(`http://localhost:${port}${request.url}`, {
+      method: request.method,
+      headers: request.headers as Record<string,string>,
+    });
+    const auth = await requireAuth(authRequest);
+    if (auth instanceof Response) {
+      response.statusCode = auth.status;
+      auth.headers.forEach((value,key)=>response.setHeader(key,value));
+      response.end(await auth.text());
+      return;
+    }
+    authenticatedUser = auth;
+    scopedStore = new UserScopedKitStore(store, auth.id);
   }
 
   const generationJobMatch = request.url?.match(/^\/api\/generation\/jobs(?:\/([^/?]+))?$/);
@@ -48,16 +82,16 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
     }
     if (!generationJobMatch[1] && request.method === "POST") {
       const body=await readBody(request);
-      const result=await createGenerationJob(new Request(`http://localhost:${port}${request.url}`,{method:"POST",headers:request.headers as Record<string,string>,body}),{store});
+      const result=await createGenerationJob(new Request(`http://localhost:${port}${request.url}`,{method:"POST",headers:request.headers as Record<string,string>,body}),{store: scopedStore!});
       response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return;
     }
   }
 
   const pinsMatch=request.url?.match(/^\/api\/kits\/([^/?]+)\/pins$/);
-  if(pinsMatch){ const result=await handlePins(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>,body:request.method==="GET"||request.method==="HEAD"?undefined:await readBody(request)}),store,decodeURIComponent(pinsMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
+  if(pinsMatch){ const result=await handlePins(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>,body:request.method==="GET"||request.method==="HEAD"?undefined:await readBody(request)}),scopedStore!,decodeURIComponent(pinsMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
 
   const provenanceMatch=request.url?.match(/^\/api\/kits\/([^/?]+)\/provenance$/);
-  if(provenanceMatch){ const result=await handleProvenance(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>}),store,decodeURIComponent(provenanceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
+  if(provenanceMatch){ const result=await handleProvenance(new Request(`http://localhost:${port}${request.url}`,{method:request.method,headers:request.headers as Record<string,string>}),scopedStore!,decodeURIComponent(provenanceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); return; }
 
   if (request.url === "/health") {
     response.statusCode = 200;
@@ -71,7 +105,7 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
     let body = "";
     for await (const chunk of request) { body += Buffer.from(chunk).toString("utf8"); if (Buffer.byteLength(body) > 1_000_000) { response.statusCode=413; response.setHeader("content-type","application/json"); response.end(JSON.stringify({error:{code:"PAYLOAD_TOO_LARGE",message:"Request body is too large"}})); request.destroy(); return; } }
     const webRequest = new Request(`http://localhost:${port}${request.url}`, {method:request.method,headers:request.headers as Record<string,string>,body:request.method==="GET"||request.method==="HEAD"?undefined:body});
-    try { const result=await handlePractice(webRequest,store,decodeURIComponent(practiceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); } catch { response.statusCode=500; response.setHeader("content-type","application/json"); response.end(JSON.stringify({error:{code:"INTERNAL_ERROR",message:"Unexpected server error"}})); }
+    try { const result=await handlePractice(webRequest,scopedStore!,decodeURIComponent(practiceMatch[1])); response.statusCode=result.status; result.headers.forEach((value,key)=>response.setHeader(key,value)); response.end(await result.text()); } catch { response.statusCode=500; response.setHeader("content-type","application/json"); response.end(JSON.stringify({error:{code:"INTERNAL_ERROR",message:"Unexpected server error"}})); }
     return;
   }
 
@@ -95,7 +129,7 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
       body: request.method === "GET" || request.method === "HEAD" ? undefined : body,
     });
     try {
-      const result = await handleBuilder(webRequest, store, decodeURIComponent(builderMatch[1]));
+      const result = await handleBuilder(webRequest, scopedStore!, decodeURIComponent(builderMatch[1]));
       response.statusCode = result.status;
       result.headers.forEach((value, key) => response.setHeader(key, value));
       response.end(await result.text());
@@ -134,7 +168,7 @@ const server = createServer({ requestTimeout: 180_000, headersTimeout: 175_000 }
   });
 
   try {
-    const result = await handleGenerateKit(webRequest, { store });
+    const result = await handleGenerateKit(webRequest, { store: scopedStore! });
     response.statusCode = result.status;
     result.headers.forEach((value, key) => response.setHeader(key, value));
     response.end(await result.text());
