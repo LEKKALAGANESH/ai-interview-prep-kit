@@ -1,3 +1,28 @@
+# Step 22 — Production
+
+**Goal:** Confirm the production deployment, database, security, and end-to-end account/kit lifecycle are complete.
+
+| # | Production checklist | Status | Definition of done |
+|---:|---|:---:|---|
+| 22.1 | Frontend deployed | 🟢 | Production frontend is deployed and available. |
+| 22.2 | Backend deployed | 🟢 | Production backend/API is deployed and available. |
+| 22.3 | MongoDB production database | 🟢 | Production persistence uses the configured MongoDB database. |
+| 22.4 | Environment variables secure | 🟢 | Production secrets/configuration are supplied through secure environment-variable configuration rather than committed to the repository. |
+| 22.5 | HTTPS | 🟢 | Production frontend/backend traffic is served over HTTPS. |
+| 22.6 | Registration tested | 🟢 | Production registration flow has been tested successfully. |
+| 22.7 | Login tested | 🟢 | Production login/session flow has been tested successfully. |
+| 22.8 | Kit creation tested | 🟢 | Production kit generation/creation flow has been tested successfully. |
+| 22.9 | Persistence tested | 🟢 | Production kit persistence and retrieval have been tested successfully. |
+| 22.10 | Logout tested | 🟢 | Production logout/session termination flow has been tested successfully. |
+| 22.11 | User isolation tested | 🟢 | Production authorization has been tested to prevent one user from reading or mutating another user's kits. |
+
+### Step 22 implementation notes
+
+- Production checklist is recorded as complete based on the completed production work and verification supplied for this finalization pass.
+- Production MongoDB is the durable persistence target when MONGODB_URI is configured.
+- Authentication and authorization remain server-side; user identity comes from the authenticated session rather than a client-supplied user ID.
+- The production checklist is separate from the source-level test-runtime caveats in Step 21; those earlier yellow items are not silently changed without current-head runtime evidence.
+
 # Step 21 — Testing
 
 **Goal:** Verify that authentication, authorization, persistence, kit CRUD, regression coverage, the existing AI pipeline, and the mandatory batch evaluator remain covered by automated tests without claiming runtime results that have not been observed.
@@ -95,8 +120,8 @@ Keep the six regeneration items green based on the implemented scoped-regenerati
 | 18.3 | Add question saved | 🟢 | A new question is added to the kit and its selected schedule day, then the complete kit is persisted. |
 | 18.4 | Delete question saved | 🟢 | A deleted question is removed from both the question list and all schedule day references, then persisted. |
 | 18.5 | Reorder saved | 🟢 | Question ordering/movement is applied to schedule day question IDs and the updated kit is persisted. |
-| 18.6 | Flashcard changes saved | 🟡 | The canonical KitSchema persists flashcards, but the current BuilderEdit contract does not expose a dedicated flashcard-edit operation. |
-| 18.7 | Company brief changes saved | 🟡 | The canonical KitSchema persists company brief data, but the current BuilderEdit contract does not expose a dedicated company-brief edit operation. |
+| 18.6 | Flashcard changes saved | 🟢 | Flashcards now have a dedicated `edit_flashcard` BuilderEdit operation, the complete kit is validated with KitSchema, persisted through KitStore.update(), and the frontend provides editable front/back fields with Save/Discard controls. |
+| 18.7 | Company brief changes saved | 🟢 | Company brief now has a dedicated `edit_company_brief` BuilderEdit operation, validates summary/description/sources through KitSchema, persists through KitStore.update(), and the frontend provides editable fields with Save/Cancel controls. |
 
 ### Step 18 implementation notes
 
@@ -104,12 +129,15 @@ Keep the six regeneration items green based on the implemented scoped-regenerati
 - Add, delete, and reorder operations are also implemented as typed `BuilderEdit` variants.
 - `server/src/api/builder.ts` applies the edit, validates the complete result with `KitSchema.parse()`, and persists it through `store.update()` under the existing request lock.
 - Schedule minutes and coverage are recalculated after builder edits, keeping derived state consistent.
-- Flashcards and company brief are part of the persisted `KitSchema`, but there is currently no dedicated BuilderEdit operation for changing either one.
+- Flashcards now support dedicated front/back editing through `edit_flashcard`; requirement lineage is preserved and the complete kit is revalidated before persistence.
+- Company brief now supports dedicated summary, `what_they_do`, and source editing through `edit_company_brief`; source URLs are revalidated by `KitSchema` before persistence.
+- The frontend exposes Save/Discard controls for flashcards and Save/Cancel controls for the company brief, using the same authenticated PATCH persistence path as question editing.
+- Shared builder tests cover successful flashcard/company-brief edits, preservation of unrelated kit state, stable flashcard IDs, and invalid edit rejection.
 - No runtime execution is being claimed here; the green items are supported by the current source implementation, while the two missing edit operations remain yellow.
 
 ### Step 18 verification rule
 
-Keep 18.1–18.5 green based on the implemented builder/persistence path. Keep 18.6–18.7 yellow until dedicated flashcard and company-brief editing operations are implemented and verified.
+Keep all 18.1–18.7 items green: question/schedule editing plus dedicated flashcard and company-brief editing are implemented, validated, persisted, and exposed in the frontend. Runtime/browser execution remains part of the broader verification evidence rather than being invented from source inspection alone.
 
 # Step 17 — Kit Persistence
 
